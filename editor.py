@@ -16,9 +16,6 @@ class Editor(wx.stc.StyledTextCtrl, WxScheduled):
         self.path = ""
 
         self.SetNullSyntax()
-        self.SetIndent(4)
-        self.SetTabWidth(4)
-        self.SetUseTabs(False)
         self.SetTabIndents(True)
         self.SetBackSpaceUnIndents(True)
 
@@ -30,8 +27,11 @@ class Editor(wx.stc.StyledTextCtrl, WxScheduled):
         self.SetLexer(wx.stc.STC_LEX_NULL)
         self.SetKeyWords(0, "")
         self.StyleClearAll()
-        self.StyleSetSpec(wx.stc.STC_STYLE_DEFAULT, "")
         self.StyleSetFont(wx.stc.STC_STYLE_DEFAULT, self.font)
+        self.StyleSetSpec(wx.stc.STC_STYLE_DEFAULT, "")
+        self.SetIndent(4)
+        self.SetTabWidth(4)
+        self.SetUseTabs(False)
 
     def SetSyntaxFromFilename(self, path):
         m = filename_syntax_re.match(os.path.basename(path))
@@ -43,6 +43,9 @@ class Editor(wx.stc.StyledTextCtrl, WxScheduled):
             for style_num, spec in syntax.stylespecs:
                 self.StyleSetFont(style_num, self.font)
                 self.StyleSetSpec(style_num, spec)
+            self.SetIndent(syntax.indent)
+            self.SetTabWidth(syntax.indent)
+            self.SetUseTabs(syntax.use_tabs)
         else:
             self.SetNullSyntax()
 

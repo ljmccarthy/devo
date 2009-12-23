@@ -4,6 +4,8 @@ ident = "c"
 name = "C/C++"
 extensions = ["*.c", "*.cpp", "*.cxx", "*.cc", "*.h", "*.hpp", "*.hxx"]
 lexer = wx.stc.STC_LEX_CPP
+indent = 4
+use_tabs = False
 
 stylespecs = (
     (wx.stc.STC_STYLE_DEFAULT,            ""),
