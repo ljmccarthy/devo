@@ -63,7 +63,7 @@ class MainFrame(wx.Frame, WxScheduled):
                 try:
                     yield editor.LoadFile(path)
                 except Exception, exn:
-                    dialogs.error("Error opening file:\n\n%s" % exn)
+                    dialogs.error(self, "Error opening file:\n\n%s" % exn)
                     editor.Destroy()
                     del self.editors[realpath]
                 else:
