@@ -160,14 +160,14 @@ class CoroutineTask(Task):
             self.set_failed(exn, traceback.format_exc())
         else:
             if isinstance(ret, Task):
-                ret.bind(self.on_success, self.on_failure)
+                ret.bind(self.__success_next, self.__failure_next)
             else:
                 self.set_done(ret)
 
-    def on_success(self, result):
+    def __success_next(self, result):
         self.__next(self.__gen.send, result)
 
-    def on_failure(self, exn, traceback):
+    def __failure_next(self, exn, traceback):
         self.__next(self.__gen.throw, exn)
 
 def coroutine(scheduler, func):
