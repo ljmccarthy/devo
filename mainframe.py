@@ -47,6 +47,12 @@ class MainFrame(wx.Frame, WxScheduled):
             wx.aui.AuiPaneInfo().CentrePane())
         self.manager.Update()
 
+        self.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CLOSE, self.OnPageClose)
+
+    def OnPageClose(self, evt):
+        editor = self.notebook.GetPage(evt.GetSelection())
+        del self.editors[editor.path]
+
     def AddPage(self, win, text):
         i = self.notebook.GetSelection() + 1
         self.notebook.InsertPage(i, win, text)
@@ -70,7 +76,7 @@ class MainFrame(wx.Frame, WxScheduled):
                 editor.Show(False)
                 self.editors[realpath] = editor
                 try:
-                    yield editor.LoadFile(path)
+                    yield editor.LoadFile(realpath)
                 except Exception, exn:
                     dialogs.error(self, "Error opening file:\n\n%s" % exn)
                     editor.Destroy()
