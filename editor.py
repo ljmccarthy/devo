@@ -8,7 +8,6 @@ from syntax import filename_syntax_re, syntax_dict
 class Editor(wx.stc.StyledTextCtrl, WxScheduled):
     font = wx.Font(10, wx.FONTFAMILY_TELETYPE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL,
                    faceName="Monospace")
-                   #faceName="Fixedsys Excelsior 3.01")
 
     def __init__(self, parent, env):
         wx.stc.StyledTextCtrl.__init__(self, parent)
@@ -18,6 +17,8 @@ class Editor(wx.stc.StyledTextCtrl, WxScheduled):
         self.SetNullSyntax()
         self.SetTabIndents(True)
         self.SetBackSpaceUnIndents(True)
+        self.SetViewWhiteSpace(wx.stc.STC_WS_VISIBLEALWAYS)
+        self.SetWhitespaceForeground(True, "#cccccc")
 
         self.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
         self.Bind(wx.stc.EVT_STC_SAVEPOINTLEFT, self.OnSavePointLeft)
@@ -44,7 +45,7 @@ class Editor(wx.stc.StyledTextCtrl, WxScheduled):
                 self.StyleSetFont(style_num, self.font)
                 self.StyleSetSpec(style_num, spec)
             self.SetIndent(syntax.indent)
-            self.SetTabWidth(syntax.indent)
+            self.SetTabWidth(syntax.indent if syntax.use_tabs else 8)
             self.SetUseTabs(syntax.use_tabs)
         else:
             self.SetNullSyntax()
@@ -73,11 +74,23 @@ class Editor(wx.stc.StyledTextCtrl, WxScheduled):
     def OnKeyDown(self, evt):
         key = evt.GetKeyCode()
         mod = evt.GetModifiers()
-        if key in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER) and mod == wx.MOD_NONE:
-            indent = self.GetLineIndentation(self.GetCurrentLine())
-            pos = self.GetCurrentPos()
-            self.InsertText(pos, "\n" + " " * indent)
-            self.GotoPos(pos + indent + 1)
+        if mod == wx.MOD_NONE:
+            if key in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER):
+                indent = self.GetLineIndentation(self.GetCurrentLine())
+                pos = self.GetCurrentPos()
+                self.InsertText(pos, "\n" + " " * indent)
+                self.GotoPos(pos + indent + 1)
+            elif key == wx.WXK_BACK and not self.GetSelectedText():
+                pos = self.GetCurrentPos()
+                col = self.GetColumn(pos)
+                linetext = self.GetLine(self.GetCurrentLine())
+                if col != 0 and not linetext.strip():
+                    self.DelLineLeft()
+                    self.DelLineRight()
+                else:
+                    evt.Skip()
+            else:
+                evt.Skip()
         else:
             evt.Skip()
 
