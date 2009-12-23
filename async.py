@@ -30,12 +30,15 @@ class Scheduler(object):
         async_call_task(task, func, args, kwargs)
         return task
 
-WAITING, DONE, FAILED = range(3)
+WAITING, DONE, FAILED, CANCELLED = range(4)
 
 class TaskNotReady(Exception):
     pass
 
 class TaskAlreadySet(Exception):
+    pass
+
+class TaskCancelled(Exception):
     pass
 
 class Task(object):
@@ -50,6 +53,8 @@ class Task(object):
 
     def set_done(self, result):
         with self.__cond:
+            if self.__status == CANCELLED:
+                return
             if self.__status != WAITING:
                 raise TaskAlreadySet()
             self.__result = result
@@ -59,6 +64,8 @@ class Task(object):
 
     def set_failed(self, exn, traceback=""):
         with self.__cond:
+            if self.__status == CANCELLED:
+                return
             if self.__status != WAITING:
                 raise TaskAlreadySet()
             self.__result = exn
@@ -80,24 +87,30 @@ class Task(object):
                 return self.__result
             elif self.__status == FAILED:
                 raise self.__result
+            elif self.__status == CANCELLED:
+                raise TaskCancelled()
 
     @property
     def ready(self):
         with self.__cond:
             return self.__status != WAITING
 
+    def __check_ready(self):
+        if self.__status == WAITING:
+            raise TaskNotReady()
+        if self.__status == CANCELLED:
+            raise TaskCancelled()
+
     @property
     def failed(self):
         with self.__cond:
-            if self.__status == WAITING:
-                raise TaskNotReady()
+            self.__check_ready()
             return self.__status == FAILED
 
     @property
     def result(self):
         with self.__cond:
-            if self.__status == WAITING:
-                raise TaskNotReady()
+            self.__check_ready()
             return self.__result
 
     def success(self, success):
@@ -106,6 +119,8 @@ class Task(object):
                 self.scheduler.call(success, self.__result)
             elif self.__status == WAITING:
                 self.__on_success = success
+            elif self.__status == CANCELLED:
+                raise TaskCancelled()
 
     def failure(self, failure):
         with self.__cond:
@@ -113,6 +128,8 @@ class Task(object):
                 self.scheduler.call(failure, self.__result, self.__traceback)
             elif self.__status == WAITING:
                 self.__on_failure = failure
+            elif self.__status == CANCELLED:
+                raise TaskCancelled()
 
     success = property(fset=success)
     failure = property(fset=failure)
@@ -122,6 +139,11 @@ class Task(object):
             self.success = success
         if failure is not None:
             self.failure = failure
+
+    def cancel(self):
+        with self.__cond:
+            if self.__status == WAITING:
+                self.__status = CANCELLED
 
 class CoroutineTask(Task):
     def __init__(self, scheduler, gen):
