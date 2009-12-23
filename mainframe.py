@@ -47,6 +47,15 @@ class MainFrame(wx.Frame, WxScheduled):
             wx.aui.AuiPaneInfo().CentrePane())
         self.manager.Update()
 
+    def AddPage(self, win, text):
+        i = self.notebook.GetSelection() + 1
+        self.notebook.InsertPage(i, win, text)
+        self.notebook.SetSelection(i)
+
+    def NewEditor(self, path):
+        editor = Editor(self.notebook, self)
+        self.AddPage(editor, "Untitled")
+
     @coroutine_method
     def OpenEditor(self, path):
         realpath = os.path.realpath(path)
@@ -67,7 +76,5 @@ class MainFrame(wx.Frame, WxScheduled):
                     editor.Destroy()
                     del self.editors[realpath]
                 else:
-                    i = self.notebook.GetSelection() + 1
-                    self.notebook.InsertPage(i, editor, os.path.basename(path))
-                    self.notebook.SetSelection(i)
+                    self.AddPage(editor, os.path.basename(path))
                     self.editors[realpath] = editor
