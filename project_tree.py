@@ -5,9 +5,10 @@ class ProjectTree(wx.TreeCtrl):
     IM_FOLDER = 0
     IM_FILE = 1
 
-    def __init__(self, parent):
+    def __init__(self, parent, env, rootdir):
         wx.TreeCtrl.__init__(self, parent, style=wx.TR_DEFAULT_STYLE|wx.TR_HIDE_ROOT)
-        self.rootdir = "/devel"
+        self.env = env
+        self.rootdir = rootdir
         bmp_folder = wx.ArtProvider.GetBitmap(wx.ART_FOLDER)
         self.imglist = wx.ImageList(bmp_folder.GetWidth(), bmp_folder.GetHeight())
         self.imglist.Add(bmp_folder)
@@ -17,12 +18,12 @@ class ProjectTree(wx.TreeCtrl):
         self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.OnItemActivated)
 
     def OnItemActivated(self, evt):
-        path = self.GetPyData(evt.GetItem())
+        item = evt.GetItem()
+        path = self.GetPyData(item)
         if path:
-            mainframe = self.GetParent()
-            editor = mainframe.notebook.GetPage(0)
-            editor.LoadFile(path)
-            mainframe.notebook.SetPageText(0, os.path.basename(path))
+            self.env.OpenFile(path)
+        else:
+            self.Toggle(item)
 
     def UpdateTree(self):
         self.DeleteAllItems()

@@ -8,11 +8,11 @@ class Editor(wx.stc.StyledTextCtrl, WxScheduled):
                    faceName="Monospace")
                    #faceName="Fixedsys Excelsior 3.01")
 
-    def __init__(self, parent):
+    def __init__(self, parent, env):
         wx.stc.StyledTextCtrl.__init__(self, parent)
         self.StyleSetFont(0, self.font)
+        self.env = env
         self.path = ""
-        self.LoadFile("test.txt")
 
     @coroutine_method
     def LoadFile(self, path):
