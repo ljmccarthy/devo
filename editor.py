@@ -18,7 +18,7 @@ class Editor(wx.stc.StyledTextCtrl, WxScheduled):
         self.SetTabIndents(True)
         self.SetBackSpaceUnIndents(True)
         self.SetViewWhiteSpace(wx.stc.STC_WS_VISIBLEALWAYS)
-        self.SetWhitespaceForeground(True, "#cccccc")
+        self.SetWhitespaceForeground(True, "#dddddd")
 
         self.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
         self.Bind(wx.stc.EVT_STC_SAVEPOINTLEFT, self.OnSavePointLeft)
@@ -78,7 +78,11 @@ class Editor(wx.stc.StyledTextCtrl, WxScheduled):
             if key in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER):
                 indent = self.GetLineIndentation(self.GetCurrentLine())
                 pos = self.GetCurrentPos()
-                self.InsertText(pos, "\n" + " " * indent)
+                if self.GetUseTabs():
+                    indent //= self.GetTabWidth()
+                    self.InsertText(pos, "\n" + "\t" * indent)
+                else:
+                    self.InsertText(pos, "\n" + " " * indent)
                 self.GotoPos(pos + indent + 1)
             elif key == wx.WXK_BACK and not self.GetSelectedText():
                 pos = self.GetCurrentPos()
