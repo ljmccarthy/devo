@@ -84,15 +84,6 @@ class Editor(wx.stc.StyledTextCtrl, WxScheduled):
                 else:
                     self.InsertText(pos, "\n" + " " * indent)
                 self.GotoPos(pos + indent + 1)
-            elif key == wx.WXK_BACK and not self.GetSelectedText():
-                pos = self.GetCurrentPos()
-                col = self.GetColumn(pos)
-                linetext = self.GetLine(self.GetCurrentLine())
-                if col != 0 and not linetext.strip():
-                    self.DelLineLeft()
-                    self.DelLineRight()
-                else:
-                    evt.Skip()
             else:
                 evt.Skip()
         else:
