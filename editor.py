@@ -31,7 +31,7 @@ class Editor(wx.stc.StyledTextCtrl, WxScheduled):
         self.StyleSetFont(wx.stc.STC_STYLE_DEFAULT, self.font)
         self.StyleSetSpec(wx.stc.STC_STYLE_DEFAULT, "")
         self.SetIndent(4)
-        self.SetTabWidth(4)
+        self.SetTabWidth(8)
         self.SetUseTabs(False)
 
     def SetSyntaxFromFilename(self, path):
