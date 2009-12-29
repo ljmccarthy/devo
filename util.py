@@ -13,3 +13,9 @@ class frozen_window(object):
 def is_text_file(path):
     filetype, encoding = mimetypes.guess_type(path)
     return filetype is None or filetype.startswith("text/")
+
+def iter_tree_children(tree, item):
+    item = tree.GetFirstChild(item)[0]
+    while item.IsOk():
+        yield item
+        item = tree.GetNextSibling(item)

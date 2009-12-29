@@ -1,14 +1,11 @@
 import os
 import stat
 import wx
-from async_wx import async_call, coroutine
-import dialogs
 
-def LoadBitmap(filename):
-    bmp = wx.Bitmap(filename)
-    if not bmp.Ok():
-        raise IOError("Failed to load bitmap: %r" % filename)
-    return bmp
+import dialogs
+from async_wx import async_call, coroutine
+from util import iter_tree_children
+from resources import load_bitmap
 
 class FSNode(object):
     __slots__ = ("path", "type", "populated")
@@ -21,12 +18,6 @@ class FSNode(object):
 IM_FOLDER = 0
 IM_FOLDER_DENIED = 1
 IM_FILE = 2
-
-def IterTreeChildren(tree, item):
-    item = tree.GetFirstChild(item)[0]
-    while item.IsOk():
-        yield item
-        item = tree.GetNextSibling(item)
 
 class ProjectTree(wx.TreeCtrl):
     def __init__(self, parent, env, rootdir):
@@ -60,7 +51,7 @@ class ProjectTree(wx.TreeCtrl):
     @coroutine
     def PopulateNode(self, rootitem, rootnode):
         rootnode.populated = True
-        for item in IterTreeChildren(self, rootitem):
+        for item in iter_tree_children(self, rootitem):
             node = self.GetPyData(item)
             if node.type == 'd':
                 try:
