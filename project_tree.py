@@ -1,6 +1,6 @@
 import os
 import wx
-from async_wx import coroutine_method, WxScheduled
+from async_wx import async_call, coroutine
 
 def LoadBitmap(filename):
     bmp = wx.Bitmap(filename)
@@ -25,7 +25,7 @@ def IterTreeChildren(tree, item):
         yield item
         item = tree.GetNextSibling(item)
 
-class ProjectTree(wx.TreeCtrl, WxScheduled):
+class ProjectTree(wx.TreeCtrl):
     def __init__(self, parent, env, rootdir):
         style = wx.TR_DEFAULT_STYLE | wx.TR_HIDE_ROOT
         wx.TreeCtrl.__init__(self, parent, style=style)
@@ -53,29 +53,29 @@ class ProjectTree(wx.TreeCtrl, WxScheduled):
         if node.type == 'd' and not node.populated:
             self.PopulateNode(item, node)
 
-    @coroutine_method
+    @coroutine
     def PopulateNode(self, rootitem, rootnode):
+        rootnode.populated = True
         for item in IterTreeChildren(self, rootitem):
             node = self.GetPyData(item)
             if node.type == 'd':
                 yield self.PopulateDirTree(item, node.path)
-        rootnode.populated = True
 
-    @coroutine_method
+    @coroutine
     def PopulateDirTree(self, rootitem, rootpath):
         files = []
-        for filename in sorted((yield self.async_call(os.listdir, rootpath))):
+        for filename in sorted((yield async_call(os.listdir, rootpath))):
             path = os.path.join(rootpath, filename)
-            if (yield self.async_call(os.path.isfile, path)):
+            if (yield async_call(os.path.isfile, path)):
                 files.append((filename, path))
-            elif (yield self.async_call(os.path.isdir, path)):
+            elif (yield async_call(os.path.isdir, path)):
                 item = self.AppendItem(rootitem, filename, IM_FOLDER)
                 self.SetPyData(item, FSNode(path, 'd'))
         for filename, path in files:
             item = self.AppendItem(rootitem, filename, IM_FILE)
             self.SetPyData(item, FSNode(path, 'f'))
 
-    @coroutine_method
+    @coroutine
     def UpdateTree(self):
         self.DeleteAllItems()
         rootitem = self.AddRoot("")

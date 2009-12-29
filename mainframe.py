@@ -1,7 +1,7 @@
 import os
 import mimetypes
 import wx
-from async_wx import coroutine_method, WxScheduled
+from async_wx import async_call, coroutine
 from project_tree import ProjectTree
 from editor import Editor
 import dialogs
@@ -20,18 +20,18 @@ def is_text(path):
     filetype, encoding = mimetypes.guess_type(path)
     return filetype is None or filetype.startswith("text/")
 
-class AppEnv(WxScheduled):
+class AppEnv(object):
     def __init__(self, mainframe):
         self.mainframe = mainframe
 
-    @coroutine_method
+    @coroutine
     def OpenFile(self, path):
-        if not (yield self.async_call(is_text, path)):
+        if not (yield async_call(is_text, path)):
             dialogs.error(self.mainframe, "Selected file is not a text file:\n\n%s" % path)
         else:
             yield self.mainframe.OpenEditor(path)
 
-class MainFrame(wx.Frame, WxScheduled):
+class MainFrame(wx.Frame):
     def __init__(self):
         wx.Frame.__init__(self, None, title="Editor", size=(1000, 1200))
         self.editors = {}
@@ -62,7 +62,7 @@ class MainFrame(wx.Frame, WxScheduled):
         editor = Editor(self.notebook, self)
         self.AddPage(editor, "Untitled")
 
-    @coroutine_method
+    @coroutine
     def OpenEditor(self, path):
         realpath = os.path.realpath(path)
         editor = self.editors.get(realpath)

@@ -2,10 +2,10 @@ import os
 import wx
 import wx.aui
 import wx.stc
-from async_wx import coroutine_method, WxScheduled
+from async_wx import async_call, coroutine
 from syntax import filename_syntax_re, syntax_dict
 
-class Editor(wx.stc.StyledTextCtrl, WxScheduled):
+class Editor(wx.stc.StyledTextCtrl):
     font = wx.Font(10, wx.FONTFAMILY_TELETYPE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL,
                    faceName="Monospace")
 
@@ -50,12 +50,12 @@ class Editor(wx.stc.StyledTextCtrl, WxScheduled):
         else:
             self.SetNullSyntax()
 
-    @coroutine_method
+    @coroutine
     def LoadFile(self, path):
         self.SetReadOnly(True)
         try:
-            with (yield self.async_call(open, path)) as f:
-                text = (yield self.async_call(f.read))
+            with (yield async_call(open, path)) as f:
+                text = (yield async_call(f.read))
         except IOError, exn:
             self.SetReadOnly(False)
             print exn

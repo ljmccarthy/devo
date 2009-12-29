@@ -1,8 +1,8 @@
 import traceback
 import wx
-from async import *
+import async
 
-class WxScheduler(Scheduler):
+class WxScheduler(async.Scheduler):
     def do_call(self, func, args, kwargs):
         if wx.Thread_IsMain():
             try:
@@ -14,8 +14,8 @@ class WxScheduler(Scheduler):
         else:
             wx.CallAfter(func, *args, **kwargs)
 
-class WxScheduled(object):
-    scheduler = WxScheduler()
+scheduler = WxScheduler()
+async_call = scheduler.async_call
 
-    def async_call(self, func, *args, **kwargs):
-        return self.scheduler.async_call(func, *args, **kwargs)
+def coroutine(func):
+    return async.coroutine(scheduler, func)
