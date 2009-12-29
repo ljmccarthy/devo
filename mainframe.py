@@ -1,24 +1,10 @@
 import os
-import mimetypes
 import wx
 from async_wx import async_call, coroutine
 from project_tree import ProjectTree
 from editor import Editor
+from util import frozen_window, is_text_file
 import dialogs
-
-class frozen_window(object):
-    def __init__(self, win):
-        self.win = win
-
-    def __enter__(self):
-        self.win.Freeze()
-
-    def __exit__(self, exn_type, exn_value, exn_traceback):
-        self.win.Thaw()
-
-def is_text(path):
-    filetype, encoding = mimetypes.guess_type(path)
-    return filetype is None or filetype.startswith("text/")
 
 class AppEnv(object):
     def __init__(self, mainframe):
@@ -26,7 +12,7 @@ class AppEnv(object):
 
     @coroutine
     def OpenFile(self, path):
-        if not (yield async_call(is_text, path)):
+        if not (yield async_call(is_text_file, path)):
             dialogs.error(self.mainframe, "Selected file is not a text file:\n\n%s" % path)
         else:
             yield self.mainframe.OpenEditor(path)
