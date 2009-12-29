@@ -2,6 +2,7 @@ import os
 import stat
 import wx
 from async_wx import async_call, coroutine
+import dialogs
 
 def LoadBitmap(filename):
     bmp = wx.Bitmap(filename)
@@ -18,7 +19,8 @@ class FSNode(object):
         self.populated = False
 
 IM_FOLDER = 0
-IM_FILE = 1
+IM_FOLDER_DENIED = 1
+IM_FILE = 2
 
 def IterTreeChildren(tree, item):
     item = tree.GetFirstChild(item)[0]
@@ -34,9 +36,10 @@ class ProjectTree(wx.TreeCtrl):
         self.rootdir = rootdir
         self.imglist = wx.ImageList(16, 16)
         self.imglist.Add(LoadBitmap("icons/folder.png"))
+        self.imglist.Add(LoadBitmap("icons/folder_denied.png"))
         self.imglist.Add(LoadBitmap("icons/file.png"))
         self.SetImageList(self.imglist)
-        self.UpdateTree()
+        self.InitializeTree()
         self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.OnItemActivated)
         self.Bind(wx.EVT_TREE_ITEM_EXPANDING, self.OnItemExpanding)
 
@@ -60,30 +63,39 @@ class ProjectTree(wx.TreeCtrl):
         for item in IterTreeChildren(self, rootitem):
             node = self.GetPyData(item)
             if node.type == 'd':
-                yield self.PopulateDirTree(item, node.path)
+                try:
+                    yield self.PopulateDirTree(item, node.path)
+                except OSError:
+                    self.SetItemImage(item, IM_FOLDER_DENIED)
 
     @coroutine
     def PopulateDirTree(self, rootitem, rootpath):
         files = []
         for filename in sorted((yield async_call(os.listdir, rootpath)), key=lambda x: x.lower()):
             path = os.path.join(rootpath, filename)
-            st = (yield async_call(os.stat, path))
-            if stat.S_ISREG(st.st_mode):
-                files.append((filename, path))
-            elif stat.S_ISDIR(st.st_mode):
-                item = self.AppendItem(rootitem, filename, IM_FOLDER)
-                self.SetPyData(item, FSNode(path, 'd'))
+            try:
+                st = (yield async_call(os.stat, path))
+            except OSError:
+                pass
+            else:
+                if stat.S_ISREG(st.st_mode):
+                    files.append((filename, path))
+                elif stat.S_ISDIR(st.st_mode):
+                    item = self.AppendItem(rootitem, filename, IM_FOLDER)
+                    self.SetPyData(item, FSNode(path, 'd'))
         for filename, path in files:
             item = self.AppendItem(rootitem, filename, IM_FILE)
             self.SetPyData(item, FSNode(path, 'f'))
 
     @coroutine
-    def UpdateTree(self):
+    def InitializeTree(self):
         self.DeleteAllItems()
         rootitem = self.AddRoot("")
+        rootnode = FSNode(self.rootdir, 'd')
+        self.SetPyData(rootitem, rootnode)
         self.Expand(rootitem)
-        yield self.PopulateDirTree(rootitem, self.rootdir)
-        for item in IterTreeChildren(self, rootitem):
-            node = self.GetPyData(item)
-            if node.type == 'd':
-                yield self.PopulateDirTree(item, node.path)
+        try:
+            yield self.PopulateDirTree(rootitem, self.rootdir)
+            yield self.PopulateNode(rootitem, rootnode)
+        except OSError, exn:
+            dialogs.error(self, "Error: %s" % exn)
