@@ -1,4 +1,5 @@
 import os
+import stat
 import wx
 from async_wx import async_call, coroutine
 
@@ -64,11 +65,12 @@ class ProjectTree(wx.TreeCtrl):
     @coroutine
     def PopulateDirTree(self, rootitem, rootpath):
         files = []
-        for filename in sorted((yield async_call(os.listdir, rootpath))):
+        for filename in sorted((yield async_call(os.listdir, rootpath)), key=lambda x: x.lower()):
             path = os.path.join(rootpath, filename)
-            if (yield async_call(os.path.isfile, path)):
+            st = (yield async_call(os.stat, path))
+            if stat.S_ISREG(st.st_mode):
                 files.append((filename, path))
-            elif (yield async_call(os.path.isdir, path)):
+            elif stat.S_ISDIR(st.st_mode):
                 item = self.AppendItem(rootitem, filename, IM_FOLDER)
                 self.SetPyData(item, FSNode(path, 'd'))
         for filename, path in files:
