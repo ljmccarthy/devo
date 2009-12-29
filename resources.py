@@ -1,3 +1,5 @@
+import wx
+
 def load_bitmap(filename):
     bmp = wx.Bitmap(filename)
     if not bmp.Ok():

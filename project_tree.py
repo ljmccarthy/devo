@@ -26,9 +26,9 @@ class ProjectTree(wx.TreeCtrl):
         self.env = env
         self.rootdir = rootdir
         self.imglist = wx.ImageList(16, 16)
-        self.imglist.Add(LoadBitmap("icons/folder.png"))
-        self.imglist.Add(LoadBitmap("icons/folder_denied.png"))
-        self.imglist.Add(LoadBitmap("icons/file.png"))
+        self.imglist.Add(load_bitmap("icons/folder.png"))
+        self.imglist.Add(load_bitmap("icons/folder_denied.png"))
+        self.imglist.Add(load_bitmap("icons/file.png"))
         self.SetImageList(self.imglist)
         self.InitializeTree()
         self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.OnItemActivated)
