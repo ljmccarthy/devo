@@ -5,9 +5,14 @@ import wx.stc
 from async_wx import async_call, coroutine
 from syntax import filename_syntax_re, syntax_dict
 
+if "wxMSW" in wx.PlatformInfo:
+    font_face = "Consolas"
+else:
+    font_face = "Monospace"
+
 class Editor(wx.stc.StyledTextCtrl):
     font = wx.Font(10, wx.FONTFAMILY_TELETYPE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL,
-                   faceName="Monospace")
+                   faceName=font_face)
 
     def __init__(self, parent, env):
         wx.stc.StyledTextCtrl.__init__(self, parent)
@@ -56,10 +61,6 @@ class Editor(wx.stc.StyledTextCtrl):
         try:
             with (yield async_call(open, path)) as f:
                 text = (yield async_call(f.read))
-        except IOError, exn:
-            self.SetReadOnly(False)
-            print exn
-        else:
             try:
                 text = text.decode("utf-8")
             except UnicodeDecodeError:
@@ -70,6 +71,8 @@ class Editor(wx.stc.StyledTextCtrl):
             self.EmptyUndoBuffer()
             self.SetSavePoint()
             self.path = path
+        finally:
+            self.SetReadOnly(False)
 
     def OnKeyDown(self, evt):
         key = evt.GetKeyCode()
