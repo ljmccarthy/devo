@@ -84,7 +84,6 @@ class ProjectTree(wx.TreeCtrl):
         rootitem = self.AddRoot("")
         rootnode = FSNode(self.rootdir, 'd')
         self.SetPyData(rootitem, rootnode)
-        self.Expand(rootitem)
         try:
             yield self.PopulateDirTree(rootitem, self.rootdir)
             yield self.PopulateNode(rootitem, rootnode)
