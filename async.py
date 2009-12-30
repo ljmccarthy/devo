@@ -73,11 +73,6 @@ class Task(object):
             self.__status = FAILED
             if self.__on_failure is not None:
                 self.scheduler.call(self.__on_failure, exn, traceback)
-            else:
-                if traceback:
-                    print traceback
-                else:
-                    print "Error: Task Failed:", exn
 
     def wait(self):
         with self.__cond:
