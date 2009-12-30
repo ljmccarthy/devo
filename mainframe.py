@@ -1,5 +1,7 @@
 import os
 import wx
+from wx.lib.utils import AdjustRectToScreen
+
 from async_wx import async_call, coroutine
 from project_tree import ProjectTree
 from editor import Editor
@@ -19,7 +21,15 @@ class AppEnv(object):
 
 class MainFrame(wx.Frame):
     def __init__(self):
-        wx.Frame.__init__(self, None, title="Editor", size=(1000, 1200))
+        if "wxMSW" in wx.PlatformInfo:
+            rect = AdjustRectToScreen(wx.Rect(0, 0, 1000, 1200))
+            size = (rect.width, rect.height - 50)
+            pos = (25, 25)
+        else:
+            size = (1000, 1200)
+            pos = wx.DefaultPosition
+        wx.Frame.__init__(self, None, title="Editor", pos=pos, size=size)
+
         self.editors = {}
         self.env = AppEnv(self)
 
@@ -69,4 +79,3 @@ class MainFrame(wx.Frame):
                     del self.editors[realpath]
                 else:
                     self.AddPage(editor, os.path.basename(path))
-                    self.editors[realpath] = editor
