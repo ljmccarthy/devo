@@ -17,7 +17,8 @@ class FSNode(object):
 
 IM_FOLDER = 0
 IM_FOLDER_DENIED = 1
-IM_FILE = 2
+IM_FOLDER_WAITING = 2
+IM_FILE = 3
 
 class ProjectTree(wx.TreeCtrl):
     def __init__(self, parent, env, rootdir):
@@ -28,6 +29,7 @@ class ProjectTree(wx.TreeCtrl):
         self.imglist = wx.ImageList(16, 16)
         self.imglist.Add(load_bitmap("icons/folder.png"))
         self.imglist.Add(load_bitmap("icons/folder_denied.png"))
+        self.imglist.Add(load_bitmap("icons/folder_waiting.png"))
         self.imglist.Add(load_bitmap("icons/file.png"))
         self.SetImageList(self.imglist)
         self.InitializeTree()
@@ -61,6 +63,7 @@ class ProjectTree(wx.TreeCtrl):
 
     @coroutine
     def PopulateDirTree(self, rootitem, rootpath):
+        self.SetItemImage(rootitem, IM_FOLDER)
         files = []
         for filename in sorted((yield async_call(os.listdir, rootpath)), key=lambda x: x.lower()):
             path = os.path.join(rootpath, filename)
@@ -72,7 +75,7 @@ class ProjectTree(wx.TreeCtrl):
                 if stat.S_ISREG(st.st_mode):
                     files.append((filename, path))
                 elif stat.S_ISDIR(st.st_mode):
-                    item = self.AppendItem(rootitem, filename, IM_FOLDER)
+                    item = self.AppendItem(rootitem, filename, IM_FOLDER_WAITING)
                     self.SetPyData(item, FSNode(path, 'd'))
         for filename, path in files:
             item = self.AppendItem(rootitem, filename, IM_FILE)
