@@ -63,7 +63,6 @@ class ProjectTree(wx.TreeCtrl):
 
     @coroutine
     def PopulateDirTree(self, rootitem, rootpath):
-        self.SetItemImage(rootitem, IM_FOLDER)
         files = []
         for filename in sorted((yield async_call(os.listdir, rootpath)), key=lambda x: x.lower()):
             path = os.path.join(rootpath, filename)
@@ -80,6 +79,7 @@ class ProjectTree(wx.TreeCtrl):
         for filename, path in files:
             item = self.AppendItem(rootitem, filename, IM_FILE)
             self.SetPyData(item, FSNode(path, 'f'))
+        self.SetItemImage(rootitem, IM_FOLDER)
 
     @coroutine
     def InitializeTree(self):
