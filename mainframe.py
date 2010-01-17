@@ -1,4 +1,6 @@
+import sys
 import os
+import traceback
 import wx
 from wx.lib.utils import AdjustRectToScreen
 
@@ -43,18 +45,31 @@ class MainFrame(wx.Frame):
             wx.aui.AuiPaneInfo().CentrePane())
         self.manager.Update()
 
+        self.Bind(wx.EVT_CLOSE, self.OnClose)
         self.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CLOSE, self.OnPageClose)
 
+    @coroutine
+    def OnClose(self, evt):
+        for i in xrange(self.notebook.GetPageCount()-1, -1, -1):
+            editor = self.notebook.GetPage(i)
+            try:
+                if not (yield editor.TryClose()):
+                    return
+            except Exception:
+                sys.stderr.write(traceback.format_exc())
+                return
+        self.Destroy()
+
     def OnPageClose(self, evt):
+        evt.Veto()
         editor = self.notebook.GetPage(evt.GetSelection())
-        try:
-            if editor.TryClose():
-                del self.editors[editor.path]
-            else:
-                evt.Veto()
-        except Exception:
-            evt.Veto()
-            raise
+        self.ClosePage(editor)
+
+    @coroutine
+    def ClosePage(self, editor):
+        if (yield editor.TryClose()):
+            del self.editors[editor.path]
+            self.notebook.DeletePage(self.notebook.GetPageIndex(editor))
 
     def AddPage(self, win):
         i = self.notebook.GetSelection() + 1

@@ -49,19 +49,20 @@ class Editor(wx.stc.StyledTextCtrl):
     def changed(self):
         return (not self.GetReadOnly()) and self.GetModify()
 
+    @coroutine
     def TryClose(self):
         if self.changed:
             result = dialogs.ask_save_changes(self, self.path)
             if result == wx.ID_YES:
                 try:
-                    self.Save()
-                    return True
+                    yield self.Save()
+                    yield True
                 except Exception:
-                    return False
+                    yield False
             else:
-                return result == wx.ID_NO
+                yield result == wx.ID_NO
         else:
-            return True
+            yield True
 
     def SetSyntaxFromFilename(self, path):
         m = filename_syntax_re.match(os.path.basename(path))
@@ -117,25 +118,29 @@ class Editor(wx.stc.StyledTextCtrl):
             yield async_call(os.rename, temp, path)
             self.SetSavePoint()
 
+    @coroutine
     def SaveAs(self):
         path = dialogs.get_file_to_open(self)
         if path:
             try:
-                self.SaveFile(path)
+                yield self.SaveFile(path)
             except Exception, exn:
                 dialogs.error(self, "Error saving file '%s'\n\n%s" % (path, exn))
+                raise
             else:
                 self.path = path
                 self.sig_title_changed.signal(self)
 
+    @coroutine
     def Save(self):
         if self.path:
             try:
-                self.SaveFile(self.path)
+                yield self.SaveFile(self.path)
             except Exception, exn:
-                dialogs.error(self, str(exn))
+                dialogs.error(self, "Error saving file '%s'\n\n%s" % (path, exn))
+                raise
         else:
-            self.SaveAs()
+            yield self.SaveAs()
 
     def OnKeyDown(self, evt):
         key = evt.GetKeyCode()
