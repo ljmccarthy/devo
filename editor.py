@@ -29,7 +29,7 @@ class Editor(wx.stc.StyledTextCtrl):
         self.SetViewWhiteSpace(wx.stc.STC_WS_VISIBLEALWAYS)
         self.SetWhitespaceForeground(True, "#dddddd")
 
-        self.sig_set_title = Signal(self)
+        self.sig_title_changed = Signal(self)
 
         self.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
         self.Bind(wx.stc.EVT_STC_SAVEPOINTLEFT, self.OnSavePointLeft)
@@ -66,7 +66,7 @@ class Editor(wx.stc.StyledTextCtrl):
         self.SetReadOnly(True)
         try:
             self.loading = path
-            self.sig_set_title.signal(self)
+            self.sig_title_changed.signal(self)
             with (yield async_call(open, path)) as f:
                 text = (yield async_call(f.read))
             try:
@@ -82,7 +82,7 @@ class Editor(wx.stc.StyledTextCtrl):
         finally:
             self.loading = ""
             self.SetReadOnly(False)
-            self.sig_set_title.signal(self)
+            self.sig_title_changed.signal(self)
 
     @coroutine
     def SaveFile(self, path):
@@ -108,7 +108,7 @@ class Editor(wx.stc.StyledTextCtrl):
                 dialogs.error(self, "Error saving file '%s'\n\n%s" % (path, exn))
             else:
                 self.path = path
-                self.sig_set_title.signal(self)
+                self.sig_title_changed.signal(self)
 
     def Save(self):
         if self.path:
@@ -158,7 +158,7 @@ class Editor(wx.stc.StyledTextCtrl):
             return path
 
     def OnSavePointLeft(self, evt):
-        self.sig_set_title.signal(self)
+        self.sig_title_changed.signal(self)
 
     def OnSavePointReached(self, evt):
-        self.sig_set_title.signal(self)
+        self.sig_title_changed.signal(self)

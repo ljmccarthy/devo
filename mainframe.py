@@ -53,7 +53,7 @@ class MainFrame(wx.Frame):
         i = self.notebook.GetSelection() + 1
         self.notebook.InsertPage(i, win, win.GetTitle())
         self.notebook.SetSelection(i)
-        win.sig_set_title.bind(self.OnPageTitleChanged)
+        win.sig_title_changed.bind(self.OnPageTitleChanged)
 
     def OnPageTitleChanged(self, win):
         i = self.notebook.GetPageIndex(win)
