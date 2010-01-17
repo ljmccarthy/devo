@@ -60,6 +60,7 @@ class Task(object):
                 raise TaskAlreadySet()
             self.__result = result
             self.__status = DONE
+            self.__cond.notify_all()
             if self.__on_success is not None:
                 self.scheduler.call(self.__on_success, result)
 
@@ -72,6 +73,7 @@ class Task(object):
             self.__result = exn
             self.__traceback = traceback
             self.__status = FAILED
+            self.__cond.notify_all()
             if self.__on_failure is not None:
                 self.scheduler.call(self.__on_failure, exn, traceback)
 
@@ -140,6 +142,7 @@ class Task(object):
         with self.__cond:
             if self.__status == WAITING:
                 self.__status = CANCELLED
+                self.__cond.notify_all()
 
 class CoroutineTask(Task):
     def __init__(self, scheduler, gen):
