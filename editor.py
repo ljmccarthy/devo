@@ -45,6 +45,24 @@ class Editor(wx.stc.StyledTextCtrl):
         self.SetTabWidth(8)
         self.SetUseTabs(False)
 
+    @property
+    def changed(self):
+        return (not self.GetReadOnly()) and self.GetModify()
+
+    def TryClose(self):
+        if self.changed:
+            result = dialogs.ask_save_changes(self, self.path)
+            if result == wx.ID_YES:
+                try:
+                    self.Save()
+                    return True
+                except Exception:
+                    return False
+            else:
+                return result == wx.ID_NO
+        else:
+            return True
+
     def SetSyntaxFromFilename(self, path):
         m = filename_syntax_re.match(os.path.basename(path))
         if m:
@@ -152,7 +170,7 @@ class Editor(wx.stc.StyledTextCtrl):
         path = os.path.basename(self.path) or "Untitled"
         if self.loading:
             return "Loading %s..." % path
-        elif (not self.GetReadOnly()) and self.GetModify():
+        elif self.changed:
             return path + " *"
         else:
             return path

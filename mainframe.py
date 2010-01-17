@@ -3,7 +3,7 @@ import wx
 from wx.lib.utils import AdjustRectToScreen
 
 from async_wx import async_call, coroutine
-from project_tree import ProjectTree
+from dirtree import DirTreeCtrl
 from editor import Editor
 from util import frozen_window, is_text_file
 import dialogs
@@ -35,7 +35,7 @@ class MainFrame(wx.Frame):
 
         self.manager = wx.aui.AuiManager(self)
         self.notebook = wx.aui.AuiNotebook(self)
-        self.tree = ProjectTree(self, self.env, "/devel")
+        self.tree = DirTreeCtrl(self, self.env, "/devel")
 
         self.manager.AddPane(self.tree,
             wx.aui.AuiPaneInfo().Left().BestSize(wx.Size(200, -1)).CaptionVisible(False))
@@ -47,7 +47,14 @@ class MainFrame(wx.Frame):
 
     def OnPageClose(self, evt):
         editor = self.notebook.GetPage(evt.GetSelection())
-        del self.editors[editor.path]
+        try:
+            if editor.TryClose():
+                del self.editors[editor.path]
+            else:
+                evt.Veto()
+        except Exception:
+            evt.Veto()
+            raise
 
     def AddPage(self, win):
         i = self.notebook.GetSelection() + 1
