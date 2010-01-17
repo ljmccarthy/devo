@@ -2,6 +2,7 @@ import sys
 import traceback
 import threading
 import functools
+import types
 
 def call_task(task, func, args, kwargs):
     try:
@@ -142,6 +143,8 @@ class Task(object):
 
 class CoroutineTask(Task):
     def __init__(self, scheduler, gen):
+        if not isinstance(gen, types.GeneratorType):
+            raise TypeError("CoroutineTask expected generator, got %s" % gen.__class__.__name__)
         Task.__init__(self, scheduler)
         self.__gen = gen
         self.__next(self.__gen.next)
