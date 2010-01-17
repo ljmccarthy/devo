@@ -20,7 +20,7 @@ IM_FOLDER_DENIED = 1
 IM_FOLDER_WAITING = 2
 IM_FILE = 3
 
-class ProjectTree(wx.TreeCtrl):
+class DirTreeCtrl(wx.TreeCtrl):
     def __init__(self, parent, env, rootdir):
         style = wx.TR_DEFAULT_STYLE | wx.TR_HIDE_ROOT
         wx.TreeCtrl.__init__(self, parent, style=style)
