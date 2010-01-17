@@ -1,3 +1,4 @@
+import sys
 import traceback
 import wx
 import async
@@ -10,7 +11,7 @@ class WxScheduler(async.Scheduler):
             except SystemExit:
                 raise
             except:
-                print traceback.format_exc()
+                sys.stdout.write(traceback.format_exc())
         else:
             wx.CallAfter(func, *args, **kwargs)
 

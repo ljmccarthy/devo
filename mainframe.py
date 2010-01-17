@@ -49,14 +49,21 @@ class MainFrame(wx.Frame):
         editor = self.notebook.GetPage(evt.GetSelection())
         del self.editors[editor.path]
 
-    def AddPage(self, win, text):
+    def AddPage(self, win):
         i = self.notebook.GetSelection() + 1
-        self.notebook.InsertPage(i, win, text)
+        self.notebook.InsertPage(i, win, win.GetTitle())
         self.notebook.SetSelection(i)
+        win.sig_set_title.bind(self.OnPageTitleChanged)
+
+    def OnPageTitleChanged(self, win):
+        i = self.notebook.GetPageIndex(win)
+        if i != wx.NOT_FOUND:
+            self.notebook.SetPageText(i, win.GetTitle())
 
     def NewEditor(self, path):
-        editor = Editor(self.notebook, self)
-        self.AddPage(editor, "Untitled")
+        editor = Editor(self, self.env)
+        editor.Show(False)
+        self.AddPage(editor)
 
     @coroutine
     def OpenEditor(self, path):
@@ -64,12 +71,13 @@ class MainFrame(wx.Frame):
         editor = self.editors.get(realpath)
         if editor is not None:
             i = self.notebook.GetPageIndex(editor)
-            if i >= 0:
+            if i != wx.NOT_FOUND:
                 self.notebook.SetSelection(i)
         else:
             with frozen_window(self.notebook):
-                editor = Editor(self.notebook, self)
+                editor = Editor(self, self.env)
                 editor.Show(False)
+                self.AddPage(editor)
                 self.editors[realpath] = editor
                 try:
                     yield editor.LoadFile(realpath)
@@ -77,5 +85,3 @@ class MainFrame(wx.Frame):
                     dialogs.error(self, "Error opening file:\n\n%s" % exn)
                     editor.Destroy()
                     del self.editors[realpath]
-                else:
-                    self.AddPage(editor, os.path.basename(path))

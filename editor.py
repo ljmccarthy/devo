@@ -1,9 +1,12 @@
 import os
+import shutil
 import wx
 import wx.aui
 import wx.stc
 from async_wx import async_call, coroutine
+from signal_wx import Signal
 from syntax import filename_syntax_re, syntax_dict
+import dialogs
 
 if "wxMSW" in wx.PlatformInfo:
     font_face = "Consolas"
@@ -18,12 +21,15 @@ class Editor(wx.stc.StyledTextCtrl):
         wx.stc.StyledTextCtrl.__init__(self, parent)
         self.env = env
         self.path = ""
+        self.loading = ""
 
         self.SetNullSyntax()
         self.SetTabIndents(True)
         self.SetBackSpaceUnIndents(True)
         self.SetViewWhiteSpace(wx.stc.STC_WS_VISIBLEALWAYS)
         self.SetWhitespaceForeground(True, "#dddddd")
+
+        self.sig_set_title = Signal(self)
 
         self.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
         self.Bind(wx.stc.EVT_STC_SAVEPOINTLEFT, self.OnSavePointLeft)
@@ -59,6 +65,8 @@ class Editor(wx.stc.StyledTextCtrl):
     def LoadFile(self, path):
         self.SetReadOnly(True)
         try:
+            self.loading = path
+            self.sig_set_title.signal(self)
             with (yield async_call(open, path)) as f:
                 text = (yield async_call(f.read))
             try:
@@ -72,7 +80,44 @@ class Editor(wx.stc.StyledTextCtrl):
             self.SetSavePoint()
             self.path = path
         finally:
+            self.loading = ""
             self.SetReadOnly(False)
+            self.sig_set_title.signal(self)
+
+    @coroutine
+    def SaveFile(self, path):
+        text = self.GetText().encode("utf-8")
+        temp = os.path.join(os.path.dirname(path), ".tmpsave." + os.path.basename(path))
+        try:
+            with (yield async_call(open, temp, "wb")) as out:
+                yield async_call(shutil.copystat, path, temp)
+                yield async_call(out.write, text)
+        except IOError:
+            yield async_call(os.remove, temp)
+            raise
+        else:
+            yield async_call(os.rename, temp, path)
+            self.SetSavePoint()
+
+    def SaveAs(self):
+        path = dialogs.get_file_to_open(self)
+        if path:
+            try:
+                self.SaveFile(path)
+            except Exception, exn:
+                dialogs.error(self, "Error saving file '%s'\n\n%s" % (path, exn))
+            else:
+                self.path = path
+                self.sig_set_title.signal(self)
+
+    def Save(self):
+        if self.path:
+            try:
+                self.SaveFile(self.path)
+            except Exception, exn:
+                dialogs.error(self, str(exn))
+        else:
+            self.SaveAs()
 
     def OnKeyDown(self, evt):
         key = evt.GetKeyCode()
@@ -89,11 +134,31 @@ class Editor(wx.stc.StyledTextCtrl):
                 self.GotoPos(pos + indent + 1)
             else:
                 evt.Skip()
+        elif mod == wx.MOD_CONTROL:
+            if key == ord('X'):
+                self.Cut()
+            elif key == ord('C'):
+                self.Copy()
+            elif key == ord('V'):
+                self.Paste()
+            elif key == ord('S'):
+                self.Save()
+            else:
+                evt.Skip()
         else:
             evt.Skip()
 
+    def GetTitle(self):
+        path = os.path.basename(self.path) or "Untitled"
+        if self.loading:
+            return "Loading %s..." % path
+        elif (not self.GetReadOnly()) and self.GetModify():
+            return path + " *"
+        else:
+            return path
+
     def OnSavePointLeft(self, evt):
-        pass
+        self.sig_set_title.signal(self)
 
     def OnSavePointReached(self, evt):
-        pass
+        self.sig_set_title.signal(self)
