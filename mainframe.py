@@ -7,8 +7,27 @@ from wx.lib.utils import AdjustRectToScreen
 from async_wx import async_call, coroutine
 from dirtree import DirTreeCtrl
 from editor import Editor
+from menu import MenuBar, Menu, MenuItem, MenuSeparator
 from util import frozen_window, is_text_file
 import dialogs
+
+menubar = MenuBar([
+    Menu("&File", [
+        MenuItem(wx.ID_NEW, "&New", "Ctrl+N"),
+        MenuItem(wx.ID_SAVE, "&Save", "Ctrl+S"),
+        MenuItem(wx.ID_SAVEAS, "Save &As"),
+        MenuItem(wx.ID_CLOSE, "&Close"),
+        MenuSeparator,
+        MenuItem(wx.ID_EXIT, "E&xit"),
+    ]),
+    Menu("&Edit", [
+        MenuItem(wx.ID_CUT, "Cu&t"),
+        MenuItem(wx.ID_COPY, "&Copy"),
+        MenuItem(wx.ID_PASTE, "&Paste"),
+        MenuSeparator,
+        MenuItem(wx.ID_SELECTALL, "Select &All"),
+    ]),
+])
 
 class AppEnv(object):
     def __init__(self, mainframe):
@@ -21,6 +40,9 @@ class AppEnv(object):
         else:
             yield self.mainframe.OpenEditor(path)
 
+    def NewEditor(self):
+        self.mainframe.NewEditor()
+
 class MainFrame(wx.Frame):
     def __init__(self):
         if "wxMSW" in wx.PlatformInfo:
@@ -31,8 +53,9 @@ class MainFrame(wx.Frame):
             size = (1000, 1200)
             pos = wx.DefaultPosition
         wx.Frame.__init__(self, None, title="Editor", pos=pos, size=size)
+        self.SetMenuBar(menubar.Create())
 
-        self.editors = {}
+        self.editors = []
         self.env = AppEnv(self)
 
         self.manager = wx.aui.AuiManager(self)
@@ -47,6 +70,10 @@ class MainFrame(wx.Frame):
 
         self.Bind(wx.EVT_CLOSE, self.OnClose)
         self.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CLOSE, self.OnPageClose)
+
+        self.Bind(wx.EVT_MENU, self.OnNewFile, id=wx.ID_NEW)
+        self.Bind(wx.EVT_MENU, self.OnCloseFile, id=wx.ID_CLOSE)
+        self.Bind(wx.EVT_MENU, self.OnClose, id=wx.ID_EXIT)
 
     @coroutine
     def OnClose(self, evt):
@@ -68,42 +95,56 @@ class MainFrame(wx.Frame):
     @coroutine
     def ClosePage(self, editor):
         if (yield editor.TryClose()):
-            del self.editors[editor.path]
-            self.notebook.DeletePage(self.notebook.GetPageIndex(editor))
+            self.editors.remove(editor)
+            with frozen_window(self.notebook):
+                self.notebook.DeletePage(self.notebook.GetPageIndex(editor))
 
     def AddPage(self, win):
         i = self.notebook.GetSelection() + 1
-        self.notebook.InsertPage(i, win, win.GetTitle())
+        self.notebook.InsertPage(i, win, win.title)
         self.notebook.SetSelection(i)
         win.sig_title_changed.bind(self.OnPageTitleChanged)
 
     def OnPageTitleChanged(self, win):
         i = self.notebook.GetPageIndex(win)
         if i != wx.NOT_FOUND:
-            self.notebook.SetPageText(i, win.GetTitle())
+            self.notebook.SetPageText(i, win.title)
 
-    def NewEditor(self, path):
+    def NewEditor(self):
         editor = Editor(self, self.env)
         editor.Show(False)
         self.AddPage(editor)
 
+    def FindEditor(self, path):
+        for editor in self.editors:
+            if editor.path == path:
+                return editor
+
     @coroutine
     def OpenEditor(self, path):
         realpath = os.path.realpath(path)
-        editor = self.editors.get(realpath)
+        editor = self.FindEditor(realpath)
         if editor is not None:
             i = self.notebook.GetPageIndex(editor)
             if i != wx.NOT_FOUND:
                 self.notebook.SetSelection(i)
         else:
             with frozen_window(self.notebook):
-                editor = Editor(self, self.env)
+                editor = Editor(self, self.env, realpath)
                 editor.Show(False)
                 self.AddPage(editor)
-                self.editors[realpath] = editor
                 try:
                     yield editor.LoadFile(realpath)
                 except Exception, exn:
                     dialogs.error(self, "Error opening file:\n\n%s" % exn)
                     editor.Destroy()
-                    del self.editors[realpath]
+                else:
+                    self.editors.append(editor)
+
+    def OnNewFile(self, evt):
+        self.NewEditor()
+
+    def OnCloseFile(self, evt):
+        editor = self.notebook.GetPage(self.notebook.GetSelection())
+        if editor is not None:
+            self.ClosePage(editor)

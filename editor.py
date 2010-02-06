@@ -17,11 +17,10 @@ class Editor(wx.stc.StyledTextCtrl):
     font = wx.Font(10, wx.FONTFAMILY_TELETYPE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL,
                    faceName=font_face)
 
-    def __init__(self, parent, env):
+    def __init__(self, parent, env, path=""):
         wx.stc.StyledTextCtrl.__init__(self, parent)
         self.env = env
-        self.path = ""
-        self.loading = ""
+        self.path = path
 
         self.SetNullSyntax()
         self.SetTabIndents(True)
@@ -82,8 +81,8 @@ class Editor(wx.stc.StyledTextCtrl):
     @coroutine
     def LoadFile(self, path):
         self.SetReadOnly(True)
+        self.Disable()
         try:
-            self.loading = path
             self.sig_title_changed.signal(self)
             with (yield async_call(open, path)) as f:
                 text = (yield async_call(f.read))
@@ -98,7 +97,7 @@ class Editor(wx.stc.StyledTextCtrl):
             self.SetSavePoint()
             self.path = path
         finally:
-            self.loading = ""
+            self.Enable()
             self.SetReadOnly(False)
             self.sig_title_changed.signal(self)
 
@@ -129,6 +128,7 @@ class Editor(wx.stc.StyledTextCtrl):
     def SaveAs(self):
         path = dialogs.get_file_to_save(self)
         if path:
+            path = os.path.realpath(path)
             try:
                 yield self.SaveFile(path)
             except Exception, exn:
@@ -181,11 +181,10 @@ class Editor(wx.stc.StyledTextCtrl):
         else:
             evt.Skip()
 
-    def GetTitle(self):
+    @property
+    def title(self):
         path = os.path.basename(self.path) or "Untitled"
-        if self.loading:
-            return "Loading %s..." % path
-        elif self.changed:
+        if self.changed:
             return path + " *"
         else:
             return path
