@@ -55,8 +55,7 @@ class Editor(wx.stc.StyledTextCtrl):
             result = dialogs.ask_save_changes(self, self.path)
             if result == wx.ID_YES:
                 try:
-                    yield self.Save()
-                    yield True
+                    yield (yield self.Save())
                 except Exception:
                     yield False
             else:
@@ -106,13 +105,21 @@ class Editor(wx.stc.StyledTextCtrl):
     @coroutine
     def SaveFile(self, path):
         text = self.GetText().encode("utf-8")
+        if not text.endswith("\n"):
+            text += "\n"
         temp = os.path.join(os.path.dirname(path), ".tmpsave." + os.path.basename(path))
         try:
             with (yield async_call(open, temp, "wb")) as out:
-                yield async_call(shutil.copystat, path, temp)
+                try:
+                    yield async_call(shutil.copystat, path, temp)
+                except OSError:
+                    pass
                 yield async_call(out.write, text)
         except IOError:
-            yield async_call(os.remove, temp)
+            try:
+                yield async_call(os.remove, temp)
+            except OSError:
+                pass
             raise
         else:
             yield async_call(os.rename, temp, path)
@@ -120,7 +127,7 @@ class Editor(wx.stc.StyledTextCtrl):
 
     @coroutine
     def SaveAs(self):
-        path = dialogs.get_file_to_open(self)
+        path = dialogs.get_file_to_save(self)
         if path:
             try:
                 yield self.SaveFile(path)
@@ -130,17 +137,20 @@ class Editor(wx.stc.StyledTextCtrl):
             else:
                 self.path = path
                 self.sig_title_changed.signal(self)
+                yield True
+        yield False
 
     @coroutine
     def Save(self):
         if self.path:
             try:
                 yield self.SaveFile(self.path)
+                yield True
             except Exception, exn:
-                dialogs.error(self, "Error saving file '%s'\n\n%s" % (path, exn))
+                dialogs.error(self, "Error saving file '%s'\n\n%s" % (self.path, exn))
                 raise
         else:
-            yield self.SaveAs()
+            yield (yield self.SaveAs())
 
     def OnKeyDown(self, evt):
         key = evt.GetKeyCode()
