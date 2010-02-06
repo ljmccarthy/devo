@@ -14,11 +14,23 @@ def get_file_to_open(parent, wildcard="All Files|*.*", message="Open File", dirn
     dlg.Destroy()
     return path
 
+def get_file_to_save(parent, wildcard="All Files|*.*", message="Save File", dirname=""):
+    dlg = wx.FileDialog(parent,
+        wildcard=wildcard, message=message, defaultDir=dirname,
+        style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
+    path = ""
+    if dlg.ShowModal() == wx.ID_OK:
+        path = dlg.GetPath()
+    dlg.Destroy()
+    return path
+
 class SaveChangesDialog(wx.Dialog):
     def __init__(self, parent, message, title="Unsaved Changes"):
         wx.Dialog.__init__(self, parent, title=title)
         btnsizer = wx.StdDialogButtonSizer()
-        btnsizer.AddButton(wx.Button(self, wx.ID_YES, "&Save"))
+        btn_save = wx.Button(self, wx.ID_YES, "&Save")
+        btn_save.SetDefault()
+        btnsizer.AddButton(btn_save)
         btnsizer.AddButton(wx.Button(self, wx.ID_NO, "&Don't Save"))
         btnsizer.AddButton(wx.Button(self, wx.ID_CANCEL, "&Cancel"))
         btnsizer.Realize()
