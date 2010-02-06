@@ -113,19 +113,17 @@ class Task(object):
 
     def success(self, success):
         with self.__cond:
+            self.__on_success = success
             if self.__status == DONE:
                 self.scheduler.call(success, self.__result)
-            elif self.__status == WAITING:
-                self.__on_success = success
             elif self.__status == CANCELLED:
                 raise TaskCancelled()
 
     def failure(self, failure):
         with self.__cond:
+            self.__on_failure = failure
             if self.__status == FAILED:
                 self.scheduler.call(failure, self.__result, self.__traceback)
-            elif self.__status == WAITING:
-                self.__on_failure = failure
             elif self.__status == CANCELLED:
                 raise TaskCancelled()
 
@@ -143,6 +141,10 @@ class Task(object):
             if self.__status == WAITING:
                 self.__status = CANCELLED
                 self.__cond.notify_all()
+
+    def __del__(self):
+        if self.__status == FAILED and self.__on_failure is None:
+            print self.__traceback
 
 class CoroutineTask(Task):
     def __init__(self, scheduler, gen):
