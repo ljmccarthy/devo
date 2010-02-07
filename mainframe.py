@@ -13,8 +13,8 @@ menubar = MenuBar([
     Menu("&File", [
         MenuItem(wx.ID_NEW, "&New", "Ctrl+T"),
         MenuItem(wx.ID_SAVE, "&Save", "Ctrl+S"),
-        MenuItem(wx.ID_SAVEAS, "Save &As"),
-        MenuItem(wx.ID_CLOSE, "&Close"),
+        MenuItem(wx.ID_SAVEAS, "Save &As", "Ctrl+Shift+S"),
+        MenuItem(wx.ID_CLOSE, "&Close", "Ctrl+W"),
         MenuSeparator,
         MenuItem(wx.ID_EXIT, "E&xit"),
     ]),
@@ -22,11 +22,11 @@ menubar = MenuBar([
         MenuItem(wx.ID_UNDO, "&Undo", "Ctrl+Z"),
         MenuItem(wx.ID_REDO, "&Redo", "Ctrl+Shift+Z"),
         MenuSeparator,
-        MenuItem(wx.ID_CUT, "Cu&t"),
-        MenuItem(wx.ID_COPY, "&Copy"),
-        MenuItem(wx.ID_PASTE, "&Paste"),
+        MenuItem(wx.ID_CUT, "Cu&t", "Ctrl+X"),
+        MenuItem(wx.ID_COPY, "&Copy", "Ctrl+C"),
+        MenuItem(wx.ID_PASTE, "&Paste", "Ctrl+V"),
         MenuSeparator,
-        MenuItem(wx.ID_SELECTALL, "Select &All"),
+        MenuItem(wx.ID_SELECTALL, "Select &All", "Ctrl+A"),
     ]),
 ])
 
@@ -68,8 +68,10 @@ class MainFrame(wx.Frame):
         self.env = AppEnv(self)
 
         self.manager = wx.aui.AuiManager(self)
-        self.notebook = wx.aui.AuiNotebook(self)
-        self.tree = DirTreeCtrl(self, self.env, "/devel")
+        nbstyle = (wx.aui.AUI_NB_CLOSE_ON_ALL_TABS  | wx.aui.AUI_NB_TOP | wx.aui.AUI_NB_TAB_SPLIT
+                  | wx.aui.AUI_NB_TAB_MOVE | wx.aui.AUI_NB_SCROLL_BUTTONS | wx.BORDER_NONE)
+        self.notebook = wx.aui.AuiNotebook(self, style=nbstyle)
+        self.tree = DirTreeCtrl(self, self.env, "/" if sys.platform != "win32" else "C:\\")
 
         self.manager.AddPane(self.tree,
             wx.aui.AuiPaneInfo().Left().BestSize(wx.Size(200, -1)).CaptionVisible(False))
@@ -85,6 +87,7 @@ class MainFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnClose, id=wx.ID_EXIT)
 
         self.Bind(wx.EVT_MENU, self.EditorAction("Save"), id=wx.ID_SAVE)
+        self.Bind(wx.EVT_MENU, self.EditorAction("SaveAs"), id=wx.ID_SAVEAS)
         self.Bind(wx.EVT_MENU, self.EditorAction("Undo"), id=wx.ID_UNDO)
         self.Bind(wx.EVT_MENU, self.EditorAction("Redo"), id=wx.ID_REDO)
         self.Bind(wx.EVT_MENU, self.EditorAction("Cut"), id=wx.ID_CUT)
@@ -92,7 +95,7 @@ class MainFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.EditorAction("Paste"), id=wx.ID_PASTE)
         self.Bind(wx.EVT_MENU, self.EditorAction("SelectAll"), id=wx.ID_SELECTALL)
 
-        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_HasEditor, id=wx.ID_SAVE)
+        self.Bind(wx.EVT_UPDATE_UI, self.EditorUpdateUI("GetModify"), id=wx.ID_SAVE)
         self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_HasEditor, id=wx.ID_SAVEAS)
         self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_HasEditor, id=wx.ID_CLOSE)
         self.Bind(wx.EVT_UPDATE_UI, self.EditorUpdateUI("CanUndo"), id=wx.ID_UNDO)

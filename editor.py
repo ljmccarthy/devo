@@ -9,24 +9,21 @@ from syntax import filename_syntax_re, syntax_dict
 import dialogs
 
 if "wxMSW" in wx.PlatformInfo:
-    font_face = "Consolas"
+    fontface = "Courier New"
 else:
-    font_face = "Monospace"
+    fontface = "Monospace"
 
 class Editor(wx.stc.StyledTextCtrl):
-    font = wx.Font(10, wx.FONTFAMILY_TELETYPE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL,
-                   faceName=font_face)
-
     def __init__(self, parent, env, path=""):
-        wx.stc.StyledTextCtrl.__init__(self, parent)
+        wx.stc.StyledTextCtrl.__init__(self, parent, style=wx.BORDER_NONE)
         self.env = env
         self.path = path
 
-        self.SetNullSyntax()
         self.SetTabIndents(True)
         self.SetBackSpaceUnIndents(True)
         self.SetViewWhiteSpace(wx.stc.STC_WS_VISIBLEALWAYS)
         self.SetWhitespaceForeground(True, "#dddddd")
+        self.SetNullSyntax()
 
         self.sig_title_changed = Signal(self)
 
@@ -34,19 +31,17 @@ class Editor(wx.stc.StyledTextCtrl):
         self.Bind(wx.stc.EVT_STC_SAVEPOINTLEFT, self.OnSavePointLeft)
         self.Bind(wx.stc.EVT_STC_SAVEPOINTREACHED, self.OnSavePointReached)
 
-    def SetNullSyntax(self):
-        self.SetLexer(wx.stc.STC_LEX_NULL)
-        self.SetKeyWords(0, "")
-        self.StyleClearAll()
-        self.StyleSetFont(wx.stc.STC_STYLE_DEFAULT, self.font)
-        self.StyleSetSpec(wx.stc.STC_STYLE_DEFAULT, "")
-        self.SetIndent(4)
-        self.SetTabWidth(8)
-        self.SetUseTabs(False)
-
     @property
     def changed(self):
         return (not self.GetReadOnly()) and self.GetModify()
+
+    @property
+    def title(self):
+        path = os.path.basename(self.path) or "Untitled"
+        if self.changed:
+            return path + " *"
+        else:
+            return path
 
     @coroutine
     def TryClose(self):
@@ -62,6 +57,16 @@ class Editor(wx.stc.StyledTextCtrl):
         else:
             yield True
 
+    def SetNullSyntax(self):
+        self.SetLexer(wx.stc.STC_LEX_NULL)
+        self.SetKeyWords(0, "")
+        self.StyleClearAll()
+        self.StyleSetFontAttr(wx.stc.STC_STYLE_DEFAULT, 10, fontface, False, False, False)
+        self.StyleSetSpec(wx.stc.STC_STYLE_DEFAULT, "")
+        self.SetIndent(4)
+        self.SetTabWidth(8)
+        self.SetUseTabs(False)
+
     def SetSyntaxFromFilename(self, path):
         m = filename_syntax_re.match(os.path.basename(path))
         if m:
@@ -70,7 +75,7 @@ class Editor(wx.stc.StyledTextCtrl):
             self.SetKeyWords(0, syntax.keywords)
             self.StyleClearAll()
             for style_num, spec in syntax.stylespecs:
-                self.StyleSetFont(style_num, self.font)
+                self.StyleSetFontAttr(style_num, 10, fontface, False, False, False)
                 self.StyleSetSpec(style_num, spec)
             self.SetIndent(syntax.indent)
             self.SetTabWidth(syntax.indent if syntax.use_tabs else 8)
@@ -169,14 +174,6 @@ class Editor(wx.stc.StyledTextCtrl):
                 evt.Skip()
         else:
             evt.Skip()
-
-    @property
-    def title(self):
-        path = os.path.basename(self.path) or "Untitled"
-        if self.changed:
-            return path + " *"
-        else:
-            return path
 
     def OnSavePointLeft(self, evt):
         self.sig_title_changed.signal(self)
