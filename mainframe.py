@@ -142,9 +142,9 @@ class MainFrame(wx.Frame):
             self.notebook.SetPageText(i, win.title)
 
     def NewEditor(self):
-        editor = Editor(self, self.env)
-        editor.Show(False)
-        self.AddPage(editor)
+        with frozen_window(self.notebook):
+            editor = Editor(self.notebook, self.env)
+            self.AddPage(editor)
 
     def FindEditor(self, path):
         for editor in self.editors:
@@ -166,7 +166,7 @@ class MainFrame(wx.Frame):
                 self.notebook.SetSelection(i)
         else:
             with frozen_window(self.notebook):
-                editor = Editor(self, self.env, realpath)
+                editor = Editor(self.notebook, self.env, realpath)
                 editor.Show(False)
                 try:
                     yield editor.LoadFile(realpath)
