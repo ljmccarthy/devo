@@ -152,9 +152,11 @@ class CoroutineTask(Task):
             raise TypeError("CoroutineTask expected generator, got %s" % gen.__class__.__name__)
         Task.__init__(self, scheduler)
         self.__gen = gen
+        self.__cont = None
         self.__next(self.__gen.next)
 
     def __next(self, func, *args, **kwargs):
+        self.__cont = None
         try:
             ret = func(*args, **kwargs)
         except StopIteration:
@@ -163,6 +165,7 @@ class CoroutineTask(Task):
             self.set_failed(exn, traceback.format_exc())
         else:
             if isinstance(ret, Task):
+                self.__cont = ret
                 ret.bind(self.__success_next, self.__failure_next)
             else:
                 self.set_done(ret)
@@ -172,6 +175,12 @@ class CoroutineTask(Task):
 
     def __failure_next(self, exn, traceback):
         self.__next(self.__gen.throw, exn)
+
+    def cancel(self):
+        Task.cancel(self)
+        if self.__cont is not None:
+            self.__cont.cancel()
+        self.__cont = None
 
 def coroutine(scheduler, func):
     @functools.wraps(func)
