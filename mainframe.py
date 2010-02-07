@@ -13,7 +13,7 @@ import dialogs
 
 menubar = MenuBar([
     Menu("&File", [
-        MenuItem(wx.ID_NEW, "&New", "Ctrl+N"),
+        MenuItem(wx.ID_NEW, "&New", "Ctrl+T"),
         MenuItem(wx.ID_SAVE, "&Save", "Ctrl+S"),
         MenuItem(wx.ID_SAVEAS, "Save &As"),
         MenuItem(wx.ID_CLOSE, "&Close"),
@@ -100,6 +100,7 @@ class MainFrame(wx.Frame):
                 self.notebook.DeletePage(self.notebook.GetPageIndex(editor))
 
     def AddPage(self, win):
+        self.editors.append(win)
         i = self.notebook.GetSelection() + 1
         self.notebook.InsertPage(i, win, win.title)
         self.notebook.SetSelection(i)
@@ -132,14 +133,13 @@ class MainFrame(wx.Frame):
             with frozen_window(self.notebook):
                 editor = Editor(self, self.env, realpath)
                 editor.Show(False)
-                self.AddPage(editor)
                 try:
                     yield editor.LoadFile(realpath)
                 except Exception, exn:
                     dialogs.error(self, "Error opening file:\n\n%s" % exn)
                     editor.Destroy()
                 else:
-                    self.editors.append(editor)
+                    self.AddPage(editor)
 
     def OnNewFile(self, evt):
         self.NewEditor()
