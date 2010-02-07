@@ -19,6 +19,9 @@ menubar = MenuBar([
         MenuItem(wx.ID_EXIT, "E&xit"),
     ]),
     Menu("&Edit", [
+        MenuItem(wx.ID_UNDO, "&Undo", "Ctrl+Z"),
+        MenuItem(wx.ID_REDO, "&Redo", "Ctrl+Shift+Z"),
+        MenuSeparator,
         MenuItem(wx.ID_CUT, "Cu&t"),
         MenuItem(wx.ID_COPY, "&Copy"),
         MenuItem(wx.ID_PASTE, "&Paste"),
@@ -44,7 +47,7 @@ class AppEnv(object):
 def with_current_editor(method):
     @wraps(method)
     def wrapper(self, *args, **kwargs):
-        editor = self.notebook.GetPage(self.notebook.GetSelection())
+        editor = self.GetCurrentEditor()
         if editor is not None:
             return method(self, editor, *args, **kwargs)
     return wrapper
@@ -80,10 +83,24 @@ class MainFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnNewFile, id=wx.ID_NEW)
         self.Bind(wx.EVT_MENU, self.OnCloseFile, id=wx.ID_CLOSE)
         self.Bind(wx.EVT_MENU, self.OnClose, id=wx.ID_EXIT)
+
         self.Bind(wx.EVT_MENU, self.EditorAction("Save"), id=wx.ID_SAVE)
+        self.Bind(wx.EVT_MENU, self.EditorAction("Undo"), id=wx.ID_UNDO)
+        self.Bind(wx.EVT_MENU, self.EditorAction("Redo"), id=wx.ID_REDO)
         self.Bind(wx.EVT_MENU, self.EditorAction("Cut"), id=wx.ID_CUT)
         self.Bind(wx.EVT_MENU, self.EditorAction("Copy"), id=wx.ID_COPY)
         self.Bind(wx.EVT_MENU, self.EditorAction("Paste"), id=wx.ID_PASTE)
+        self.Bind(wx.EVT_MENU, self.EditorAction("SelectAll"), id=wx.ID_SELECTALL)
+
+        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_HasEditor, id=wx.ID_SAVE)
+        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_HasEditor, id=wx.ID_SAVEAS)
+        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_HasEditor, id=wx.ID_CLOSE)
+        self.Bind(wx.EVT_UPDATE_UI, self.EditorUpdateUI("CanUndo"), id=wx.ID_UNDO)
+        self.Bind(wx.EVT_UPDATE_UI, self.EditorUpdateUI("CanRedo"), id=wx.ID_REDO)
+        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasSelection, id=wx.ID_CUT)
+        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasSelection, id=wx.ID_COPY)
+        self.Bind(wx.EVT_UPDATE_UI, self.EditorUpdateUI("CanPaste"), id=wx.ID_PASTE)
+        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_HasEditor, id=wx.ID_SELECTALL)
 
     @coroutine
     def OnClose(self, evt):
@@ -131,6 +148,11 @@ class MainFrame(wx.Frame):
             if editor.path == path:
                 return editor
 
+    def GetCurrentEditor(self):
+        sel = self.notebook.GetSelection()
+        if sel != wx.NOT_FOUND:
+            return self.notebook.GetPage(sel)
+
     @coroutine
     def OpenEditor(self, path):
         realpath = os.path.realpath(path)
@@ -160,7 +182,27 @@ class MainFrame(wx.Frame):
 
     def EditorAction(self, method):
         def handler(evt):
-            editor = self.notebook.GetPage(self.notebook.GetSelection())
+            editor = self.GetCurrentEditor()
             if editor is not None:
-                getattr(editor, method)()
+                return getattr(editor, method)()
         return handler
+
+    def EditorUpdateUI(self, method):
+        def handler(evt):
+            editor = self.GetCurrentEditor()
+            if editor is not None:
+                evt.Enable(getattr(editor, method)())
+            else:
+                evt.Enable(False)
+        return handler
+
+    def UpdateUI_HasEditor(self, evt):
+        evt.Enable(self.GetCurrentEditor() is not None)
+
+    def UpdateUI_EditorHasSelection(self, evt):
+        editor = self.GetCurrentEditor()
+        if editor is not None:
+            start, end = editor.GetSelection()
+            evt.Enable(start != end)
+        else:
+            evt.Enable(False)
