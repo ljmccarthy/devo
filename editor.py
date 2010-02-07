@@ -58,11 +58,13 @@ class Editor(wx.stc.StyledTextCtrl):
             yield True
 
     def SetNullSyntax(self):
+        self.StyleResetDefault()
+        self.ClearDocumentStyle()
         self.SetLexer(wx.stc.STC_LEX_NULL)
         self.SetKeyWords(0, "")
-        self.StyleClearAll()
         self.StyleSetFontAttr(wx.stc.STC_STYLE_DEFAULT, 10, fontface, False, False, False)
         self.StyleSetSpec(wx.stc.STC_STYLE_DEFAULT, "")
+        self.StyleClearAll()
         self.SetIndent(4)
         self.SetTabWidth(8)
         self.SetUseTabs(False)
@@ -71,6 +73,8 @@ class Editor(wx.stc.StyledTextCtrl):
         m = filename_syntax_re.match(os.path.basename(path))
         if m:
             syntax = syntax_dict[m.lastgroup]
+            self.StyleResetDefault()
+            self.ClearDocumentStyle()
             self.SetLexer(syntax.lexer)
             self.SetKeyWords(0, syntax.keywords)
             self.StyleClearAll()
@@ -88,7 +92,6 @@ class Editor(wx.stc.StyledTextCtrl):
         self.SetReadOnly(True)
         self.Disable()
         try:
-            self.sig_title_changed.signal(self)
             with (yield async_call(open, path)) as f:
                 text = (yield async_call(f.read))
             try:
