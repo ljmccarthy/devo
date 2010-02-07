@@ -167,17 +167,6 @@ class Editor(wx.stc.StyledTextCtrl):
                 self.GotoPos(pos + indent + 1)
             else:
                 evt.Skip()
-        elif mod == wx.MOD_CONTROL:
-            if key == ord('X'):
-                self.Cut()
-            elif key == ord('C'):
-                self.Copy()
-            elif key == ord('V'):
-                self.Paste()
-            elif key == ord('S'):
-                self.Save()
-            else:
-                evt.Skip()
         else:
             evt.Skip()
 

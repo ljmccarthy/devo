@@ -1,15 +1,13 @@
-import sys
-import os
-import traceback
-import wx
+import sys, os, traceback, wx
+from functools import wraps
 from wx.lib.utils import AdjustRectToScreen
 
+import dialogs
 from async_wx import async_call, coroutine
 from dirtree import DirTreeCtrl
 from editor import Editor
 from menu import MenuBar, Menu, MenuItem, MenuSeparator
 from util import frozen_window, is_text_file
-import dialogs
 
 menubar = MenuBar([
     Menu("&File", [
@@ -43,6 +41,14 @@ class AppEnv(object):
     def NewEditor(self):
         self.mainframe.NewEditor()
 
+def with_current_editor(method):
+    @wraps(method)
+    def wrapper(self, *args, **kwargs):
+        editor = self.notebook.GetPage(self.notebook.GetSelection())
+        if editor is not None:
+            return method(self, editor, *args, **kwargs)
+    return wrapper
+
 class MainFrame(wx.Frame):
     def __init__(self):
         if "wxMSW" in wx.PlatformInfo:
@@ -74,6 +80,10 @@ class MainFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnNewFile, id=wx.ID_NEW)
         self.Bind(wx.EVT_MENU, self.OnCloseFile, id=wx.ID_CLOSE)
         self.Bind(wx.EVT_MENU, self.OnClose, id=wx.ID_EXIT)
+        self.Bind(wx.EVT_MENU, self.EditorAction("Save"), id=wx.ID_SAVE)
+        self.Bind(wx.EVT_MENU, self.EditorAction("Cut"), id=wx.ID_CUT)
+        self.Bind(wx.EVT_MENU, self.EditorAction("Copy"), id=wx.ID_COPY)
+        self.Bind(wx.EVT_MENU, self.EditorAction("Paste"), id=wx.ID_PASTE)
 
     @coroutine
     def OnClose(self, evt):
@@ -144,7 +154,13 @@ class MainFrame(wx.Frame):
     def OnNewFile(self, evt):
         self.NewEditor()
 
-    def OnCloseFile(self, evt):
-        editor = self.notebook.GetPage(self.notebook.GetSelection())
-        if editor is not None:
-            self.ClosePage(editor)
+    @with_current_editor
+    def OnCloseFile(self, editor, evt):
+        self.ClosePage(editor)
+
+    def EditorAction(self, method):
+        def handler(evt):
+            editor = self.notebook.GetPage(self.notebook.GetSelection())
+            if editor is not None:
+                getattr(editor, method)()
+        return handler
