@@ -9,9 +9,14 @@ from editor import Editor
 from menu import MenuBar, Menu, MenuItem, MenuSeparator
 from util import frozen_window, is_text_file
 
+ID_NEW_PROJECT = wx.NewId()
+ID_OPEN_PROJECT = wx.NewId()
+ID_CLOSE_PROJECT = wx.NewId()
+
 menubar = MenuBar([
     Menu("&File", [
         MenuItem(wx.ID_NEW, "&New", "Ctrl+T"),
+        MenuItem(wx.ID_OPEN, "&Open...", "Ctrl+O"),
         MenuItem(wx.ID_SAVE, "&Save", "Ctrl+S"),
         MenuItem(wx.ID_SAVEAS, "Save &As", "Ctrl+Shift+S"),
         MenuItem(wx.ID_CLOSE, "&Close", "Ctrl+W"),
@@ -27,6 +32,11 @@ menubar = MenuBar([
         MenuItem(wx.ID_PASTE, "&Paste", "Ctrl+V"),
         MenuSeparator,
         MenuItem(wx.ID_SELECTALL, "Select &All", "Ctrl+A"),
+    ]),
+    Menu("&Project", [
+        MenuItem(ID_NEW_PROJECT, "&New Project", "Ctrl+Alt+T"),
+        MenuItem(ID_OPEN_PROJECT, "&Open Project...", "Ctrl+Alt+O"),
+        MenuItem(ID_CLOSE_PROJECT, "&Close Project", "Ctrl+Alt+W"),
     ]),
 ])
 
@@ -65,6 +75,7 @@ class MainFrame(wx.Frame):
         self.SetMenuBar(menubar.Create())
 
         self.editors = []
+        self.hidden = wx.Frame(self)
         self.env = AppEnv(self)
 
         self.manager = wx.aui.AuiManager(self)
@@ -81,8 +92,10 @@ class MainFrame(wx.Frame):
 
         self.Bind(wx.EVT_CLOSE, self.OnClose)
         self.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CLOSE, self.OnPageClose)
+        self.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnPageChanged)
 
         self.Bind(wx.EVT_MENU, self.OnNewFile, id=wx.ID_NEW)
+        self.Bind(wx.EVT_MENU, self.OnOpenFile, id=wx.ID_OPEN)
         self.Bind(wx.EVT_MENU, self.OnCloseFile, id=wx.ID_CLOSE)
         self.Bind(wx.EVT_MENU, self.OnClose, id=wx.ID_EXIT)
 
@@ -135,6 +148,11 @@ class MainFrame(wx.Frame):
         self.notebook.InsertPage(i, win, win.title)
         self.notebook.SetSelection(i)
         win.sig_title_changed.bind(self.OnPageTitleChanged)
+        win.SetFocus()
+
+    def OnPageChanged(self, evt):
+        editor = self.notebook.GetPage(evt.GetSelection())
+        editor.SetFocus()
 
     def OnPageTitleChanged(self, win):
         i = self.notebook.GetPageIndex(win)
@@ -142,8 +160,8 @@ class MainFrame(wx.Frame):
             self.notebook.SetPageText(i, win.title)
 
     def NewEditor(self):
+        editor = Editor(self.hidden, self.env)
         with frozen_window(self.notebook):
-            editor = Editor(self.notebook, self.env)
             self.AddPage(editor)
 
     def FindEditor(self, path):
@@ -165,19 +183,23 @@ class MainFrame(wx.Frame):
             if i != wx.NOT_FOUND:
                 self.notebook.SetSelection(i)
         else:
-            with frozen_window(self.notebook):
-                editor = Editor(self.notebook, self.env, realpath)
-                editor.Show(False)
-                try:
-                    yield editor.LoadFile(realpath)
-                except Exception, exn:
-                    dialogs.error(self, "Error opening file:\n\n%s" % exn)
-                    editor.Destroy()
-                else:
+            editor = Editor(self.hidden, self.env, realpath)
+            try:
+                yield editor.LoadFile(realpath)
+            except Exception, exn:
+                dialogs.error(self, "Error opening file:\n\n%s" % exn)
+                editor.Destroy()
+            else:
+                with frozen_window(self.notebook):
                     self.AddPage(editor)
 
     def OnNewFile(self, evt):
         self.NewEditor()
+
+    def OnOpenFile(self, evt):
+        path = dialogs.get_file_to_open(self)
+        if path:
+            self.OpenEditor(path)
 
     @with_current_editor
     def OnCloseFile(self, editor, evt):
