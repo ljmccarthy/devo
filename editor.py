@@ -58,10 +58,10 @@ class Editor(wx.stc.StyledTextCtrl):
             yield True
 
     def SetNullSyntax(self):
-        self.StyleResetDefault()
         self.ClearDocumentStyle()
         self.SetLexer(wx.stc.STC_LEX_NULL)
         self.SetKeyWords(0, "")
+        self.StyleResetDefault()
         self.StyleSetFontAttr(wx.stc.STC_STYLE_DEFAULT, 10, fontface, False, False, False)
         self.StyleSetSpec(wx.stc.STC_STYLE_DEFAULT, "")
         self.StyleClearAll()
@@ -145,8 +145,7 @@ class Editor(wx.stc.StyledTextCtrl):
                 dialogs.error(self, "Error saving file '%s'\n\n%s" % (path, exn))
                 raise
             else:
-                if not self.path:
-                    self.SetSyntaxFromFilename(path)
+                self.SetSyntaxFromFilename(path)
                 self.path = path
                 self.sig_title_changed.signal(self)
                 yield True
