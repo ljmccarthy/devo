@@ -64,13 +64,14 @@ def with_current_editor(method):
 
 class MainFrame(wx.Frame):
     def __init__(self):
-        if "wxMSW" in wx.PlatformInfo:
-            rect = AdjustRectToScreen(wx.Rect(0, 0, 1000, 1200))
+        rect = AdjustRectToScreen(wx.Rect(0, 0, 1000, 1500))
+        if wx.Platform == "__WXGTK__":
+            size = rect.Size
+            pos = (0, 0)
+        else:
             size = (rect.width, rect.height - 50)
             pos = (25, 25)
-        else:
-            size = (1000, 1200)
-            pos = wx.DefaultPosition
+
         wx.Frame.__init__(self, None, title="Editor", pos=pos, size=size)
         self.SetMenuBar(menubar.Create())
 
