@@ -43,10 +43,11 @@ class TaskCancelled(Exception):
     pass
 
 class Task(object):
-    def __init__(self, scheduler, success=None, failure=None):
+    def __init__(self, scheduler):
         self.scheduler = scheduler
-        self.__on_success = success
-        self.__on_failure = failure
+        self.__on_success = []
+        self.__on_failure = []
+        self.__on_cleanup = []
         self.__status = WAITING
         self.__result = None
         self.__traceback = ""
@@ -61,8 +62,8 @@ class Task(object):
             self.__result = result
             self.__status = DONE
             self.__cond.notify_all()
-            if self.__on_success is not None:
-                self.scheduler.call(self.__on_success, result)
+            for handler in self.__on_success:
+                self.scheduler.call(handler, result)
 
     def set_failed(self, exn, traceback=""):
         with self.__cond:
@@ -74,8 +75,8 @@ class Task(object):
             self.__traceback = traceback
             self.__status = FAILED
             self.__cond.notify_all()
-            if self.__on_failure is not None:
-                self.scheduler.call(self.__on_failure, exn, traceback)
+            for handler in self.__on_failure:
+                self.scheduler.call(handler, exn, traceback)
 
     def wait(self):
         with self.__cond:
@@ -111,30 +112,18 @@ class Task(object):
             self.__check_ready()
             return self.__result
 
-    def success(self, success):
+    def bind(self, success=None, failure=None, cleanup=None):
         with self.__cond:
-            self.__on_success = success
-            if self.__status == DONE:
-                self.scheduler.call(success, self.__result)
-            elif self.__status == CANCELLED:
-                raise TaskCancelled()
-
-    def failure(self, failure):
-        with self.__cond:
-            self.__on_failure = failure
-            if self.__status == FAILED:
-                self.scheduler.call(failure, self.__result, self.__traceback)
-            elif self.__status == CANCELLED:
-                raise TaskCancelled()
-
-    success = property(fset=success)
-    failure = property(fset=failure)
-
-    def bind(self, success=None, failure=None):
-        if success is not None:
-            self.success = success
-        if failure is not None:
-            self.failure = failure
+            if success is not None:
+                self.__on_success.append(success)
+                if self.__status == DONE:
+                    self.scheduler.call(success, self.__result)
+            if failure is not None:
+                self.__on_failure.append(failure)
+                if self.__status == FAILED:
+                    self.scheduler.call(failure, self.__result, self.__traceback)
+            if cleanup is not None:
+                self.__on_cleanup.append(cleanup)
 
     def cancel(self):
         with self.__cond:
@@ -143,8 +132,10 @@ class Task(object):
                 self.__cond.notify_all()
 
     def __del__(self):
-        if self.__status == FAILED and self.__on_failure is None:
+        if self.__status == FAILED and not self.__on_failure:
             print self.__traceback
+        for handler in self.__on_cleanup:
+            self.scheduler.call(handler, self)
 
 class CoroutineTask(Task):
     def __init__(self, scheduler, gen):
@@ -180,22 +171,10 @@ class CoroutineTask(Task):
         Task.cancel(self)
         if self.__cont is not None:
             self.__cont.cancel()
-        self.__cont = None
+            self.__cont = None
 
 def coroutine(scheduler, func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         return CoroutineTask(scheduler, func(*args, **kwargs))
-    return wrapper
-
-def coroutine_func(func):
-    @functools.wraps(func)
-    def wrapper(scheduler, *args, **kwargs):
-        return CoroutineTask(scheduler, func(*args, **kwargs))
-    return wrapper
-
-def coroutine_method(method):
-    @functools.wraps(method)
-    def wrapper(self, *args, **kwargs):
-        return CoroutineTask(self.scheduler, method(self, *args, **kwargs))
     return wrapper

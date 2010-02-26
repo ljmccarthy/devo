@@ -3,7 +3,7 @@ import stat
 import wx
 
 import dialogs
-from async_wx import async_call, coroutine
+from async_wx import async_call, coroutine, queued_coroutine, managed_coroutine,  CoroutineQueue, CoroutineManager
 from util import iter_tree_children
 from resources import load_bitmap
 
@@ -26,6 +26,8 @@ class DirTreeCtrl(wx.TreeCtrl):
         wx.TreeCtrl.__init__(self, parent, style=style)
         self.env = env
         self.rootdir = rootdir
+        self.cq_PopulateNode = CoroutineQueue()
+        self.cm = CoroutineManager()
         self.imglist = wx.ImageList(16, 16)
         self.imglist.Add(load_bitmap("icons/folder.png"))
         self.imglist.Add(load_bitmap("icons/folder_denied.png"))
@@ -35,6 +37,12 @@ class DirTreeCtrl(wx.TreeCtrl):
         self.InitializeTree()
         self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.OnItemActivated)
         self.Bind(wx.EVT_TREE_ITEM_EXPANDING, self.OnItemExpanding)
+        self.Bind(wx.EVT_CLOSE, self.OnClose)
+
+    def OnClose(self, evt):
+        print "closing"
+        self.cq_PopulateNode.cancel()
+        self.cm.cancel()
 
     def OnItemActivated(self, evt):
         item = evt.GetItem()
@@ -50,7 +58,7 @@ class DirTreeCtrl(wx.TreeCtrl):
         if node.type == 'd' and not node.populated:
             self.PopulateNode(item, node)
 
-    @coroutine
+    @queued_coroutine("cq_PopulateNode")
     def PopulateNode(self, rootitem, rootnode):
         rootnode.populated = True
         for item in iter_tree_children(self, rootitem):
@@ -61,7 +69,7 @@ class DirTreeCtrl(wx.TreeCtrl):
                 except OSError:
                     self.SetItemImage(item, IM_FOLDER_DENIED)
 
-    @coroutine
+    @managed_coroutine("cm")
     def PopulateDirTree(self, rootitem, rootpath):
         files = []
         for filename in sorted((yield async_call(os.listdir, rootpath)), key=lambda x: x.lower()):
@@ -81,7 +89,7 @@ class DirTreeCtrl(wx.TreeCtrl):
             self.SetPyData(item, FSNode(path, 'f'))
         self.SetItemImage(rootitem, IM_FOLDER)
 
-    @coroutine
+    @managed_coroutine("cm")
     def InitializeTree(self):
         self.DeleteAllItems()
         rootitem = self.AddRoot("")
