@@ -73,17 +73,19 @@ class Editor(wx.stc.StyledTextCtrl):
         m = filename_syntax_re.match(os.path.basename(path))
         if m:
             syntax = syntax_dict[m.lastgroup]
-            self.StyleResetDefault()
             self.ClearDocumentStyle()
             self.SetLexer(syntax.lexer)
             self.SetKeyWords(0, syntax.keywords)
+            self.StyleResetDefault()
+            self.StyleSetFontAttr(wx.stc.STC_STYLE_DEFAULT, 10, fontface, False, False, False)
+            self.StyleSetSpec(wx.stc.STC_STYLE_DEFAULT, "")
             self.StyleClearAll()
             for style_num, spec in syntax.stylespecs:
-                self.StyleSetFontAttr(style_num, 10, fontface, False, False, False)
                 self.StyleSetSpec(style_num, spec)
             self.SetIndent(syntax.indent)
             self.SetTabWidth(syntax.indent if syntax.use_tabs else 8)
             self.SetUseTabs(syntax.use_tabs)
+            self.Colourise(0, -1)
         else:
             self.SetNullSyntax()
 
@@ -143,6 +145,8 @@ class Editor(wx.stc.StyledTextCtrl):
                 dialogs.error(self, "Error saving file '%s'\n\n%s" % (path, exn))
                 raise
             else:
+                if not self.path:
+                    self.SetSyntaxFromFilename(path)
                 self.path = path
                 self.sig_title_changed.signal(self)
                 yield True
