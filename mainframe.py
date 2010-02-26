@@ -72,7 +72,7 @@ class MainFrame(wx.Frame):
             size = (rect.width, rect.height - 50)
             pos = (25, 25)
 
-        wx.Frame.__init__(self, None, title="Editor", pos=pos, size=size)
+        wx.Frame.__init__(self, None, title="Devo", pos=pos, size=size)
         self.SetMenuBar(menubar.Create())
 
         self.editors = []
