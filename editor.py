@@ -11,7 +11,7 @@ from signal_wx import Signal
 from syntax import filename_syntax_re, syntax_dict
 import dialogs
 
-if "wxMSW" in wx.PlatformInfo:
+if wx.Platform == "__WXMSW__":
     fontface = "Courier New"
 else:
     fontface = "Monospace"
