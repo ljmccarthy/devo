@@ -79,6 +79,7 @@ class MainFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.EditorAction("SelectAll"), id=wx.ID_SELECTALL)
         self.Bind(wx.EVT_MENU, self.EditorAction("Find"), id=wx.ID_FIND)
         self.Bind(wx.EVT_MENU, self.EditorAction("FindNext"), id=ID_FIND_NEXT)
+        self.Bind(wx.EVT_MENU, self.EditorAction("GoToLine"), id=ID_GO_TO_LINE)
 
         self.Bind(wx.EVT_UPDATE_UI, self.EditorUpdateUI("GetModify"), id=wx.ID_SAVE)
         self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_HasEditor, id=wx.ID_SAVEAS)

@@ -2,6 +2,7 @@ import wx
 from menu import MenuBar, Menu, MenuItem, MenuSeparator
 
 ID_FIND_NEXT = wx.NewId()
+ID_GO_TO_LINE = wx.NewId()
 ID_NEW_PROJECT = wx.NewId()
 ID_OPEN_PROJECT = wx.NewId()
 ID_CLOSE_PROJECT = wx.NewId()
@@ -18,6 +19,7 @@ edit_menu = Menu("&Edit", [
     MenuSeparator,
     MenuItem(wx.ID_FIND, "&Find...", "Ctrl+F"),
     MenuItem(ID_FIND_NEXT, "Find &Next", "F3"),
+    MenuItem(ID_GO_TO_LINE, "&Go To Line...", "Ctrl+G"),
 ])
 
 menubar = MenuBar([

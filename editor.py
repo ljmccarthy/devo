@@ -5,6 +5,7 @@ import wx.aui
 import wx.stc
 from async_wx import async_call, coroutine
 from find_replace_dialog import FindReplaceDialog
+from go_to_line_dialog import GoToLineDialog
 from menu_defs import edit_menu
 from signal_wx import Signal
 from syntax import filename_syntax_re, syntax_dict
@@ -204,3 +205,11 @@ class Editor(wx.stc.StyledTextCtrl):
     def FindNext(self):
         if self.find_details is not None:
             self.find_details.Find(self)
+
+    def GoToLine(self):
+        dlg = GoToLineDialog(self)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                self.GotoLine(dlg.GetLineNumber())
+        finally:
+            dlg.Destroy()
