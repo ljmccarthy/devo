@@ -9,6 +9,7 @@ from editor import Editor
 from menu import MenuBar, Menu, MenuItem, MenuSeparator
 from util import frozen_window, is_text_file
 
+ID_FIND_NEXT = wx.NewId()
 ID_NEW_PROJECT = wx.NewId()
 ID_OPEN_PROJECT = wx.NewId()
 ID_CLOSE_PROJECT = wx.NewId()
@@ -32,6 +33,9 @@ menubar = MenuBar([
         MenuItem(wx.ID_PASTE, "&Paste", "Ctrl+V"),
         MenuSeparator,
         MenuItem(wx.ID_SELECTALL, "Select &All", "Ctrl+A"),
+        MenuSeparator,
+        MenuItem(wx.ID_FIND, "&Find...", "Ctrl+F"),
+        MenuItem(ID_FIND_NEXT, "Find &Next", "F3"),
     ]),
     Menu("&Project", [
         MenuItem(ID_NEW_PROJECT, "&New Project", "Ctrl+Alt+T"),
@@ -108,6 +112,8 @@ class MainFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.EditorAction("Copy"), id=wx.ID_COPY)
         self.Bind(wx.EVT_MENU, self.EditorAction("Paste"), id=wx.ID_PASTE)
         self.Bind(wx.EVT_MENU, self.EditorAction("SelectAll"), id=wx.ID_SELECTALL)
+        self.Bind(wx.EVT_MENU, self.EditorAction("Find"), id=wx.ID_FIND)
+        self.Bind(wx.EVT_MENU, self.EditorAction("FindNext"), id=ID_FIND_NEXT)
 
         self.Bind(wx.EVT_UPDATE_UI, self.EditorUpdateUI("GetModify"), id=wx.ID_SAVE)
         self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_HasEditor, id=wx.ID_SAVEAS)

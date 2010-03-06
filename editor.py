@@ -4,6 +4,7 @@ import wx
 import wx.aui
 import wx.stc
 from async_wx import async_call, coroutine
+from find_replace_dialog import FindReplaceDialog
 from signal_wx import Signal
 from syntax import filename_syntax_re, syntax_dict
 import dialogs
@@ -18,14 +19,14 @@ class Editor(wx.stc.StyledTextCtrl):
         wx.stc.StyledTextCtrl.__init__(self, parent, style=wx.BORDER_NONE)
         self.env = env
         self.path = path
+        self.find_details = None
+        self.sig_title_changed = Signal(self)
 
         self.SetTabIndents(True)
         self.SetBackSpaceUnIndents(True)
         self.SetViewWhiteSpace(wx.stc.STC_WS_VISIBLEALWAYS)
         self.SetWhitespaceForeground(True, "#dddddd")
         self.SetNullSyntax()
-
-        self.sig_title_changed = Signal(self)
 
         self.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
         self.Bind(wx.stc.EVT_STC_SAVEPOINTLEFT, self.OnSavePointLeft)
@@ -186,3 +187,15 @@ class Editor(wx.stc.StyledTextCtrl):
 
     def OnSavePointReached(self, evt):
         self.sig_title_changed.signal(self)
+
+    def Find(self):
+        dlg = FindReplaceDialog(self, os.path.basename(self.path), self.find_details)
+        try:
+            dlg.ShowModal()
+            self.find_details = dlg.GetFindDetails()
+        finally:
+            dlg.Destroy()
+
+    def FindNext(self):
+        if self.find_details is not None:
+            self.find_details.Find(self)

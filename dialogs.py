@@ -1,10 +1,16 @@
 import wx
 import os
 
-def error(parent, message, caption="Error"):
-    dlg = wx.MessageDialog(parent, message, caption, wx.OK | wx.ICON_ERROR)
+def message_dialog(parent, message, caption, style):
+    dlg = wx.MessageDialog(parent, message, caption, style)
     dlg.ShowModal()
     dlg.Destroy()
+
+def error(parent, message, caption="Error"):
+    message_dialog(parent, message, caption, wx.OK | wx.ICON_ERROR)
+
+def info(parent, message, caption=""):
+    message_dialog(parent, message, caption, wx.OK | wx.ICON_INFORMATION)
 
 def get_file_to_open(parent, wildcard="All Files|*.*", message="Open File", dirname=""):
     dlg = wx.FileDialog(parent, wildcard=wildcard, message=message, defaultDir=dirname)
