@@ -1,11 +1,13 @@
 import wx
 import re
 import dialogs
+from dialog_util import bind_escape_key
 
 class FindReplaceDetails(object):
-    def __init__(self, ptn_find, ptn_replace, reverse=False, regexp=False):
+    def __init__(self, ptn_find, ptn_replace, case=False, reverse=False, regexp=False):
         self.ptn_find = ptn_find
         self.ptn_replace = ptn_replace
+        self.case = case
         self.reverse = reverse
         self.regexp = regexp
 
@@ -14,7 +16,7 @@ class FindReplaceDetails(object):
         if not self.regexp:
             ptn = re.escape(ptn)
         try:
-            return re.compile(ptn)
+            return re.compile(ptn, 0 if self.case else re.IGNORECASE)
         except re.error, e:
             dialogs.error(editor, "Invalid regular expression:\n\n" + str(e).capitalize())
 
@@ -95,9 +97,11 @@ class FindReplaceDialog(wx.Dialog):
         grid.Add(wx.StaticText(self, label="Replace"), 0, wx.ALIGN_CENTRE_VERTICAL)
         grid.Add(self.text_replace, 0, wx.EXPAND)
         grid.AddSpacer(0)
+        self.check_case = wx.CheckBox(self, wx.ID_ANY, "&Case sensitive")
         self.check_regexp = wx.CheckBox(self, wx.ID_ANY, "Regular &expression")
         self.check_reverse = wx.CheckBox(self, wx.ID_ANY, "Re&verse")
         chksizer = wx.BoxSizer(wx.VERTICAL)
+        chksizer.Add(self.check_case)
         chksizer.Add(self.check_regexp)
         chksizer.Add(self.check_reverse)
         grid.Add(chksizer)
@@ -133,18 +137,7 @@ class FindReplaceDialog(wx.Dialog):
         self.Bind(wx.EVT_BUTTON, self.OnFind, id=wx.ID_FIND)
         self.Bind(wx.EVT_BUTTON, self.OnReplace, id=wx.ID_REPLACE)
         self.Bind(wx.EVT_BUTTON, self.OnReplaceAll, id=wx.ID_REPLACE_ALL)
-
-        self.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
-        for control in self.GetChildren():
-            control.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
-
-    def OnKeyDown(self, evt):
-        mod = evt.GetModifiers()
-        key = evt.GetKeyCode()
-        if mod == wx.MOD_NONE and key == wx.WXK_ESCAPE:
-            self.EndModal(wx.ID_CANCEL)
-        else:
-            evt.Skip()
+        bind_escape_key(self)
 
     def OnGoToStart(self, evt):
         self.editor.SetSelection(0, 0)
@@ -171,5 +164,6 @@ class FindReplaceDialog(wx.Dialog):
         return FindReplaceDetails(
             ptn_find = self.text_find.GetValue(),
             ptn_replace = self.text_replace.GetValue(),
+            case = self.check_case.GetValue(),
             reverse = self.check_reverse.GetValue(),
             regexp = self.check_regexp.GetValue())
