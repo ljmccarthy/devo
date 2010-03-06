@@ -2,6 +2,8 @@ import wx
 import os
 
 def message_dialog(parent, message, caption, style):
+    if not caption:
+        caption = wx.GetApp().GetAppName()
     dlg = wx.MessageDialog(parent, message, caption, style)
     dlg.ShowModal()
     dlg.Destroy()
