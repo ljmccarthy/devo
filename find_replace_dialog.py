@@ -103,7 +103,9 @@ class FindReplaceDialog(wx.Dialog):
         self.check_reverse = wx.CheckBox(self, wx.ID_ANY, "Re&verse")
         chksizer = wx.BoxSizer(wx.VERTICAL)
         chksizer.Add(self.check_case)
+        chksizer.AddSpacer(5)
         chksizer.Add(self.check_regexp)
+        chksizer.AddSpacer(5)
         chksizer.Add(self.check_reverse)
         grid.Add(chksizer)
 
