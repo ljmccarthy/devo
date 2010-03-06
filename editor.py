@@ -5,6 +5,7 @@ import wx.aui
 import wx.stc
 from async_wx import async_call, coroutine
 from find_replace_dialog import FindReplaceDialog
+from menu_defs import edit_menu
 from signal_wx import Signal
 from syntax import filename_syntax_re, syntax_dict
 import dialogs
@@ -29,6 +30,7 @@ class Editor(wx.stc.StyledTextCtrl):
         self.SetNullSyntax()
 
         self.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
+        self.Bind(wx.EVT_CONTEXT_MENU, self.OnContextMenu)
         self.Bind(wx.stc.EVT_STC_SAVEPOINTLEFT, self.OnSavePointLeft)
         self.Bind(wx.stc.EVT_STC_SAVEPOINTREACHED, self.OnSavePointReached)
 
@@ -181,6 +183,9 @@ class Editor(wx.stc.StyledTextCtrl):
                 evt.Skip()
         else:
             evt.Skip()
+
+    def OnContextMenu(self, evt):
+        self.PopupMenu(edit_menu.Create())
 
     def OnSavePointLeft(self, evt):
         self.sig_title_changed.signal(self)
