@@ -69,6 +69,7 @@ class FindReplaceDetails(object):
         ptn = self._GetFindPattern(editor)
         count = 0
         if ptn:
+            editor.SetSelection(0, 0)
             for pos, line in self._IterFindLines(editor):
                 m = ptn.search(line)
                 if m and m.start() != m.end():
