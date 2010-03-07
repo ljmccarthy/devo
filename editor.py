@@ -203,11 +203,14 @@ class Editor(wx.stc.StyledTextCtrl):
             dlg.Destroy()
 
     def FindNext(self):
-        if self.find_details is not None:
+        if self.CanFindNext():
             self.find_details.Find(self)
 
+    def CanFindNext(self):
+        return self.find_details is not None
+
     def GoToLine(self):
-        dlg = GoToLineDialog(self)
+        dlg = GoToLineDialog(self, os.path.basename(self.path))
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 self.GotoLine(dlg.GetLineNumber())

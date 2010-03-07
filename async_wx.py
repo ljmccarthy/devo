@@ -24,7 +24,7 @@ def queued_coroutine(queue_name):
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs):
             queue = getattr(self, queue_name)
-            queue.run(func, (self,) + args, kwargs)
+            return queue.run(func, (self,) + args, kwargs)
         return wrapper
     return decorator
 
@@ -33,9 +33,10 @@ def managed_coroutine(manager_name):
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs):
             manager = getattr(self, manager_name)
-            f = async.CoroutineTask(scheduler, func(self, *args, **kwargs))
-            manager.add(f)
-            return f
+            co = async.CoroutineTask(scheduler, func(self, *args, **kwargs))
+            manager.add(co)
+            co.start()
+            return co
         return wrapper
     return decorator
 
@@ -45,27 +46,29 @@ class CoroutineQueue(object):
         self.__queue = []
 
     def run(self, func, args, kwargs):
+        co = async.CoroutineTask(scheduler, func(*args, **kwargs))
         if self.__running is not None:
-            self.__queue.append((func, args, kwargs))
+            self.__queue.append(co)
         else:
-            f = async.CoroutineTask(scheduler, func(*args, **kwargs))
-            f.bind(cleanup=self.__next)
-            self.__running = weakref.ref(f)
+            self.__running = weakref.ref(co)
+            co.bind(cleanup=self.__next)
+            co.start()
+        return co
 
     def __next(self, f):
         if self.__queue:
-            func, args, kwargs = self.__queue.pop()
-            f = async.CoroutineTask(scheduler, func(*args, **kwargs))
-            f.bind(cleanup=self.__next)
+            co = self.__queue.pop()
+            co.bind(cleanup=self.__next)
+            co.start()
         else:
             self.__running = None
 
     def cancel(self):
         self.__queue = []
         if self.__running is not None:
-            f = self.__running()
-            if f is not None:
-                f.cancel()
+            co = self.__running()
+            if co is not None:
+                co.cancel()
 
 class CoroutineManager(object):
     def __init__(self):

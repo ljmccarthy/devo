@@ -1,16 +1,21 @@
-import os
-import stat
+import sys, os, stat
 import wx
 
 import dialogs
-from async_wx import async_call, coroutine, queued_coroutine, managed_coroutine,  CoroutineQueue, CoroutineManager
+from async_wx import async_call, coroutine, queued_coroutine, managed_coroutine, CoroutineQueue, CoroutineManager
 from util import iter_tree_children
 from resources import load_bitmap
+
+if sys.platform == "win32":
+    import win32api
+    toplevel = win32api.GetLogicalDriveStrings().strip("\0").split("\0")
+else:
+    toplevel = ["/"]
 
 class FSNode(object):
     __slots__ = ("path", "type", "populated")
 
-    def __init__(self, path, type):
+    def __init__(self, path="", type="", populated=False):
         self.path = path
         self.type = type
         self.populated = False
@@ -21,11 +26,11 @@ IM_FOLDER_WAITING = 2
 IM_FILE = 3
 
 class DirTreeCtrl(wx.TreeCtrl):
-    def __init__(self, parent, env, rootdir):
+    def __init__(self, parent, env, toplevel=toplevel):
         style = wx.TR_DEFAULT_STYLE | wx.TR_HIDE_ROOT | wx.BORDER_NONE
         wx.TreeCtrl.__init__(self, parent, style=style)
         self.env = env
-        self.rootdir = rootdir
+        self.toplevel = toplevel
         self.cq_PopulateNode = CoroutineQueue()
         self.cm = CoroutineManager()
         self.imglist = wx.ImageList(16, 16)
@@ -40,7 +45,6 @@ class DirTreeCtrl(wx.TreeCtrl):
         self.Bind(wx.EVT_CLOSE, self.OnClose)
 
     def OnClose(self, evt):
-        print "closing"
         self.cq_PopulateNode.cancel()
         self.cm.cancel()
 
@@ -93,10 +97,20 @@ class DirTreeCtrl(wx.TreeCtrl):
     def InitializeTree(self):
         self.DeleteAllItems()
         rootitem = self.AddRoot("")
-        rootnode = FSNode(self.rootdir, 'd')
-        self.SetPyData(rootitem, rootnode)
-        try:
-            yield self.PopulateDirTree(rootitem, self.rootdir)
-            yield self.PopulateNode(rootitem, rootnode)
-        except OSError, exn:
-            dialogs.error(self, "Error: %s" % exn)
+        if len(self.toplevel) == 1:
+            self.SetPyData(rootitem, FSNode(self.toplevel[0], 'd'))
+            toplevel_items = [rootitem]
+        else:
+            self.SetPyData(rootitem, FSNode())
+            toplevel_items = []
+            for path in self.toplevel:
+                item = self.AppendItem(rootitem, path, IM_FOLDER_WAITING)
+                self.SetPyData(item, FSNode(path, 'd'))
+                toplevel_items.append(item)
+        for item in toplevel_items:
+            try:
+                node = self.GetPyData(item)
+                yield self.PopulateDirTree(item, node.path)
+                yield self.PopulateNode(item, node)
+            except OSError:
+                self.SetItemImage(item, IM_FOLDER_DENIED)

@@ -52,7 +52,7 @@ class MainFrame(wx.Frame):
         nbstyle = (wx.aui.AUI_NB_CLOSE_ON_ALL_TABS  | wx.aui.AUI_NB_TOP | wx.aui.AUI_NB_TAB_SPLIT
                   | wx.aui.AUI_NB_TAB_MOVE | wx.aui.AUI_NB_SCROLL_BUTTONS | wx.BORDER_NONE)
         self.notebook = wx.aui.AuiNotebook(self, style=nbstyle)
-        self.tree = DirTreeCtrl(self, self.env, "/" if sys.platform != "win32" else "C:\\")
+        self.tree = DirTreeCtrl(self, self.env)
 
         self.manager.AddPane(self.tree,
             wx.aui.AuiPaneInfo().Left().BestSize(wx.Size(200, -1)).CaptionVisible(False))
@@ -90,6 +90,9 @@ class MainFrame(wx.Frame):
         self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasSelection, id=wx.ID_COPY)
         self.Bind(wx.EVT_UPDATE_UI, self.EditorUpdateUI("CanPaste"), id=wx.ID_PASTE)
         self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_HasEditor, id=wx.ID_SELECTALL)
+        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_HasEditor, id=wx.ID_FIND)
+        self.Bind(wx.EVT_UPDATE_UI, self.EditorUpdateUI("CanFindNext"), id=ID_FIND_NEXT)
+        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_HasEditor, id=ID_GO_TO_LINE)
 
     @coroutine
     def OnClose(self, evt):

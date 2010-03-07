@@ -140,11 +140,17 @@ class Task(object):
 class CoroutineTask(Task):
     def __init__(self, scheduler, gen):
         if not isinstance(gen, types.GeneratorType):
-            raise TypeError("CoroutineTask expected generator, got %s" % gen.__class__.__name__)
+            raise TypeError("CoroutineTask expected generator, got %s"
+                            % gen.__class__.__name__)
         Task.__init__(self, scheduler)
         self.__gen = gen
         self.__cont = None
-        self.__next(self.__gen.next)
+        self.__running = False
+
+    def start(self):
+        if not self.__running:
+            self.__running = True
+            self.__next(self.__gen.next)
 
     def __next(self, func, *args, **kwargs):
         self.__cont = None
@@ -176,5 +182,7 @@ class CoroutineTask(Task):
 def coroutine(scheduler, func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        return CoroutineTask(scheduler, func(*args, **kwargs))
+        co = CoroutineTask(scheduler, func(*args, **kwargs))
+        co.start()
+        return co
     return wrapper
