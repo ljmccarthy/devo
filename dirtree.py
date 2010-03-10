@@ -183,6 +183,7 @@ class DirTreeCtrl(wx.TreeCtrl):
     @queued_coroutine("cq_populate")
     def ExpandNode(self, item, node):
         yield node.expand(self, item, self.monitor)
+        self.Expand(item)
 
     def CollapseNode(self, item, node):
         node.collapse(self, item, self.monitor)
