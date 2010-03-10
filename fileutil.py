@@ -1,4 +1,12 @@
-import os, shutil
+import sys, os, shutil
+
+if sys.platform == "win32":
+    # os.rename is broken on windows
+    import win32file
+    def rename(old, new):
+        win32file.MoveFileEx(old, new, win32file.MOVEFILE_REPLACE_EXISTING)
+else:
+    rename = os.rename
 
 def atomic_write_file(path, data):
     temp = os.path.join(os.path.dirname(path), ".tmpsave." + os.path.basename(path))
@@ -16,4 +24,4 @@ def atomic_write_file(path, data):
             pass
         raise
     else:
-        os.rename(temp, path)
+        rename(temp, path)
