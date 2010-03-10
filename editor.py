@@ -1,9 +1,7 @@
 import os
-import shutil
-import wx
-import wx.aui
-import wx.stc
+import wx, wx.aui, wx.stc
 from async_wx import async_call, coroutine
+from fileutil import atomic_write_file
 from find_replace_dialog import FindReplaceDialog
 from go_to_line_dialog import GoToLineDialog
 from menu_defs import edit_menu
@@ -120,23 +118,8 @@ class Editor(wx.stc.StyledTextCtrl):
         text = self.GetText().encode("utf-8")
         if not text.endswith("\n"):
             text += "\n"
-        temp = os.path.join(os.path.dirname(path), ".tmpsave." + os.path.basename(path))
-        try:
-            with (yield async_call(open, temp, "wb")) as out:
-                try:
-                    yield async_call(shutil.copystat, path, temp)
-                except OSError:
-                    pass
-                yield async_call(out.write, text)
-        except IOError:
-            try:
-                yield async_call(os.remove, temp)
-            except OSError:
-                pass
-            raise
-        else:
-            yield async_call(os.rename, temp, path)
-            self.SetSavePoint()
+        yield async_call(atomic_write_file, path, text)
+        self.SetSavePoint()
 
     @coroutine
     def SaveAs(self):
