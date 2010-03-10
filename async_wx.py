@@ -28,15 +28,14 @@ def queued_coroutine(queue_name):
         return wrapper
     return decorator
 
-def managed_coroutine(manager_name):
+def managed(manager_name):
     def decorator(func):
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs):
             manager = getattr(self, manager_name)
-            co = async.CoroutineTask(scheduler, func(self, *args, **kwargs))
-            manager.add(co)
-            co.start()
-            return co
+            f = func(self, *args, **kwargs)
+            manager.add(f)
+            return f
         return wrapper
     return decorator
 
