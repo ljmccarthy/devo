@@ -15,11 +15,14 @@ IM_FILE = 3
 
 def dirtree_insert(tree, parent_item, text, image):
     i = 0
-    text = text.lower()
+    text_lower = text.lower()
     for i, item in enumerate(iter_tree_children(tree, parent_item)):
+        item_text = tree.GetItemText(item)
+        if item_text == text:
+            return item
         if image != IM_FILE and tree.GetItemImage(item) == IM_FILE:
             return tree.InsertItemBefore(parent_item, i, text, image)
-        elif tree.GetItemText(item).lower() > text:
+        if item_text.lower() > text_lower:
             if not (image == IM_FILE and tree.GetItemImage(item) != IM_FILE):
                 return tree.InsertItemBefore(parent_item, i, text, image)
     return tree.AppendItem(parent_item, text, image)
@@ -149,7 +152,7 @@ class DirTreeCtrl(wx.TreeCtrl):
         self.cm.cancel()
 
     def _OnFileSystemChanged(self, evt):
-        wx.CallAfter(self.OnFileSystemChanged, evt)
+        wx.CallLater(10, self.OnFileSystemChanged, evt)
 
     @managed("cm")
     @queued_coroutine("cq_populate")
