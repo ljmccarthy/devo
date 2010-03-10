@@ -102,19 +102,20 @@ class FSNode(object):
         #self.item = None
 
     @coroutine
-    def changed(self, evt, tree, monitor):
+    def add(self, name, tree, monitor):
         if self.populated:
-            path = os.path.join(self.path, evt.name)
-            if evt.action in (fsmonitor.FSEVT_CREATE, fsmonitor.FSEVT_MOVE_TO):
-                type, image = (yield async_call(get_file_type_and_image, path))
-                if type:
-                    item = dirtree_insert(tree, self.item, evt.name, image)
-                    node = FSNode(path, type)
-                    tree.SetPyData(item, node)
-                    if type == 'd':
-                        tree.SetItemHasChildren(item, True)
-            elif evt.action in (fsmonitor.FSEVT_DELETE, fsmonitor.FSEVT_MOVE_FROM):
-                dirtree_delete(tree, self.item, evt.name)
+            path = os.path.join(self.path, name)
+            type, image = (yield async_call(get_file_type_and_image, path))
+            if type:
+                item = dirtree_insert(tree, self.item, name, image)
+                node = FSNode(path, type)
+                tree.SetPyData(item, node)
+                if type == 'd':
+                    tree.SetItemHasChildren(item, True)
+
+    def remove(self, name, tree, monitor):
+        if self.populated:
+            dirtree_delete(tree, self.item, name)
 
 if sys.platform == "win32":
     import win32api
@@ -167,7 +168,10 @@ class DirTreeCtrl(wx.TreeCtrl):
             evts = self.fsevts
             self.fsevts = []
         for evt in evts:
-            yield evt.userobj.changed(evt, self, self.monitor)
+            if evt.action in (fsmonitor.FSEVT_CREATE, fsmonitor.FSEVT_MOVE_TO):
+                yield evt.userobj.add(evt.name, self, self.monitor)
+            elif evt.action in (fsmonitor.FSEVT_DELETE, fsmonitor.FSEVT_MOVE_FROM):
+                evt.userobj.remove(evt.name, self, self.monitor)
 
     def OnItemActivated(self, evt):
         item = evt.GetItem()
