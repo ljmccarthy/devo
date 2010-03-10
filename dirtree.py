@@ -1,4 +1,4 @@
-import sys, os, stat
+import sys, os, stat, threading
 import wx
 import fsmonitor
 
@@ -136,6 +136,8 @@ class DirTreeCtrl(wx.TreeCtrl):
         self.cq_populate = CoroutineQueue()
         self.cm = CoroutineManager()
         self.monitor = fsmonitor.FSMonitorThread(self._OnFileSystemChanged)
+        self.fsevts = []
+        self.fsevts_lock = threading.Lock()
         self.imglist = wx.ImageList(16, 16)
         self.imglist.Add(load_bitmap("icons/folder.png"))
         self.imglist.Add(load_bitmap("icons/folder_denied.png"))
@@ -152,12 +154,20 @@ class DirTreeCtrl(wx.TreeCtrl):
         self.cm.cancel()
 
     def _OnFileSystemChanged(self, evt):
-        wx.CallLater(10, self.OnFileSystemChanged, evt)
+        with self.fsevts_lock:
+            called = bool(self.fsevts)
+            self.fsevts.append(evt)
+            if not called:
+                wx.CallAfter(lambda: wx.CallLater(200, self.OnFileSystemChanged))
 
     @managed("cm")
     @queued_coroutine("cq_populate")
-    def OnFileSystemChanged(self, evt):
-        yield evt.userobj.changed(evt, self, self.monitor)
+    def OnFileSystemChanged(self):
+        with self.fsevts_lock:
+            evts = self.fsevts
+            self.fsevts = []
+        for evt in evts:
+            yield evt.userobj.changed(evt, self, self.monitor)
 
     def OnItemActivated(self, evt):
         item = evt.GetItem()
