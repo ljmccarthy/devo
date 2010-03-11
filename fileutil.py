@@ -2,9 +2,12 @@ import sys, os, shutil
 
 if sys.platform == "win32":
     # os.rename is broken on windows
-    import win32file
+    import win32file, pywintypes
     def rename(old, new):
-        win32file.MoveFileEx(old, new, win32file.MOVEFILE_REPLACE_EXISTING)
+        try:
+            win32file.MoveFileEx(old, new, win32file.MOVEFILE_REPLACE_EXISTING)
+        except pywintypes.error, e:
+            raise WindowsError(*e.args)
 else:
     rename = os.rename
 
