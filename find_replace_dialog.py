@@ -154,20 +154,24 @@ class FindReplaceDialog(wx.Dialog):
     def OnFind(self, evt):
         details = self.GetFindDetails()
         if not details.Find(self.editor):
-            dialogs.info(self, "Pattern not found: '%s'" % details.ptn_find)
+            dialogs.info(self, "Pattern not found: '%s'" % details.ptn_find, "Find")
 
     def OnReplace(self, evt):
         details = self.GetFindDetails()
         if not details.Replace(self.editor):
-            dialogs.info(self, "Pattern not found: '%s'" % details.ptn_find)
+            dialogs.info(self, "Pattern not found: '%s'" % details.ptn_find, "Replace")
 
     def OnReplaceAll(self, evt):
         details = self.GetFindDetails()
         count = details.ReplaceAll(self.editor)
         if count > 0:
-            dialogs.info(self, "Replaced %d instances of '%s'" % (count, details.ptn_find))
+            dialogs.info(self,
+                "Replaced %d instances of '%s'" % (count, details.ptn_find),
+                "Replace All")
         else:
-            dialogs.info(self, "Pattern not found: '%s'" % details.ptn_find)
+            dialogs.info(self,
+                "Pattern not found: '%s'" % details.ptn_find,
+                "Replace All")
 
     def GetFindDetails(self):
         return FindReplaceDetails(
