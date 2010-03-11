@@ -1,5 +1,5 @@
 import os
-import wx, wx.aui, wx.stc
+import wx, wx.stc
 from async_wx import async_call, coroutine
 from fileutil import atomic_write_file
 from find_replace_dialog import FindReplaceDialog
