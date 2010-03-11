@@ -20,7 +20,7 @@ class FindReplaceDetails(object):
         except re.error, e:
             dialogs.error(editor, "Invalid regular expression:\n\n" + str(e).capitalize())
 
-    def _IterFindLines(self, editor):
+    def _IterFindLines(self, editor, wrap=True):
         init_pos = editor.GetSelection()[1]
         init_line = editor.LineFromPosition(init_pos)
         last_line = editor.LineFromPosition(editor.GetTextLength())
@@ -31,11 +31,12 @@ class FindReplaceDetails(object):
         for line in xrange(init_line + 1, last_line + 1):
             yield editor.PositionFromLine(line), editor.GetLine(line)[:-1]
 
-        for line in xrange(0, init_line):
-            yield editor.PositionFromLine(line), editor.GetLine(line)[:-1]
+        if wrap:
+            for line in xrange(0, init_line):
+                yield editor.PositionFromLine(line), editor.GetLine(line)[:-1]
 
-        line_start = editor.PositionFromLine(init_line)
-        yield line_start, editor.GetTextRange(line_start, init_pos)
+            line_start = editor.PositionFromLine(init_line)
+            yield line_start, editor.GetTextRange(line_start, init_pos)
 
     def _ReplaceSelected(self, editor):
         text = editor.GetSelectedText()
@@ -51,10 +52,10 @@ class FindReplaceDetails(object):
             else:
                 editor.ReplaceSelection(self.ptn_replace)
 
-    def Find(self, editor):
+    def Find(self, editor, wrap=True):
         ptn = self._GetFindPattern(editor)
         if ptn:
-            for pos, line in self._IterFindLines(editor):
+            for pos, line in self._IterFindLines(editor, wrap):
                 m = ptn.search(line)
                 if m and m.start() != m.end():
                     editor.SetSelection(pos + m.start(), pos + m.end())
@@ -62,20 +63,25 @@ class FindReplaceDetails(object):
         return False
 
     def Replace(self, editor):
-        self._ReplaceSelected(editor)
+        ptn = self._GetFindPattern(editor)
+        if ptn.match(editor.GetSelectedText()):
+            self._ReplaceSelected(editor)
         return self.Find(editor)
 
     def ReplaceAll(self, editor):
-        ptn = self._GetFindPattern(editor)
         count = 0
+        ptn = self._GetFindPattern(editor)
         if ptn:
             editor.SetSelection(0, 0)
-            for pos, line in self._IterFindLines(editor):
-                m = ptn.search(line)
-                if m and m.start() != m.end():
-                    editor.SetSelection(pos + m.start(), pos + m.end())
-                    self._ReplaceSelected(editor)
-                    count += 1
+            m = True
+            while m:
+                for pos, line in self._IterFindLines(editor, wrap=False):
+                    m = ptn.search(line)
+                    if m and m.start() != m.end():
+                        editor.SetSelection(pos + m.start(), pos + m.end())
+                        self._ReplaceSelected(editor)
+                        count += 1
+                        break
         return count
 
 ID_GO_TO_START = wx.NewId()
