@@ -5,8 +5,18 @@ import fsmonitor
 import dialogs
 from async import Task
 from async_wx import async_call, coroutine, queued_coroutine, managed, CoroutineQueue, CoroutineManager
-from util import iter_tree_children
+from fileutil import rename, remove
+from menu import Menu, MenuItem
+from util import iter_tree_children, frozen_window
 from resources import load_bitmap
+
+ID_RENAME = wx.NewId()
+ID_DELETE = wx.NewId()
+
+file_context_menu = Menu("", [
+    MenuItem(ID_RENAME, "&Rename"),
+    MenuItem(ID_DELETE, "&Delete"),
+])
 
 IM_FOLDER = 0
 IM_FOLDER_DENIED = 1
@@ -60,13 +70,14 @@ class SimpleNode(object):
             tree.SetItemHasChildren(item, True)
 
 class FSNode(object):
-    __slots__ = ("populated", "path", "type", "item", "label")
+    __slots__ = ("populated", "path", "type", "item", "watch", "label")
 
     def __init__(self, path="", type="", label=""):
         self.populated = False
         self.path = path
         self.type = type
         self.item = None
+        self.watch = None
         self.label = label or os.path.basename(path) or path
 
     @coroutine
@@ -75,7 +86,7 @@ class FSNode(object):
             self.populated = True
             self.item = rootitem
             files = []
-            monitor.add_watch(self.path, self)
+            self.watch = monitor.add_watch(self.path, self)
             for filename in sorted((yield async_call(os.listdir, self.path)),
                                    key=lambda x: x.lower()):
                 path = os.path.join(self.path, filename)
@@ -97,7 +108,7 @@ class FSNode(object):
 
     def collapse(self, tree, rootitem, monitor):
         pass
-        #monitor.remove_watch(self.path)
+        #monitor.remove_watch(self.watch)
         #self.populated = False
         #self.item = None
 
@@ -112,6 +123,7 @@ class FSNode(object):
                 tree.SetPyData(item, node)
                 if type == 'd':
                     tree.SetItemHasChildren(item, True)
+                yield item
 
     def remove(self, name, tree, monitor):
         if self.populated:
@@ -139,6 +151,8 @@ class DirTreeCtrl(wx.TreeCtrl):
         self.monitor = fsmonitor.FSMonitorThread(self._OnFileSystemChanged)
         self.fsevts = []
         self.fsevts_lock = threading.Lock()
+        self.last_renamed_parent = None
+        self.last_renamed_name = None
         self.imglist = wx.ImageList(16, 16)
         self.imglist.Add(load_bitmap("icons/folder.png"))
         self.imglist.Add(load_bitmap("icons/folder_denied.png"))
@@ -146,10 +160,14 @@ class DirTreeCtrl(wx.TreeCtrl):
         self.imglist.Add(load_bitmap("icons/file.png"))
         self.SetImageList(self.imglist)
         self.InitializeTree()
+        self.Bind(wx.EVT_CLOSE, self.OnClose)
         self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.OnItemActivated)
         self.Bind(wx.EVT_TREE_ITEM_EXPANDING, self.OnItemExpanding)
         self.Bind(wx.EVT_TREE_ITEM_COLLAPSED, self.OnItemCollapsed)
-        self.Bind(wx.EVT_CLOSE, self.OnClose)
+        self.Bind(wx.EVT_TREE_ITEM_RIGHT_CLICK, self.OnItemRightClicked)
+        self.Bind(wx.EVT_TREE_END_LABEL_EDIT, self.OnItemEndLabelEdit)
+        self.Bind(wx.EVT_MENU, self.OnItemRename, id=ID_RENAME)
+        self.Bind(wx.EVT_MENU, self.OnItemDelete, id=ID_DELETE)
 
     def OnClose(self, evt):
         self.cm.cancel()
@@ -167,11 +185,18 @@ class DirTreeCtrl(wx.TreeCtrl):
         with self.fsevts_lock:
             evts = self.fsevts
             self.fsevts = []
-        for evt in evts:
-            if evt.action in (fsmonitor.FSEVT_CREATE, fsmonitor.FSEVT_MOVE_TO):
-                yield evt.userobj.add(evt.name, self, self.monitor)
-            elif evt.action in (fsmonitor.FSEVT_DELETE, fsmonitor.FSEVT_MOVE_FROM):
-                evt.userobj.remove(evt.name, self, self.monitor)
+        with frozen_window(self):
+            for evt in evts:
+                if evt.action in (fsmonitor.FSEVT_CREATE, fsmonitor.FSEVT_MOVE_TO):
+                    item = (yield evt.userobj.add(evt.name, self, self.monitor))
+                    if item:
+                        if evt.name == self.last_renamed_name \
+                        and self.GetItemParent(item) == self.last_renamed_parent:
+                            self.last_renamed_name = None
+                            self.last_renamed_parent = None
+                            self.SelectItem(item)
+                elif evt.action in (fsmonitor.FSEVT_DELETE, fsmonitor.FSEVT_MOVE_FROM):
+                    evt.userobj.remove(evt.name, self, self.monitor)
 
     def OnItemActivated(self, evt):
         item = evt.GetItem()
@@ -192,6 +217,42 @@ class DirTreeCtrl(wx.TreeCtrl):
         node = self.GetPyData(item)
         if node.type == 'd' and node.populated:
             self.CollapseNode(item, node)
+
+    def OnItemRightClicked(self, evt):
+        evt.Skip()
+        self.PopupMenu(file_context_menu.Create())
+
+    def OnItemEndLabelEdit(self, evt):
+        if not evt.IsEditCancelled():
+            evt.Veto()
+            item = evt.GetItem()
+            node = self.GetPyData(item)
+            newpath = os.path.join(os.path.dirname(node.path), evt.GetLabel())
+            if newpath != node.path:
+                try:
+                    if os.path.exists(newpath):
+                        if not dialogs.ask_overwrite(self, newpath):
+                            return
+                    rename(node.path, newpath)
+                    self.last_renamed_parent = self.GetItemParent(item)
+                    self.last_renamed_name = evt.GetLabel()
+                except OSError, e:
+                    dialogs.error(self, str(e))
+
+    def OnItemRename(self, evt):
+        item = self.GetSelection()
+        node = self.GetPyData(item)
+        if node.type in 'fd':
+            self.EditLabel(item)
+
+    def OnItemDelete(self, evt):
+        item = self.GetSelection()
+        node = self.GetPyData(item)
+        if dialogs.ask_delete(self, node.path):
+            try:
+                remove(node.path)
+            except OSError, e:
+                dialogs.error(self, str(e))
 
     @managed("cm")
     @queued_coroutine("cq_populate")

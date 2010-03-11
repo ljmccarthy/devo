@@ -5,8 +5,9 @@ def message_dialog(parent, message, caption, style):
     if not caption:
         caption = wx.GetApp().GetAppName()
     dlg = wx.MessageDialog(parent, message, caption, style)
-    dlg.ShowModal()
+    rc = dlg.ShowModal()
     dlg.Destroy()
+    return rc
 
 def error(parent, message, caption="Error"):
     message_dialog(parent, message, caption, wx.OK | wx.ICON_ERROR)
@@ -66,3 +67,15 @@ def ask_save_changes(parent, path=""):
     result = dlg.ShowModal()
     dlg.Destroy()
     return result
+
+def ask_overwrite(parent, path):
+    return message_dialog(parent, 
+        "A file named '%s' already exists. Overwrite?" % path,
+        "Confirm Overwrite",
+        wx.YES_NO | wx.ICON_QUESTION) == wx.ID_YES
+
+def ask_delete(parent, path):
+    return message_dialog(parent,
+        "Are you sure you want to delete '%s'?" % path,
+        "Confirm Delete",
+        wx.YES_NO | wx.ICON_QUESTION) == wx.ID_YES

@@ -28,3 +28,10 @@ def atomic_write_file(path, data):
         raise
     else:
         rename(temp, path)
+
+def remove(path):
+    # TODO: move to recycle bin
+    if os.path.isdir(path):
+        shutil.rmtree(path)
+    else:
+        os.remove(path)
