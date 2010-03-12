@@ -20,8 +20,7 @@ file_context_menu = Menu("", [
 
 IM_FOLDER = 0
 IM_FOLDER_DENIED = 1
-IM_FOLDER_WAITING = 2
-IM_FILE = 3
+IM_FILE = 2
 
 def dirtree_insert(tree, parent_item, text, image):
     i = 0
@@ -98,9 +97,14 @@ class FSNode(object):
                     if stat.S_ISREG(st.st_mode):
                         files.append((filename, path))
                     elif stat.S_ISDIR(st.st_mode):
-                        item = tree.AppendItem(rootitem, filename, IM_FOLDER)
+                        try:
+                            listable = (yield async_call(os.access, path, os.X_OK))
+                        except OSError, e:
+                            listable = False
+                        image = IM_FOLDER if listable else IM_FOLDER_DENIED
+                        item = tree.AppendItem(rootitem, filename, image)
                         tree.SetPyData(item, FSNode(path, 'd'))
-                        tree.SetItemHasChildren(item, True)
+                        tree.SetItemHasChildren(item, listable)
             for filename, path in files:
                 item = tree.AppendItem(rootitem, filename, IM_FILE)
                 tree.SetPyData(item, FSNode(path, 'f'))
@@ -156,7 +160,6 @@ class DirTreeCtrl(wx.TreeCtrl):
         self.imglist = wx.ImageList(16, 16)
         self.imglist.Add(load_bitmap("icons/folder.png"))
         self.imglist.Add(load_bitmap("icons/folder_denied.png"))
-        self.imglist.Add(load_bitmap("icons/folder_waiting.png"))
         self.imglist.Add(load_bitmap("icons/file.png"))
         self.SetImageList(self.imglist)
         self.InitializeTree()
