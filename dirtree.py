@@ -82,11 +82,12 @@ class SimpleNode(object):
         self.label = label
         self.children = children
         self.populated = False
+        self.item = None
 
-    def expand(self, tree, rootitem, monitor):
-        tree.SetItemImage(rootitem, IM_FOLDER)
+    def expand(self, tree, monitor):
+        tree.SetItemImage(self.item, IM_FOLDER)
         for node in self.children:
-            item = tree.AppendItem(rootitem, node.label, IM_FOLDER)
+            item = tree.AppendItem(self.item, node.label, IM_FOLDER)
             tree.SetItemNode(item, node)
             tree.SetItemHasChildren(item, True)
 
