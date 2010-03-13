@@ -1,7 +1,6 @@
 import os, subprocess
 
 def run(*args):
-    print args
     p = subprocess.Popen(args, close_fds=True)
     return p.wait()
 
