@@ -5,9 +5,10 @@ def message_dialog(parent, message, caption, style):
     if not caption:
         caption = wx.GetApp().GetAppName()
     dlg = wx.MessageDialog(parent, message, caption, style)
-    rc = dlg.ShowModal()
-    dlg.Destroy()
-    return rc
+    try:
+        return dlg.ShowModal()
+    finally:
+        dlg.Destroy()
 
 def error(parent, message, caption="Error"):
     message_dialog(parent, message, caption, wx.OK | wx.ICON_ERROR)
@@ -17,21 +18,21 @@ def info(parent, message, caption=""):
 
 def get_file_to_open(parent, wildcard="All Files|*.*", message="Open File", dirname=""):
     dlg = wx.FileDialog(parent, wildcard=wildcard, message=message, defaultDir=dirname)
-    path = ""
-    if dlg.ShowModal() == wx.ID_OK:
-        path = dlg.GetPath()
-    dlg.Destroy()
-    return path
+    try:
+        if dlg.ShowModal() == wx.ID_OK:
+            return dlg.GetPath()
+    finally:
+        dlg.Destroy()
 
 def get_file_to_save(parent, wildcard="All Files|*.*", message="Save File", dirname=""):
     dlg = wx.FileDialog(parent,
         wildcard=wildcard, message=message, defaultDir=dirname,
         style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
-    path = ""
-    if dlg.ShowModal() == wx.ID_OK:
-        path = dlg.GetPath()
-    dlg.Destroy()
-    return path
+    try:
+        if dlg.ShowModal() == wx.ID_OK:
+            return dlg.GetPath()
+    finally:
+        dlg.Destroy()
 
 class SaveChangesDialog(wx.Dialog):
     def __init__(self, parent, message, title="Unsaved Changes"):
@@ -64,9 +65,10 @@ def ask_save_changes(parent, path=""):
     else:
         message = "Save unsaved changes?"
     dlg = SaveChangesDialog(parent, message)
-    result = dlg.ShowModal()
-    dlg.Destroy()
-    return result
+    try:
+        return dlg.ShowModal()
+    finally:
+        dlg.Destroy()
 
 def ask_overwrite(parent, path):
     return message_dialog(parent, 
@@ -79,3 +81,32 @@ def ask_delete(parent, path):
         "Are you sure you want to delete '%s'?" % path,
         "Confirm Delete",
         wx.YES_NO | wx.ICON_QUESTION) == wx.ID_YES
+
+class TextInputDialog(wx.Dialog):
+    def __init__(self, parent, title="", message="", value="", width=300):
+        wx.Dialog.__init__(self, parent, title=title)
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        if message:
+            label = wx.StaticText(self, label=message)
+            sizer.Add(label, 0, wx.LEFT | wx.RIGHT | wx.TOP, 5)
+        self.textctrl = wx.TextCtrl(self, size=(width, -1), value=value)
+        sizer.Add(self.textctrl, 0, wx.ALL | wx.EXPAND, 5)
+        btnsizer = wx.StdDialogButtonSizer()
+        btn_ok = wx.Button(self, wx.ID_OK)
+        btn_ok.SetDefault()
+        btnsizer.AddButton(btn_ok)
+        btnsizer.AddButton(wx.Button(self, wx.ID_CANCEL))
+        btnsizer.Realize()
+        sizer.Add(btnsizer, 0, wx.ALIGN_RIGHT | wx.LEFT | wx.RIGHT | wx.BOTTOM, 5)
+        self.SetSizer(sizer)
+        self.Fit()
+        self.SetMinSize(self.GetSize())
+        self.textctrl.SetFocus()
+
+def get_text_input(*args, **kwargs):
+    dlg = TextInputDialog(*args, **kwargs)
+    try:
+        if dlg.ShowModal() == wx.ID_OK:
+            return dlg.textctrl.GetValue()
+    finally:
+        dlg.Destroy()
