@@ -74,13 +74,13 @@ def ask_overwrite(parent, path):
     return message_dialog(parent, 
         "A file named '%s' already exists. Overwrite?" % path,
         "Confirm Overwrite",
-        wx.YES_NO | wx.ICON_QUESTION) == wx.ID_YES
+        wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION) == wx.ID_YES
 
 def ask_delete(parent, path):
     return message_dialog(parent,
         "Are you sure you want to delete '%s'?" % path,
         "Confirm Delete",
-        wx.YES_NO | wx.ICON_QUESTION) == wx.ID_YES
+        wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION) == wx.ID_YES
 
 class TextInputDialog(wx.Dialog):
     def __init__(self, parent, title="", message="", value="", width=300):
