@@ -182,7 +182,7 @@ def MakeTopLevel():
 
 class DirTreeCtrl(wx.TreeCtrl):
     def __init__(self, parent, env, toplevel=None):
-        style = wx.TR_DEFAULT_STYLE | wx.TR_HIDE_ROOT | wx.BORDER_NONE
+        style = wx.TR_DEFAULT_STYLE | wx.TR_HIDE_ROOT | wx.TR_EDIT_LABELS | wx.BORDER_NONE
         wx.TreeCtrl.__init__(self, parent, style=style)
         self.env = env
         self.toplevel = toplevel or MakeTopLevel()
