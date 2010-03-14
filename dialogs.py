@@ -1,5 +1,5 @@
-import wx
 import os
+import wx
 
 def message_dialog(parent, message, caption, style):
     if not caption:
@@ -16,18 +16,26 @@ def error(parent, message, caption="Error"):
 def info(parent, message, caption=""):
     message_dialog(parent, message, caption, wx.OK | wx.ICON_INFORMATION)
 
-def get_file_to_open(parent, wildcard="All Files|*.*", message="Open File", dirname=""):
-    dlg = wx.FileDialog(parent, wildcard=wildcard, message=message, defaultDir=dirname)
+def get_file_to_open(parent, wildcard="All Files|*.*", message="Open File", path=""):
+    dlg = wx.FileDialog(parent, wildcard=wildcard, message=message, defaultDir=path)
     try:
         if dlg.ShowModal() == wx.ID_OK:
             return dlg.GetPath()
     finally:
         dlg.Destroy()
 
-def get_file_to_save(parent, wildcard="All Files|*.*", message="Save File", dirname=""):
+def get_file_to_save(parent, wildcard="All Files|*.*", message="Save File", path=""):
     dlg = wx.FileDialog(parent,
-        wildcard=wildcard, message=message, defaultDir=dirname,
+        wildcard=wildcard, message=message, defaultDir=path,
         style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
+    try:
+        if dlg.ShowModal() == wx.ID_OK:
+            return dlg.GetPath()
+    finally:
+        dlg.Destroy()
+
+def get_directory(parent, message="Select Folder", path=""):
+    dlg = wx.DirDialog(parent, message=message, defaultPath=path)
     try:
         if dlg.ShowModal() == wx.ID_OK:
             return dlg.GetPath()
