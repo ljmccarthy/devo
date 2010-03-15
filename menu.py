@@ -11,13 +11,21 @@ class MenuItem(object):
         self.accel = accel
         self.kind = kind
 
-    def Build(self, menu):
+    def Build(self, menu, hooks):
         text = "%s\t%s" % (self.label, self.accel) if self.accel else self.label
         menu.Append(self.id, text, kind=self.kind)
 
 class MenuSeparator(object):
-    def Build(self, menu):
+    def Build(self, menu, hooks):
         menu.AppendSeparator()
+
+class MenuHook(object):
+    def __init__(self, id):
+        self.id = id
+
+    def Build(self, menu, hooks):
+        for item in hooks.get(self.id, []):
+            item.Build(menu, hooks)
 
 MenuSeparator = MenuSeparator()
 
@@ -26,21 +34,21 @@ class Menu(object):
         self.label = label
         self.items = items
 
-    def Build(self, menu):
+    def Build(self, menu, hooks):
         menu.AppendSubMenu(self.Create(), self.label)
 
-    def Create(self):
+    def Create(self, **hooks):
         menu = wx.Menu()
         for item in self.items:
-            item.Build(menu)
+            item.Build(menu, hooks)
         return menu
 
 class MenuBar(object):
     def __init__(self, menus):
         self.menus = menus
 
-    def Create(self):
+    def Create(self, **hooks):
         menubar = wx.MenuBar()
         for menu in self.menus:
-            menubar.Append(menu.Create(), menu.label)
+            menubar.Append(menu.Create(**hooks), menu.label)
         return menubar
