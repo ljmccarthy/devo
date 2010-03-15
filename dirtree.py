@@ -84,7 +84,7 @@ class SimpleNode(object):
         self.populated = False
         self.item = None
 
-    def expand(self, tree, monitor):
+    def expand(self, tree, monitor, filter):
         tree.SetItemImage(self.item, IM_FOLDER)
         for node in self.children:
             item = tree.AppendItem(self.item, node.label, IM_FOLDER)
@@ -103,7 +103,7 @@ class FSNode(object):
         self.label = label or os.path.basename(path) or path
 
     @coroutine
-    def expand(self, tree, monitor):
+    def expand(self, tree, monitor, filter):
         if not self.populated:
             self.populated = True
             files = []
@@ -111,12 +111,16 @@ class FSNode(object):
             expanded = tree.IsExpanded(self.item)
             for filename in sorted((yield async_call(os.listdir, self.path)),
                                    key=lambda x: x.lower()):
+                if not filter.filter_by_name(filename):
+                    continue
                 path = os.path.join(self.path, filename)
                 try:
                     st = (yield async_call(os.stat, path))
                 except OSError:
                     pass
                 else:
+                    if not filter.filter_by_stat(st):
+                        continue
                     if stat.S_ISREG(st.st_mode):
                         files.append((filename, path))
                     elif stat.S_ISDIR(st.st_mode):
@@ -168,6 +172,19 @@ class FSNode(object):
         elif self.type == 'd':
             return dir_context_menu
 
+class DirTreeFilter(object):
+    def __init__(self, show_hidden=False, show_files=True, show_dirs=True):
+        self.show_hidden = show_hidden
+        self.show_files = show_files
+        self.show_dirs = show_dirs
+
+    def filter_by_name(self, name):
+        return self.show_hidden or not name.startswith(".")
+
+    def filter_by_stat(self, st):
+        return (self.show_dirs or not stat.S_ISDIR(st.st_mode)) \
+           and (self.show_files or not stat.S_ISREG(st.st_mode))
+
 def MakeTopLevel():
     if sys.platform == "win32":
         import win32api
@@ -181,11 +198,12 @@ def MakeTopLevel():
         return [FSNode("/", 'd')]
 
 class DirTreeCtrl(wx.TreeCtrl):
-    def __init__(self, parent, env, toplevel=None):
+    def __init__(self, parent, env, toplevel=None, filter=None):
         style = wx.TR_DEFAULT_STYLE | wx.TR_HIDE_ROOT | wx.TR_EDIT_LABELS | wx.BORDER_NONE
         wx.TreeCtrl.__init__(self, parent, style=style)
         self.env = env
         self.toplevel = toplevel or MakeTopLevel()
+        self.filter = filter or DirTreeFilter()
         self.cq_populate = CoroutineQueue()
         self.cm = CoroutineManager()
         self.monitor = fsmonitor.FSMonitorThread(self._OnFileSystemChanged)
@@ -327,7 +345,7 @@ class DirTreeCtrl(wx.TreeCtrl):
     @managed("cm")
     @queued_coroutine("cq_populate")
     def ExpandNode(self, node):
-        yield node.expand(self, self.monitor)
+        yield node.expand(self, self.monitor, self.filter)
         self.Expand(node.item)
 
     def CollapseNode(self, node):
