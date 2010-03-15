@@ -1,5 +1,6 @@
 import sys, os, traceback, wx
 from functools import wraps
+from wx.lib.agw import aui
 from wx.lib.utils import AdjustRectToScreen
 
 import dialogs
@@ -8,6 +9,8 @@ from dirtree import DirTreeCtrl
 from editor import Editor
 from menu_defs import *
 from util import frozen_window, is_text_file
+
+from new_project_dialog import NewProjectDialog
 
 class AppEnv(object):
     def __init__(self, mainframe):
@@ -48,21 +51,21 @@ class MainFrame(wx.Frame):
         self.hidden = wx.Frame(self)
         self.env = AppEnv(self)
 
-        self.manager = wx.aui.AuiManager(self)
-        nbstyle = (wx.aui.AUI_NB_CLOSE_ON_ALL_TABS  | wx.aui.AUI_NB_TOP | wx.aui.AUI_NB_TAB_SPLIT
-                  | wx.aui.AUI_NB_TAB_MOVE | wx.aui.AUI_NB_SCROLL_BUTTONS | wx.BORDER_NONE)
-        self.notebook = wx.aui.AuiNotebook(self, style=nbstyle)
+        self.manager = aui.AuiManager(self)
+        nbstyle = (aui.AUI_NB_CLOSE_ON_ALL_TABS  | aui.AUI_NB_TOP | aui.AUI_NB_TAB_SPLIT
+                  | aui.AUI_NB_TAB_MOVE | aui.AUI_NB_SCROLL_BUTTONS | wx.BORDER_NONE)
+        self.notebook = aui.AuiNotebook(self, style=nbstyle)
         self.tree = DirTreeCtrl(self, self.env)
 
         self.manager.AddPane(self.tree,
-            wx.aui.AuiPaneInfo().Left().BestSize(wx.Size(200, -1)).CaptionVisible(False))
+            aui.AuiPaneInfo().Left().BestSize(wx.Size(200, -1)).CaptionVisible(False))
         self.manager.AddPane(self.notebook,
-            wx.aui.AuiPaneInfo().CentrePane())
+            aui.AuiPaneInfo().CentrePane())
         self.manager.Update()
 
         self.Bind(wx.EVT_CLOSE, self.OnClose)
-        self.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CLOSE, self.OnPageClose)
-        self.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnPageChanged)
+        self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CLOSE, self.OnPageClose)
+        self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnPageChanged)
 
         self.Bind(wx.EVT_MENU, self.OnNewFile, id=wx.ID_NEW)
         self.Bind(wx.EVT_MENU, self.OnOpenFile, id=wx.ID_OPEN)
@@ -81,6 +84,8 @@ class MainFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.EditorAction("FindNext"), id=ID_FIND_NEXT)
         self.Bind(wx.EVT_MENU, self.EditorAction("GoToLine"), id=ID_GO_TO_LINE)
 
+        self.Bind(wx.EVT_MENU, self.OnNewProject, id=ID_NEW_PROJECT)
+
         self.Bind(wx.EVT_UPDATE_UI, self.EditorUpdateUI("GetModify"), id=wx.ID_SAVE)
         self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_HasEditor, id=wx.ID_SAVEAS)
         self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_HasEditor, id=wx.ID_CLOSE)
@@ -94,17 +99,26 @@ class MainFrame(wx.Frame):
         self.Bind(wx.EVT_UPDATE_UI, self.EditorUpdateUI("CanFindNext"), id=ID_FIND_NEXT)
         self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_HasEditor, id=ID_GO_TO_LINE)
 
-    @coroutine
     def OnClose(self, evt):
-        for i in xrange(self.notebook.GetPageCount()-1, -1, -1):
+        self.CloseSession(shutdown=True)
+
+    @coroutine
+    def CloseSession(self, shutdown=False):
+        for i in xrange(self.notebook.GetPageCount()):
             editor = self.notebook.GetPage(i)
             try:
                 if not (yield editor.TryClose()):
-                    return
+                    yield False
             except Exception:
                 sys.stderr.write(traceback.format_exc())
                 return
-        self.Destroy()
+        if shutdown:
+            self.Destroy()
+        else:
+            with frozen_window(self):
+                for i in xrange(self.notebook.GetPageCount()-1, -1, -1):
+                    self.notebook.DeletePage(i)
+        yield True
 
     def OnPageClose(self, evt):
         evt.Veto()
@@ -180,6 +194,13 @@ class MainFrame(wx.Frame):
     @with_current_editor
     def OnCloseFile(self, editor, evt):
         self.ClosePage(editor)
+
+    def OnNewProject(self, evt):
+        dlg = NewProjectDialog(self)
+        try:
+            dlg.ShowModal()
+        finally:
+            dlg.Destroy()
 
     def EditorAction(self, method):
         def handler(evt):
