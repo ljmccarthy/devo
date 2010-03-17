@@ -48,7 +48,6 @@ class MainFrame(wx.Frame):
         self.SetMenuBar(menubar.Create())
 
         self.editors = []
-        self.hidden = wx.Frame(self)
         self.env = AppEnv(self)
 
         self.manager = aui.AuiManager(self)
@@ -135,8 +134,7 @@ class MainFrame(wx.Frame):
     def AddPage(self, win):
         self.editors.append(win)
         i = self.notebook.GetSelection() + 1
-        self.notebook.InsertPage(i, win, win.title)
-        self.notebook.SetSelection(i)
+        self.notebook.InsertPage(i, win, win.title, select=True)
         win.sig_title_changed.bind(self.OnPageTitleChanged)
         win.SetFocus()
 
@@ -150,7 +148,7 @@ class MainFrame(wx.Frame):
             self.notebook.SetPageText(i, win.title)
 
     def NewEditor(self):
-        editor = Editor(self.hidden, self.env)
+        editor = Editor(self.notebook, self.env)      
         with frozen_window(self.notebook):
             self.AddPage(editor)
 
@@ -173,7 +171,7 @@ class MainFrame(wx.Frame):
             if i != wx.NOT_FOUND:
                 self.notebook.SetSelection(i)
         else:
-            editor = Editor(self.hidden, self.env, realpath)
+            editor = Editor(self.notebook, self.env, realpath)
             try:
                 yield editor.LoadFile(realpath)
             except Exception, exn:
