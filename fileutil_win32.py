@@ -1,3 +1,4 @@
+import os
 import win32api, win32con, win32file, pywintypes
 
 # os.rename is broken on windows
@@ -10,7 +11,14 @@ def rename(old, new):
 def shell_open(path):
     return win32api.ShellExecute(None, "open", path, None, None, win32con.SW_SHOW) > 32
 
+def get_user_config_dir(name=""):
+    path = os.environ["APPDATA"]
+    if name:
+        path = os.path.join(path, name)
+    return path
+
 __all__ = (
     "rename",
     "shell_open",
+    "get_user_config_dir",
 )
