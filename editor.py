@@ -16,7 +16,11 @@ else:
 
 class Editor(wx.stc.StyledTextCtrl):
     def __init__(self, parent, env, path=""):
-        wx.stc.StyledTextCtrl.__init__(self, parent, style=wx.BORDER_NONE)
+        pre = wx.stc.PreStyledTextCtrl()
+        pre.Hide()
+        pre.Create(parent, size=wx.Size(1, 1), style=wx.BORDER_NONE)
+        self.PostCreate(pre)
+
         self.env = env
         self.path = path
         self.find_details = None
