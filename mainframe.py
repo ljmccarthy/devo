@@ -1,16 +1,18 @@
-import sys, os, traceback, wx
+import sys, os, traceback, wx, cPickle as pickle
 from functools import wraps
 from wx.lib.agw import aui
 from wx.lib.utils import AdjustRectToScreen
 
-import dialogs
-from async_wx import async_call, coroutine
+import dialogs, fileutil
+from async_wx import async_call, coroutine, managed, CoroutineManager
 from dirtree import DirTreeCtrl
 from editor import Editor
 from menu_defs import *
 from util import frozen_window, is_text_file
 
 from new_project_dialog import NewProjectDialog
+
+session_file = os.path.join(fileutil.get_user_config_dir(), ".devo.session")
 
 class AppEnv(object):
     def __init__(self, mainframe):
@@ -47,6 +49,7 @@ class MainFrame(wx.Frame):
         wx.Frame.__init__(self, None, title="Devo", pos=pos, size=size)
         self.SetMenuBar(menubar.Create())
 
+        self.cm = CoroutineManager()
         self.editors = []
         self.env = AppEnv(self)
 
@@ -61,6 +64,8 @@ class MainFrame(wx.Frame):
         self.manager.AddPane(self.notebook,
             aui.AuiPaneInfo().CentrePane())
         self.manager.Update()
+
+        self.LoadSession()
 
         self.Bind(wx.EVT_CLOSE, self.OnClose)
         self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CLOSE, self.OnPageClose)
@@ -99,8 +104,59 @@ class MainFrame(wx.Frame):
         self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_HasEditor, id=ID_GO_TO_LINE)
 
     def OnClose(self, evt):
-        self.CloseSession(shutdown=True)
+        self.DoClose()
 
+    @managed("cm")
+    @coroutine
+    def DoClose(self):
+        if (yield self.SaveSession()):
+            self.Destroy()
+
+    @managed("cm")
+    @coroutine
+    def SaveSession(self):
+        try:
+            session = {}
+            session["editors"] = editors = []
+            session["dirtree"] = self.tree.SavePerspective()
+            if self.notebook.GetPageCount() > 0:
+                session["selection"] = self.notebook.GetSelection()
+            for i in xrange(self.notebook.GetPageCount()):
+                editor = self.notebook.GetPage(i)
+                if editor.path and editor.changed:
+                    if not (yield editor.TryClose()):
+                        yield False
+                editors.append(editor.SavePerspective())
+            data = pickle.dumps(session, pickle.HIGHEST_PROTOCOL)
+            yield async_call(fileutil.atomic_write_file, session_file, data)
+            yield True
+        except Exception, e:
+            dialogs.error(self, "Error saving session:\n\n%s" % e)
+            yield False
+
+    @managed("cm")
+    @coroutine
+    def LoadSession(self):
+        try:
+            with (yield async_call(open, session_file, "rb")) as f:
+                session = pickle.loads((yield async_call(f.read)))
+            for p in session.get("editors", ()):
+                editor = self.NewEditor()
+                yield editor.LoadPerspective(p)
+            if "dirtree" in session:
+                self.tree.LoadPerspective(session["dirtree"])
+            if "selection" in session:
+                selection = session["selection"]
+                if 0 <= selection < self.notebook.GetPageCount():
+                    self.notebook.SetSelection(selection)
+                    self.notebook.GetPage(selection).SetFocus()
+        except (IOError, OSError):
+            pass
+        except Exception, e:
+            dialogs.error(self, "Error loading session:\n\n%s" % e)
+        self.Show()
+
+    @managed("cm")
     @coroutine
     def CloseSession(self, shutdown=False):
         for i in xrange(self.notebook.GetPageCount()):
@@ -108,9 +164,9 @@ class MainFrame(wx.Frame):
             try:
                 if not (yield editor.TryClose()):
                     yield False
-            except Exception:
-                sys.stderr.write(traceback.format_exc())
-                return
+            except Exception, e:
+                dialogs.error(self, str(e))
+                yield False
         if shutdown:
             self.Destroy()
         else:
@@ -124,6 +180,7 @@ class MainFrame(wx.Frame):
         editor = self.notebook.GetPage(evt.GetSelection())
         self.ClosePage(editor)
 
+    @managed("cm")
     @coroutine
     def ClosePage(self, editor):
         if (yield editor.TryClose()):
@@ -151,6 +208,7 @@ class MainFrame(wx.Frame):
         editor = Editor(self.notebook, self.env)      
         with frozen_window(self.notebook):
             self.AddPage(editor)
+        return editor
 
     def FindEditor(self, path):
         for editor in self.editors:
@@ -162,6 +220,7 @@ class MainFrame(wx.Frame):
         if sel != wx.NOT_FOUND:
             return self.notebook.GetPage(sel)
 
+    @managed("cm")
     @coroutine
     def OpenEditor(self, path):
         realpath = os.path.realpath(path)
@@ -174,8 +233,8 @@ class MainFrame(wx.Frame):
             editor = Editor(self.notebook, self.env, realpath)
             try:
                 yield editor.LoadFile(realpath)
-            except Exception, exn:
-                dialogs.error(self, "Error opening file:\n\n%s" % exn)
+            except Exception, e:
+                dialogs.error(self, "Error opening file:\n\n%s" % e)
                 editor.Destroy()
             else:
                 with frozen_window(self.notebook):

@@ -203,3 +203,25 @@ class Editor(wx.stc.StyledTextCtrl):
                 self.GotoLine(dlg.GetLineNumber())
         finally:
             dlg.Destroy()
+
+    def SavePerspective(self):
+        p = {
+            "line"      : self.GetFirstVisibleLine(),
+            "selection" : self.GetSelection(),
+        }
+        if self.path:
+            p["path"] = self.path
+        elif self.changed:
+            p["text"] = self.GetText()
+        return p
+
+    @coroutine
+    def LoadPerspective(self, p):
+        if "text" in p:
+            self.SetSavePoint()
+            self.EmptyUndoBuffer()
+            self.SetText(p["text"])
+        elif "path" in p:
+            yield self.LoadFile(p["path"])
+        self.ScrollToLine(p.get("line", 0))
+        self.SetSelection(*p.get("selection", (0, 0)))

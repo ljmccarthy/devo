@@ -204,6 +204,7 @@ class DirTreeCtrl(wx.TreeCtrl):
         self.env = env
         self.toplevel = toplevel or MakeTopLevel()
         self.filter = filter or DirTreeFilter()
+        self.cq_init = CoroutineQueue()
         self.cq_populate = CoroutineQueue()
         self.cm = CoroutineManager()
         self.monitor = fsmonitor.FSMonitorThread(self._OnFileSystemChanged)
@@ -392,7 +393,7 @@ class DirTreeCtrl(wx.TreeCtrl):
             dialogs.error(self, str(e))
 
     @managed("cm")
-    @coroutine
+    @queued_coroutine("cq_init")
     def InitializeTree(self):
         self.DeleteAllItems()
         rootitem = self.AddRoot("")
@@ -413,3 +414,49 @@ class DirTreeCtrl(wx.TreeCtrl):
                 yield self.ExpandNode(node)
             except OSError:
                 self.SetItemImage(item, IM_FOLDER_DENIED)
+
+    def FindExpandedNodes(self, item, nodes):
+        if self.IsExpanded(item):
+            node = self.GetPyData(item)
+            if node.type == 'd':
+                nodes.append(node)
+                for child_item in iter_tree_children(self, item):
+                    self.FindExpandedNodes(child_item, nodes)
+
+    def SavePerspective(self):
+        p = {}
+        expanded = []
+        self.FindExpandedNodes(self.GetRootItem(), expanded)
+        if expanded:
+            p["expanded"] = [node.path for node in expanded]
+        selected = self.GetSelectedNode()
+        if selected and selected.type in 'fd':
+            p["selected"] = selected.path
+        return p
+
+    @managed("cm")
+    @coroutine
+    def ExpandPathNodes(self, item, paths):
+        node = self.GetPyData(item)
+        if node.type == 'd':
+            if node.path in paths:
+                yield self.ExpandNode(node)
+                for child_item in iter_tree_children(self, item):
+                    yield self.ExpandPathNodes(child_item, paths)
+
+    def SelectNodeByPath(self, item, path):
+        node = self.GetPyData(item)
+        if node.path == path:
+            self.SelectItem(node.item)
+        elif node.type == 'd':
+            for child_item in iter_tree_children(self, item):
+                self.SelectNodeByPath(child_item, path)
+
+    @managed("cm")
+    @queued_coroutine("cq_init")
+    def LoadPerspective(self, p):
+        expanded = set(p.get("expanded", ()))
+        if expanded:
+            yield self.ExpandPathNodes(self.GetRootItem(), expanded)
+        if "selected" in p:
+            self.SelectNodeByPath(self.GetRootItem(), p["selected"])

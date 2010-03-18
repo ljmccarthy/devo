@@ -9,7 +9,6 @@ def main():
     app.SetAppName("Devo")
     from mainframe import MainFrame
     mainframe = MainFrame()
-    mainframe.Show()
     app.SetTopWindow(mainframe)
     app.MainLoop()
 
