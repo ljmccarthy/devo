@@ -50,7 +50,6 @@ class MainFrame(wx.Frame):
         self.SetMenuBar(menubar.Create())
 
         self.cm = CoroutineManager()
-        self.editors = []
         self.env = AppEnv(self)
 
         self.manager = aui.AuiManager(self)
@@ -105,6 +104,11 @@ class MainFrame(wx.Frame):
         self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_HasEditor, id=ID_GO_TO_LINE)
         self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_HasEditor, id=ID_UNINDENT)
 
+    @property
+    def editors(self):
+        for i in xrange(self.notebook.GetPageCount()):
+            yield self.notebook.GetPage(i)
+
     def OnClose(self, evt):
         self.DoClose()
 
@@ -119,13 +123,12 @@ class MainFrame(wx.Frame):
     def SaveSession(self):
         try:
             session = {}
-            session["editors"] = editors = []
-            session["notebook"] = self.notebook.SavePerspective()
             session["dirtree"] = self.tree.SavePerspective()
             if self.notebook.GetPageCount() > 0:
+                session["notebook"] = self.notebook.SavePerspective()
+                session["editors"] = editors = []
                 session["selection"] = self.notebook.GetSelection()
-            for i in xrange(self.notebook.GetPageCount()):
-                editor = self.notebook.GetPage(i)
+            for editor in self.editors:
                 if editor.path and editor.changed:
                     if not (yield editor.TryClose()):
                         yield False
@@ -143,11 +146,12 @@ class MainFrame(wx.Frame):
         try:
             with (yield async_call(open, session_file, "rb")) as f:
                 session = pickle.loads((yield async_call(f.read)))
-            for p in session.get("editors", ()):
-                editor = self.NewEditor()
-                yield editor.LoadPerspective(p)
-            if "notebook" in session:
-                self.notebook.LoadPerspective(session["notebook"])
+            if "editors" in session:
+                for p in session["editors"]:
+                    editor = self.NewEditor()
+                    yield editor.LoadPerspective(p)
+                if "notebook" in session and session["editors"]:
+                    self.notebook.LoadPerspective(session["notebook"])
             if "dirtree" in session:
                 self.tree.LoadPerspective(session["dirtree"])
             if "selection" in session:
@@ -158,14 +162,13 @@ class MainFrame(wx.Frame):
         except (IOError, OSError):
             pass
         except Exception, e:
-            dialogs.error(self, "Error loading session:\n\n%s" % e)
+            dialogs.error(self, "Error loading session:\n\n%s" % traceback.format_exc())
         self.Show()
 
     @managed("cm")
     @coroutine
     def CloseSession(self, shutdown=False):
-        for i in xrange(self.notebook.GetPageCount()):
-            editor = self.notebook.GetPage(i)
+        for editor in self.editors:
             try:
                 if not (yield editor.TryClose()):
                     yield False
@@ -189,12 +192,10 @@ class MainFrame(wx.Frame):
     @coroutine
     def ClosePage(self, editor):
         if (yield editor.TryClose()):
-            self.editors.remove(editor)
             with frozen_window(self.notebook):
                 self.notebook.DeletePage(self.notebook.GetPageIndex(editor))
 
     def AddPage(self, win):
-        self.editors.append(win)
         i = self.notebook.GetSelection() + 1
         self.notebook.InsertPage(i, win, win.title, select=True)
         win.sig_title_changed.bind(self.OnPageTitleChanged)
