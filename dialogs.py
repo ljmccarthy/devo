@@ -1,6 +1,8 @@
 import os
 import wx
 
+from dirdialog import DirDialog
+
 def message_dialog(parent, message, caption, style):
     if not caption:
         caption = wx.GetApp().GetAppName()
@@ -35,7 +37,7 @@ def get_file_to_save(parent, wildcard="All Files|*.*", message="Save File", path
         dlg.Destroy()
 
 def get_directory(parent, message="Select Folder", path=""):
-    dlg = wx.DirDialog(parent, message=message, defaultPath=path)
+    dlg = DirDialog(parent, message=message, path=path)
     try:
         if dlg.ShowModal() == wx.ID_OK:
             return dlg.GetPath()
@@ -106,7 +108,7 @@ class TextInputDialog(wx.Dialog):
         btnsizer.AddButton(btn_ok)
         btnsizer.AddButton(wx.Button(self, wx.ID_CANCEL))
         btnsizer.Realize()
-        sizer.Add(btnsizer, 0, wx.ALIGN_RIGHT | wx.LEFT | wx.RIGHT | wx.BOTTOM, 5)
+        sizer.Add(btnsizer, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 5)
         self.SetSizer(sizer)
         self.Fit()
         self.SetMinSize(self.GetSize())
