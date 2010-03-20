@@ -154,19 +154,26 @@ class Editor(wx.stc.StyledTextCtrl):
         else:
             yield (yield self.SaveAs())
 
+    def OnReturnKeyDown(self, evt):
+        start, end = self.GetSelection()
+        if start == end:
+            indent = self.GetLineIndentation(self.GetCurrentLine())
+            pos = self.GetCurrentPos()
+            if self.GetUseTabs():
+                indent //= self.GetTabWidth()
+                self.InsertText(pos, "\n" + "\t" * indent)
+            else:
+                self.InsertText(pos, "\n" + " " * indent)
+            self.GotoPos(pos + indent + 1)
+        else:
+            evt.Skip()
+
     def OnKeyDown(self, evt):
         key = evt.GetKeyCode()
         mod = evt.GetModifiers()
         if mod == wx.MOD_NONE:
             if key in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER):
-                indent = self.GetLineIndentation(self.GetCurrentLine())
-                pos = self.GetCurrentPos()
-                if self.GetUseTabs():
-                    indent //= self.GetTabWidth()
-                    self.InsertText(pos, "\n" + "\t" * indent)
-                else:
-                    self.InsertText(pos, "\n" + " " * indent)
-                self.GotoPos(pos + indent + 1)
+                self.OnReturnKeyDown(evt)
             else:
                 evt.Skip()
         else:
