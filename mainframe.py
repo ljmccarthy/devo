@@ -87,6 +87,7 @@ class MainFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.EditorAction("Find"), id=wx.ID_FIND)
         self.Bind(wx.EVT_MENU, self.EditorAction("FindNext"), id=ID_FIND_NEXT)
         self.Bind(wx.EVT_MENU, self.EditorAction("GoToLine"), id=ID_GO_TO_LINE)
+        self.Bind(wx.EVT_MENU, self.EditorAction("Unindent"), id=ID_UNINDENT)
 
         self.Bind(wx.EVT_MENU, self.OnNewProject, id=ID_NEW_PROJECT)
 
@@ -102,6 +103,7 @@ class MainFrame(wx.Frame):
         self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_HasEditor, id=wx.ID_FIND)
         self.Bind(wx.EVT_UPDATE_UI, self.EditorUpdateUI("CanFindNext"), id=ID_FIND_NEXT)
         self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_HasEditor, id=ID_GO_TO_LINE)
+        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_HasEditor, id=ID_UNINDENT)
 
     def OnClose(self, evt):
         self.DoClose()

@@ -204,6 +204,14 @@ class Editor(wx.stc.StyledTextCtrl):
         finally:
             dlg.Destroy()
 
+    def Unindent(self):
+        start, end = self.GetSelection()
+        self.BeginUndoAction()
+        for line in xrange(self.LineFromPosition(start), self.LineFromPosition(end) + 1):
+            indent = self.GetLineIndentation(line)
+            self.SetLineIndentation(line, indent - self.GetIndent())
+        self.EndUndoAction()
+
     def SavePerspective(self):
         p = {
             "line"      : self.GetFirstVisibleLine(),
