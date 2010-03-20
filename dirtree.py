@@ -63,17 +63,6 @@ def dirtree_delete(tree, parent_item, text):
             tree.Delete(item)
             break
 
-def get_file_type_and_image(path):
-    try:
-        st = os.stat(path)
-        if stat.S_ISREG(st.st_mode):
-            return 'f', IM_FILE
-        elif stat.S_ISDIR(st.st_mode):
-            return 'd', IM_FOLDER
-    except OSError:
-        pass
-    return None, None
-
 class SimpleNode(object):
     type = 'd'
     path = ""
@@ -153,17 +142,27 @@ class FSNode(object):
         #self.populated = False
 
     @coroutine
-    def add(self, name, tree, monitor):
-        if self.populated:
+    def add(self, name, tree, monitor, filter):
+        if self.populated and filter.filter_by_name(name):
             path = os.path.join(self.path, name)
-            type, image = (yield async_call(get_file_type_and_image, path))
-            if type:
+            try:
+                st = os.stat(path)
+                if not filter.filter_by_stat(st):
+                    return
+                if stat.S_ISREG(st.st_mode):
+                    type = 'f'
+                    image = IM_FILE
+                elif stat.S_ISDIR(st.st_mode):
+                    type = 'd'
+                    image = IM_FOLDER
                 item = dirtree_insert(tree, self.item, name, image)
                 node = FSNode(path, type)
                 tree.SetItemNode(item, node)
                 if type == 'd':
                     tree.SetItemHasChildren(item, True)
                 yield item
+            except OSError:
+                pass
 
     def remove(self, name, tree, monitor):
         if self.populated:
@@ -268,7 +267,7 @@ class DirTreeCtrl(wx.TreeCtrl):
         with frozen_window(self):
             for evt in evts:
                 if evt.action in (fsmonitor.FSEVT_CREATE, fsmonitor.FSEVT_MOVE_TO):
-                    item = (yield evt.userobj.add(evt.name, self, self.monitor))
+                    item = (yield evt.userobj.add(evt.name, self, self.monitor, self.filter))
                     if item:
                         if evt.name == self.select_later_name \
                         and self.GetItemParent(item) == self.select_later_parent:
@@ -379,7 +378,7 @@ class DirTreeCtrl(wx.TreeCtrl):
     @queued_coroutine("cq_populate")
     def ExpandNode(self, node):
         f = node.expand(self, self.monitor, self.filter)
-        if f:
+        if isinstance(f, Future):
             yield f
         self.Expand(node.item)
 
