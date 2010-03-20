@@ -16,6 +16,12 @@ class WxScheduler(async.Scheduler):
 scheduler = WxScheduler()
 async_call = scheduler.async_call
 
+def async_function(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        return async_call(func, *args, **kwargs)
+    return wrapper
+
 def coroutine(func):
     return async.coroutine(scheduler, func)
 
