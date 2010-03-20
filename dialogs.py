@@ -37,7 +37,7 @@ def get_file_to_save(parent, wildcard="All Files|*.*", message="Save File", path
         dlg.Destroy()
 
 def get_directory(parent, message="Select Folder", path=""):
-    dlg = DirDialog(parent, message=message, path=path)
+    dlg = DirDialog(parent, message=message, select_path=path)
     try:
         if dlg.ShowModal() == wx.ID_OK:
             return dlg.GetPath()

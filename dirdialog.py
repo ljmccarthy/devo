@@ -4,7 +4,7 @@ import wx
 from dirtree import DirTreeCtrl, DirTreeFilter, DirNode
 
 class DirDialog(wx.Dialog):
-    def __init__(self, parent, size=wx.DefaultSize, message="", path=""):
+    def __init__(self, parent, size=wx.DefaultSize, message="", path="", select_path=""):
         style = wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
         if size == wx.DefaultSize:
             size = wx.Size(450, 600)
@@ -13,6 +13,8 @@ class DirDialog(wx.Dialog):
         filter = DirTreeFilter(show_files=False)
         self.dirtree = DirTreeCtrl(self, self,
             toplevel=toplevel, filter=filter, show_root=True)
+        if select_path:
+            self.dirtree.SelectPath(select_path)
         btnsizer = wx.StdDialogButtonSizer()
         btn_ok = wx.Button(self, wx.ID_OK)
         btn_ok.SetDefault()
@@ -23,6 +25,7 @@ class DirDialog(wx.Dialog):
         sizer.Add(self.dirtree, 1, wx.EXPAND)
         sizer.Add(btnsizer, 0, wx.EXPAND | wx.ALL, 5)
         self.SetSizer(sizer)
+        self.dirtree.SetFocus()
 
     def OpenFile(self, path):
         pass
