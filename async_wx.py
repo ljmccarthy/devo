@@ -51,7 +51,7 @@ class CoroutineQueue(object):
         self.__queue = []
 
     def run(self, func, args, kwargs):
-        co = async.CoroutineTask(scheduler, func(*args, **kwargs))
+        co = async.Coroutine(scheduler, func(*args, **kwargs))
         if self.__running is not None:
             self.__queue.append(co)
         else:

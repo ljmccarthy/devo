@@ -4,18 +4,18 @@ import threading
 import functools
 import types
 
-def call_task(task, func, args, kwargs):
+def call_task(future, func, args, kwargs):
     try:
         result = func(*args, **kwargs)
     except:
         exn = sys.exc_info()[1]
         tbstr = traceback.format_exc()
-        task.set_failed(exn, tbstr)
+        future.set_failed(exn, tbstr)
     else:
-        task.set_done(result)
+        future.set_done(result)
 
-def async_call_task(task, func, args, kwargs):
-    thread = threading.Thread(target=call_task, args=(task, func, args, kwargs))
+def async_call_task(future, func, args, kwargs):
+    thread = threading.Thread(target=call_task, args=(future, func, args, kwargs))
     thread.daemon = True
     thread.start()
 
@@ -27,22 +27,22 @@ class Scheduler(object):
         self.do_call(func, args, kwargs)
 
     def async_call(self, func, *args, **kwargs):
-        task = Task(self)
-        async_call_task(task, func, args, kwargs)
-        return task
+        future = Future(self)
+        async_call_task(future, func, args, kwargs)
+        return future
 
 WAITING, DONE, FAILED, CANCELLED = range(4)
 
-class TaskNotReady(Exception):
+class FutureNotReady(Exception):
     pass
 
-class TaskAlreadySet(Exception):
+class FutureAlreadySet(Exception):
     pass
 
-class TaskCancelled(Exception):
+class FutureCancelled(Exception):
     pass
 
-class Task(object):
+class Future(object):
     def __init__(self, scheduler):
         self.scheduler = scheduler
         self.__on_success = []
@@ -58,7 +58,7 @@ class Task(object):
             if self.__status == CANCELLED:
                 return
             if self.__status != WAITING:
-                raise TaskAlreadySet()
+                raise FutureAlreadySet()
             self.__result = result
             self.__status = DONE
             self.__cond.notify_all()
@@ -70,7 +70,7 @@ class Task(object):
             if self.__status == CANCELLED:
                 return
             if self.__status != WAITING:
-                raise TaskAlreadySet()
+                raise FutureAlreadySet()
             self.__result = exn
             self.__traceback = traceback
             self.__status = FAILED
@@ -87,7 +87,7 @@ class Task(object):
             elif self.__status == FAILED:
                 raise self.__result
             elif self.__status == CANCELLED:
-                raise TaskCancelled()
+                raise FutureCancelled()
 
     @property
     def ready(self):
@@ -96,9 +96,9 @@ class Task(object):
 
     def __check_ready(self):
         if self.__status == WAITING:
-            raise TaskNotReady()
+            raise FutureNotReady()
         if self.__status == CANCELLED:
-            raise TaskCancelled()
+            raise FutureCancelled()
 
     @property
     def failed(self):
@@ -137,11 +137,11 @@ class Task(object):
         for handler in self.__on_cleanup:
             self.scheduler.call(handler, self)
 
-class CoroutineTask(Task):
+class Coroutine(Future):
     def __init__(self, scheduler, gen):
-        Task.__init__(self, scheduler)
+        Future.__init__(self, scheduler)
         if not isinstance(gen, types.GeneratorType):
-            raise TypeError("CoroutineTask expected generator, got %s"
+            raise TypeError("Coroutine expected generator, got %s"
                             % gen.__class__.__name__)
         self.__gen = gen
         self.__cont = None
@@ -161,7 +161,7 @@ class CoroutineTask(Task):
         except Exception, exn:
             self.set_failed(exn, traceback.format_exc())
         else:
-            if isinstance(ret, Task):
+            if isinstance(ret, Future):
                 self.__cont = ret
                 ret.bind(self.__success_next, self.__failure_next)
             else:
@@ -174,7 +174,7 @@ class CoroutineTask(Task):
         self.__next(self.__gen.throw, exn)
 
     def cancel(self):
-        Task.cancel(self)
+        Future.cancel(self)
         if self.__cont is not None:
             self.__cont.cancel()
             self.__cont = None
@@ -182,7 +182,7 @@ class CoroutineTask(Task):
 def coroutine(scheduler, func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        co = CoroutineTask(scheduler, func(*args, **kwargs))
+        co = Coroutine(scheduler, func(*args, **kwargs))
         co.start()
         return co
     return wrapper
