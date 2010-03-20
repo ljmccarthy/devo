@@ -56,14 +56,14 @@ class CoroutineQueue(object):
             self.__queue.append(co)
         else:
             self.__running = weakref.ref(co)
-            co.bind(cleanup=self.__next)
+            co.bind(success=self.__next, failure=self.__next, cancelled=self.__next)
             co.start()
         return co
 
-    def __next(self, f):
+    def __next(self, *args):
         if self.__queue:
             co = self.__queue.pop()
-            co.bind(cleanup=self.__next)
+            co.bind(success=self.__next, failure=self.__next, cancelled=self.__next)
             co.start()
         else:
             self.__running = None
@@ -80,9 +80,10 @@ class CoroutineManager(object):
         self.__futures = set()
 
     def add(self, future):
-        ref = weakref.ref(future)
-        self.__futures.add(ref)
-        future.bind(cleanup=lambda f: self.__futures.discard(ref))
+        self.__futures.add(weakref.ref(future, self.__discard))
+
+    def __discard(self, ref):
+        self.__futures.discard(ref)
 
     def cancel(self):
         for ref in self.__futures:

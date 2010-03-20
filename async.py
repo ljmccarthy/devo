@@ -48,7 +48,6 @@ class Future(object):
         self.__on_success = []
         self.__on_failure = []
         self.__on_cancelled = []
-        self.__on_cleanup = []
         self.__status = WAITING
         self.__result = None
         self.__traceback = ""
@@ -115,7 +114,7 @@ class Future(object):
             self.__check_ready()
             return self.__result
 
-    def bind(self, success=None, failure=None, cancelled=None, cleanup=None):
+    def bind(self, success=None, failure=None, cancelled=None):
         with self.__cond:
             if success is not None:
                 self.__on_success.append(success)
@@ -129,8 +128,6 @@ class Future(object):
                 self.__on_cancelled.append(cancelled)
                 if self.__status == CANCELLED:
                     self.scheduler.call(cancelled, self)
-            if cleanup is not None:
-                self.__on_cleanup.append(cleanup)
 
     def cancel(self):
         with self.__cond:
@@ -142,8 +139,6 @@ class Future(object):
     def __del__(self):
         if self.__status == FAILED and not self.__on_failure:
             print self.__traceback
-        for handler in self.__on_cleanup:
-            self.scheduler.call(handler, self)
 
 class Coroutine(Future):
     def __init__(self, scheduler, gen):
