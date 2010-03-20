@@ -160,6 +160,7 @@ class FSNode(object):
                 tree.SetItemNode(item, node)
                 if type == 'd':
                     tree.SetItemHasChildren(item, True)
+                tree.SetItemHasChildren(self.item, True)
                 yield item
             except OSError:
                 pass
