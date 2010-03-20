@@ -6,7 +6,7 @@ import dialogs, fileutil
 from async import Future
 from async_wx import async_call, coroutine, queued_coroutine, managed, CoroutineQueue, CoroutineManager
 from menu import Menu, MenuItem, MenuSeparator
-from util import iter_tree_children, frozen_window
+from util import iter_tree_children, frozen_window, CallLater
 from resources import load_bitmap
 
 ID_EDIT = wx.NewId()
@@ -97,7 +97,7 @@ class SimpleNode(object):
 class FSNode(object):
     __slots__ = ("populated", "path", "type", "item", "watch", "label")
 
-    def __init__(self, path="", type="", label=""):
+    def __init__(self, path, type, label=""):
         self.populated = False
         self.path = path
         self.type = type
@@ -175,6 +175,9 @@ class FSNode(object):
         elif self.type == 'd':
             return dir_context_menu
 
+def DirNode(path):
+    return FSNode(path, 'd')
+
 class DirTreeFilter(object):
     def __init__(self, show_hidden=False, show_files=True, show_dirs=True):
         self.show_hidden = show_hidden
@@ -201,8 +204,10 @@ def MakeTopLevel():
         return [FSNode("/", 'd')]
 
 class DirTreeCtrl(wx.TreeCtrl):
-    def __init__(self, parent, env, toplevel=None, filter=None):
-        style = wx.TR_DEFAULT_STYLE | wx.TR_HIDE_ROOT | wx.TR_EDIT_LABELS | wx.BORDER_NONE
+    def __init__(self, parent, env, toplevel=None, filter=None, show_root=False):
+        style = wx.TR_DEFAULT_STYLE | wx.TR_EDIT_LABELS | wx.BORDER_NONE
+        if not show_root:
+            style |= wx.TR_HIDE_ROOT
         wx.TreeCtrl.__init__(self, parent, style=style)
         self.SetDoubleBuffered(True)
         self.env = env
@@ -240,11 +245,13 @@ class DirTreeCtrl(wx.TreeCtrl):
         self.cm.cancel()
 
     def _OnFileSystemChanged(self, evt):
+        if isinstance(self, wx._core._wxPyDeadObject):
+            return
         with self.fsevts_lock:
             called = bool(self.fsevts)
             self.fsevts.append(evt)
             if not called:
-                wx.CallAfter(lambda: wx.CallLater(100, self.OnFileSystemChanged))
+                CallLater(100, self.OnFileSystemChanged)
 
     def SelectLater(self, parent, name, timeout=1):
         self.select_later_parent = parent
@@ -309,34 +316,36 @@ class DirTreeCtrl(wx.TreeCtrl):
 
     def OnItemEdit(self, evt):
         node = self.GetSelectedNode()
-        if node.type == 'f':
+        if node and node.type == 'f':
             self.env.OpenFile(node.path)
 
     def OnItemOpen(self, evt):
         node = self.GetSelectedNode()
-        if node.type in 'fd':
+        if node.path:
             self._shell_open(node.path)
 
     def OnItemRename(self, evt):
         node = self.GetSelectedNode()
-        if node.type in 'fd':
+        if node and node.path:
             self.EditLabel(node.item)
 
     def OnItemDelete(self, evt):
         node = self.GetSelectedNode()
-        next_item = self.GetNextSibling(node.item)
-        if dialogs.ask_delete(self, node.path):
-            self._remove(node.path)
+        if node:
+            next_item = self.GetNextSibling(node.item)
+            if dialogs.ask_delete(self, node.path):
+                self._remove(node.path)
 
     def OnNewFolder(self, evt):
         node = self.GetSelectedNode()
-        if node.type != 'd':
-            node = self.GetPyData(self.GetItemParent(node.item))
-        name = dialogs.get_text_input(self,
-            "New Folder",
-            "Please enter new folder name:")
-        if name:
-            self.NewFolder(node, name)
+        if node:
+            if node.type != 'd':
+                node = self.GetPyData(self.GetItemParent(node.item))
+            name = dialogs.get_text_input(self,
+                "New Folder",
+                "Please enter new folder name:")
+            if name:
+                self.NewFolder(node, name)
 
     def SetItemNode(self, item, node):
         self.SetPyData(item, node)
@@ -352,6 +361,10 @@ class DirTreeCtrl(wx.TreeCtrl):
         item = self.GetSelection()
         if item.IsOk():
             return self.GetPyData(item)
+
+    def GetSelectedPath(self):
+        node = self.GetSelectedNode()
+        return node.path if node else ""
 
     # Workaround for Windows sillyness
     if wx.Platform == "__WXMSW__":
@@ -416,10 +429,11 @@ class DirTreeCtrl(wx.TreeCtrl):
     @queued_coroutine("cq_init")
     def InitializeTree(self):
         self.DeleteAllItems()
-        rootitem = self.AddRoot("")
         if len(self.toplevel) == 1:
+            rootitem = self.AddRoot(self.toplevel[0].label)
             rootnode = self.toplevel[0]
         else:
+            rootitem = self.AddRoot("")
             rootnode = SimpleNode("", self.toplevel)
         self.SetItemNode(rootitem, rootnode)
         yield self.ExpandNode(rootnode)
@@ -439,7 +453,7 @@ class DirTreeCtrl(wx.TreeCtrl):
         if expanded:
             p["expanded"] = [node.path for node in expanded if node.path]
         selected = self.GetSelectedNode()
-        if selected and selected.type in 'fd' and selected.path:
+        if selected and selected.path:
             p["selected"] = selected.path
         return p
 
