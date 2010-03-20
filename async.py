@@ -47,11 +47,16 @@ class Future(object):
         self.scheduler = scheduler
         self.__on_success = []
         self.__on_failure = []
+        self.__on_cancelled = []
         self.__on_cleanup = []
         self.__status = WAITING
         self.__result = None
         self.__traceback = ""
         self.__cond = threading.Condition()
+
+    def __call_handlers(self, handlers, *args):
+        for handler in handlers:
+            self.scheduler.call(handler, *args)
 
     def set_done(self, result):
         with self.__cond:
@@ -62,8 +67,7 @@ class Future(object):
             self.__result = result
             self.__status = DONE
             self.__cond.notify_all()
-            for handler in self.__on_success:
-                self.scheduler.call(handler, result)
+            self.__call_handlers(self.__on_success, result)
 
     def set_failed(self, exn, traceback=""):
         with self.__cond:
@@ -75,8 +79,7 @@ class Future(object):
             self.__traceback = traceback
             self.__status = FAILED
             self.__cond.notify_all()
-            for handler in self.__on_failure:
-                self.scheduler.call(handler, exn, traceback)
+            self.__call_handlers(self.__on_failure, exn, traceback)
 
     def wait(self):
         with self.__cond:
@@ -112,7 +115,7 @@ class Future(object):
             self.__check_ready()
             return self.__result
 
-    def bind(self, success=None, failure=None, cleanup=None):
+    def bind(self, success=None, failure=None, cancelled=None, cleanup=None):
         with self.__cond:
             if success is not None:
                 self.__on_success.append(success)
@@ -122,6 +125,10 @@ class Future(object):
                 self.__on_failure.append(failure)
                 if self.__status == FAILED:
                     self.scheduler.call(failure, self.__result, self.__traceback)
+            if cancelled is not None:
+                self.__on_cancelled.append(cancelled)
+                if self.__status == CANCELLED:
+                    self.scheduler.call(cancelled, self)
             if cleanup is not None:
                 self.__on_cleanup.append(cleanup)
 
@@ -130,6 +137,7 @@ class Future(object):
             if self.__status == WAITING:
                 self.__status = CANCELLED
                 self.__cond.notify_all()
+                self.__call_handlers(self.__on_cancelled, self)
 
     def __del__(self):
         if self.__status == FAILED and not self.__on_failure:
@@ -163,7 +171,7 @@ class Coroutine(Future):
         else:
             if isinstance(ret, Future):
                 self.__cont = ret
-                ret.bind(self.__success_next, self.__failure_next)
+                ret.bind(self.__success_next, self.__failure_next, self.__cancelled_next)
             else:
                 self.set_done(ret)
 
@@ -172,6 +180,9 @@ class Coroutine(Future):
 
     def __failure_next(self, exn, traceback):
         self.__next(self.__gen.throw, exn)
+
+    def __cancelled_next(self, future):
+        self.cancel()
 
     def cancel(self):
         Future.cancel(self)
