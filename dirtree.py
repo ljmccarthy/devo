@@ -470,8 +470,9 @@ class DirTreeCtrl(wx.TreeCtrl):
             if not part:
                 break
             parts.append(path)
-        parts.reverse()
-        return self.ExpandPathNodes(parts)
+        if parts:
+            parts.reverse()
+            return self.ExpandPathNodes(parts)
 
     def _SelectPath(self, item, path):
         node = self.GetPyData(item)
