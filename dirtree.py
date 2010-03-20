@@ -75,7 +75,8 @@ def get_file_type_and_image(path):
     return None, None
 
 class SimpleNode(object):
-    type = None
+    type = 'd'
+    path = ""
     context_menu = None
 
     def __init__(self, label, children):
@@ -85,11 +86,13 @@ class SimpleNode(object):
         self.item = None
 
     def expand(self, tree, monitor, filter):
-        tree.SetItemImage(self.item, IM_FOLDER)
-        for node in self.children:
-            item = tree.AppendItem(self.item, node.label, IM_FOLDER)
-            tree.SetItemNode(item, node)
-            tree.SetItemHasChildren(item, True)
+        if not self.populated:
+            self.populated = True
+            tree.SetItemImage(self.item, IM_FOLDER)
+            for node in self.children:
+                item = tree.AppendItem(self.item, node.label, IM_FOLDER)
+                tree.SetItemNode(item, node)
+                tree.SetItemHasChildren(item, True)
 
 class FSNode(object):
     __slots__ = ("populated", "path", "type", "item", "watch", "label")
@@ -201,6 +204,7 @@ class DirTreeCtrl(wx.TreeCtrl):
     def __init__(self, parent, env, toplevel=None, filter=None):
         style = wx.TR_DEFAULT_STYLE | wx.TR_HIDE_ROOT | wx.TR_EDIT_LABELS | wx.BORDER_NONE
         wx.TreeCtrl.__init__(self, parent, style=style)
+        self.SetDoubleBuffered(True)
         self.env = env
         self.toplevel = toplevel or MakeTopLevel()
         self.filter = filter or DirTreeFilter()
@@ -224,6 +228,7 @@ class DirTreeCtrl(wx.TreeCtrl):
         self.Bind(wx.EVT_TREE_ITEM_EXPANDING, self.OnItemExpanding)
         self.Bind(wx.EVT_TREE_ITEM_COLLAPSED, self.OnItemCollapsed)
         self.Bind(wx.EVT_TREE_ITEM_RIGHT_CLICK, self.OnItemRightClicked)
+        self.Bind(wx.EVT_TREE_BEGIN_LABEL_EDIT, self.OnItemBeginLabelEdit)
         self.Bind(wx.EVT_TREE_END_LABEL_EDIT, self.OnItemEndLabelEdit)
         self.Bind(wx.EVT_MENU, self.OnItemEdit, id=ID_EDIT)
         self.Bind(wx.EVT_MENU, self.OnItemOpen, id=ID_OPEN)
@@ -291,6 +296,11 @@ class DirTreeCtrl(wx.TreeCtrl):
         if menu:
             self.PopupMenu(menu.Create())
 
+    def OnItemBeginLabelEdit(self, evt):
+        node = self.GetEventNode(evt)
+        if not (node and node.path):
+            evt.Veto()
+
     def OnItemEndLabelEdit(self, evt):
         if not evt.IsEditCancelled():
             evt.Veto()
@@ -343,10 +353,20 @@ class DirTreeCtrl(wx.TreeCtrl):
         if item.IsOk():
             return self.GetPyData(item)
 
+    # Workaround for Windows sillyness
+    if wx.Platform == "__WXMSW__":
+        def IsExpanded(self, item):
+            return self.GetRootItem() == item or wx.TreeCtrl.IsExpanded(self, item)
+        def Expand(self, item):
+            if self.GetRootItem() != item:
+                wx.TreeCtrl.Expand(self, item)
+
     @managed("cm")
     @queued_coroutine("cq_populate")
     def ExpandNode(self, node):
-        yield node.expand(self, self.monitor, self.filter)
+        t = node.expand(self, self.monitor, self.filter)
+        if isinstance(t, Task):
+            yield t
         self.Expand(node.item)
 
     def CollapseNode(self, node):
@@ -398,22 +418,11 @@ class DirTreeCtrl(wx.TreeCtrl):
         self.DeleteAllItems()
         rootitem = self.AddRoot("")
         if len(self.toplevel) == 1:
-            self.SetItemNode(rootitem, self.toplevel[0])
-            toplevel_items = [rootitem]
+            rootnode = self.toplevel[0]
         else:
-            self.SetItemNode(rootitem, FSNode())
-            toplevel_items = []
-            for node in self.toplevel:
-                item = self.AppendItem(rootitem, node.label, IM_FOLDER)
-                self.SetItemNode(item, node)
-                self.SetItemHasChildren(item, True)
-                toplevel_items.append(item)
-        for item in toplevel_items:
-            try:
-                node = self.GetPyData(item)
-                yield self.ExpandNode(node)
-            except OSError:
-                self.SetItemImage(item, IM_FOLDER_DENIED)
+            rootnode = SimpleNode("", self.toplevel)
+        self.SetItemNode(rootitem, rootnode)
+        yield self.ExpandNode(rootnode)
 
     def FindExpandedNodes(self, item, nodes):
         if self.IsExpanded(item):
@@ -428,9 +437,9 @@ class DirTreeCtrl(wx.TreeCtrl):
         expanded = []
         self.FindExpandedNodes(self.GetRootItem(), expanded)
         if expanded:
-            p["expanded"] = [node.path for node in expanded]
+            p["expanded"] = [node.path for node in expanded if node.path]
         selected = self.GetSelectedNode()
-        if selected and selected.type in 'fd':
+        if selected and selected.type in 'fd' and selected.path:
             p["selected"] = selected.path
         return p
 
@@ -438,11 +447,10 @@ class DirTreeCtrl(wx.TreeCtrl):
     @coroutine
     def ExpandPathNodes(self, item, paths):
         node = self.GetPyData(item)
-        if node.type == 'd':
-            if node.path in paths:
-                yield self.ExpandNode(node)
-                for child_item in iter_tree_children(self, item):
-                    yield self.ExpandPathNodes(child_item, paths)
+        if node.type == 'd' and (node.path in paths or not node.path):
+            yield self.ExpandNode(node)
+            for child_item in iter_tree_children(self, item):
+                yield self.ExpandPathNodes(child_item, paths)
 
     def SelectNodeByPath(self, item, path):
         node = self.GetPyData(item)
