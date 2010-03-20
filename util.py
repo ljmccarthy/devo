@@ -22,7 +22,6 @@ def iter_tree_children(tree, item):
         item = tree.GetNextSibling(item)
 
 def _TryCallLater(timer, func, args, kwargs):
-    print "_TryCallLater", timer, func, args, kwargs
     try:
         wx.CallLater(timer, func, *args, **kwargs)
     except wx._core.PyDeadObjectError, e:
