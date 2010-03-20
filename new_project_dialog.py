@@ -20,7 +20,7 @@ class NewProjectDialog(wx.Dialog):
         btnsizer.Realize()
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(grid, 0, wx.EXPAND | wx.ALL, 5)
-        sizer.Add(btnsizer, 0, wx.ALIGN_RIGHT | wx.ALL, 5)
+        sizer.Add(btnsizer, 0, wx.EXPAND | wx.ALL, 5)
         self.SetSizer(sizer)
         self.Fit()
         self.text_name.SetFocus()
