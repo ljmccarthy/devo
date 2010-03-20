@@ -1,4 +1,4 @@
-import sys, os, shutil
+import sys, os, errno, shutil
 
 def atomic_write_file(path, data):
     temp = os.path.join(os.path.dirname(path), ".saving." + os.path.basename(path))
@@ -26,6 +26,22 @@ def remove(path):
         shutil.rmtree(path)
     else:
         os.remove(path)
+
+def mkpath(path):
+    dirpath = path
+    parts = []
+    while True:
+        try:
+            os.mkdir(dirpath)
+            break
+        except OSError, e:
+            if e.errno == errno.EEXIST:
+                break
+            parts.append(os.path.basename(dirpath))
+            dirpath = os.path.dirname(dirpath)
+    for part in reversed(parts):
+        dirpath = os.path.join(dirpath, part)
+        os.mkdir(dirpath)
 
 if sys.platform == "win32":
     from fileutil_win32 import *

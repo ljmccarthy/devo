@@ -12,8 +12,6 @@ from util import frozen_window, is_text_file
 
 from new_project_dialog import NewProjectDialog
 
-session_file = os.path.join(fileutil.get_user_config_dir(), ".devo.session")
-
 class AppEnv(object):
     def __init__(self, mainframe):
         self.mainframe = mainframe
@@ -48,6 +46,9 @@ class MainFrame(wx.Frame):
 
         wx.Frame.__init__(self, None, title="Devo", pos=pos, size=size)
         self.SetMenuBar(menubar.Create())
+
+        self.config_dir = fileutil.get_user_config_dir("devo")
+        self.session_file = os.path.join(self.config_dir, "session")
 
         self.cm = CoroutineManager()
         self.env = AppEnv(self)
@@ -136,7 +137,8 @@ class MainFrame(wx.Frame):
                         yield False
                 editors.append(editor.SavePerspective())
             data = pickle.dumps(session, pickle.HIGHEST_PROTOCOL)
-            yield async_call(fileutil.atomic_write_file, session_file, data)
+            fileutil.mkpath(self.config_dir)
+            yield async_call(fileutil.atomic_write_file, self.session_file, data)
             yield True
         except Exception, e:
             dialogs.error(self, "Error saving session:\n\n%s" % e)
@@ -146,7 +148,7 @@ class MainFrame(wx.Frame):
     @coroutine
     def LoadSession(self):
         try:
-            with (yield async_call(open, session_file, "rb")) as f:
+            with (yield async_call(open, self.session_file, "rb")) as f:
                 session = pickle.loads((yield async_call(f.read)))
             if "editors" in session:
                 for p in session["editors"]:
