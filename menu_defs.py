@@ -1,12 +1,15 @@
 import wx
-from menu import MenuBar, Menu, MenuItem, MenuSeparator
+from menu import MenuBar, Menu, MenuItem, MenuSeparator, MenuHook
 
 ID_FIND_NEXT = wx.NewId()
+ID_FIND_SELECTED = wx.NewId()
 ID_GO_TO_LINE = wx.NewId()
 ID_UNINDENT = wx.NewId()
 ID_NEW_PROJECT = wx.NewId()
 ID_OPEN_PROJECT = wx.NewId()
 ID_CLOSE_PROJECT = wx.NewId()
+ID_EDIT_PROJECT = wx.NewId()
+ID_ORGANISE_PROJECTS = wx.NewId()
 
 edit_menu = Menu("&Edit", [
     MenuItem(wx.ID_UNDO, "&Undo", "Ctrl+Z"),
@@ -19,6 +22,7 @@ edit_menu = Menu("&Edit", [
     MenuItem(wx.ID_SELECTALL, "Select &All", "Ctrl+A"),
     MenuSeparator,
     MenuItem(wx.ID_FIND, "&Find...", "Ctrl+F"),
+    MenuItem(ID_FIND_SELECTED, "&Find Selected...", "Ctrl+Shift+F"),
     MenuItem(ID_FIND_NEXT, "Find &Next", "F3"),
     MenuItem(ID_GO_TO_LINE, "&Go To Line...", "Ctrl+G"),
     MenuSeparator,
@@ -40,5 +44,9 @@ menubar = MenuBar([
         MenuItem(ID_NEW_PROJECT, "&New Project", "Ctrl+Alt+T"),
         MenuItem(ID_OPEN_PROJECT, "&Open Project...", "Ctrl+Alt+O"),
         MenuItem(ID_CLOSE_PROJECT, "&Close Project", "Ctrl+Alt+W"),
+        MenuSeparator,
+        MenuItem(ID_EDIT_PROJECT, "&Edit Current Project..."),
+        MenuItem(ID_ORGANISE_PROJECTS, "O&rganise Projects..."),
+        MenuHook("projects"),
     ]),
 ])
