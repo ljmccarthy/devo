@@ -120,6 +120,7 @@ class MainFrame(wx.Frame):
         try:
             session = {}
             session["editors"] = editors = []
+            session["notebook"] = self.notebook.SavePerspective()
             session["dirtree"] = self.tree.SavePerspective()
             if self.notebook.GetPageCount() > 0:
                 session["selection"] = self.notebook.GetSelection()
@@ -145,6 +146,8 @@ class MainFrame(wx.Frame):
             for p in session.get("editors", ()):
                 editor = self.NewEditor()
                 yield editor.LoadPerspective(p)
+            if "notebook" in session:
+                self.notebook.LoadPerspective(session["notebook"])
             if "dirtree" in session:
                 self.tree.LoadPerspective(session["dirtree"])
             if "selection" in session:
