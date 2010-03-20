@@ -145,6 +145,7 @@ class FSNode(object):
                 tree.Expand(self.item)
                 expanded = True
             tree.SetItemImage(self.item, IM_FOLDER)
+            tree.SetItemHasChildren(self.item, tree.GetFirstChild(self.item)[0].IsOk())
 
     def collapse(self, tree, monitor):
         pass
@@ -378,7 +379,7 @@ class DirTreeCtrl(wx.TreeCtrl):
     @queued_coroutine("cq_populate")
     def ExpandNode(self, node):
         f = node.expand(self, self.monitor, self.filter)
-        if isinstance(f, Future):
+        if f:
             yield f
         self.Expand(node.item)
 
