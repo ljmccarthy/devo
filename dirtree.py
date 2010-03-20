@@ -3,7 +3,7 @@ import wx
 import fsmonitor
 
 import dialogs, fileutil
-from async import Task
+from async import Future
 from async_wx import async_call, coroutine, queued_coroutine, managed, CoroutineQueue, CoroutineManager
 from menu import Menu, MenuItem, MenuSeparator
 from util import iter_tree_children, frozen_window
@@ -364,9 +364,9 @@ class DirTreeCtrl(wx.TreeCtrl):
     @managed("cm")
     @queued_coroutine("cq_populate")
     def ExpandNode(self, node):
-        t = node.expand(self, self.monitor, self.filter)
-        if isinstance(t, Task):
-            yield t
+        f = node.expand(self, self.monitor, self.filter)
+        if isinstance(f, Future):
+            yield f
         self.Expand(node.item)
 
     def CollapseNode(self, node):
