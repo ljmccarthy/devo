@@ -11,8 +11,7 @@ class DirDialog(wx.Dialog):
         wx.Dialog.__init__(self, parent, size=size, title=message, style=style)
         toplevel = [DirNode(path)] if path else None
         filter = DirTreeFilter(show_files=False)
-        self.dirtree = DirTreeCtrl(self, self,
-            toplevel=toplevel, filter=filter, show_root=True)
+        self.dirtree = DirTreeCtrl(self, self, toplevel=toplevel, filter=filter)
         if select_path:
             self.dirtree.SelectPath(select_path)
         btnsizer = wx.StdDialogButtonSizer()
