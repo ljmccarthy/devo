@@ -146,7 +146,7 @@ class FSNode(object):
         if self.populated and filter.filter_by_name(name):
             path = os.path.join(self.path, name)
             try:
-                st = os.stat(path)
+                st = (yield async_call(os.stat, path))
                 if not filter.filter_by_stat(st):
                     return
                 if stat.S_ISREG(st.st_mode):
@@ -249,7 +249,7 @@ class DirTreeCtrl(wx.TreeCtrl):
         if isinstance(self, wx._core._wxPyDeadObject):
             return
         with self.fsevts_lock:
-            called = bool(self.fsevts)
+            called = len(self.fsevts) > 0
             self.fsevts.append(evt)
             if not called:
                 CallLater(100, self.OnFileSystemChanged)
@@ -265,20 +265,19 @@ class DirTreeCtrl(wx.TreeCtrl):
         with self.fsevts_lock:
             evts = self.fsevts
             self.fsevts = []
-        with frozen_window(self):
-            for evt in evts:
-                if evt.action in (fsmonitor.FSEVT_CREATE, fsmonitor.FSEVT_MOVE_TO):
-                    item = (yield evt.userobj.add(evt.name, self, self.monitor, self.filter))
-                    if item:
-                        if evt.name == self.select_later_name \
-                        and self.GetItemParent(item) == self.select_later_parent:
-                            if time.time() < self.select_later_time:
-                                self.SelectItem(item)
-                            self.select_later_name = None
-                            self.select_later_parent = None
-                            self.select_later_time = 0
-                elif evt.action in (fsmonitor.FSEVT_DELETE, fsmonitor.FSEVT_MOVE_FROM):
-                    evt.userobj.remove(evt.name, self, self.monitor)
+        for evt in evts:
+            if evt.action in (fsmonitor.FSEVT_CREATE, fsmonitor.FSEVT_MOVE_TO):
+                item = (yield evt.userobj.add(evt.name, self, self.monitor, self.filter))
+                if item:
+                    if evt.name == self.select_later_name \
+                    and self.GetItemParent(item) == self.select_later_parent:
+                        if time.time() < self.select_later_time:
+                            self.SelectItem(item)
+                        self.select_later_name = None
+                        self.select_later_parent = None
+                        self.select_later_time = 0
+            elif evt.action in (fsmonitor.FSEVT_DELETE, fsmonitor.FSEVT_MOVE_FROM):
+                evt.userobj.remove(evt.name, self, self.monitor)
 
     def OnItemActivated(self, evt):
         node = self.GetEventNode(evt)
