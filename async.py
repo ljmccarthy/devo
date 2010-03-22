@@ -1,8 +1,4 @@
-import sys
-import traceback
-import threading
-import functools
-import types
+import sys, traceback, threading, functools, types
 
 def call_task(future, func, args, kwargs):
     try:
@@ -43,11 +39,13 @@ class FutureCancelled(Exception):
     pass
 
 class Future(object):
-    def __init__(self, scheduler):
+    def __init__(self, scheduler, context=""):
         self.scheduler = scheduler
+        self.__context = context
         self.__on_success = []
         self.__on_failure = []
         self.__on_cancelled = []
+        self.__on_finished = []
         self.__status = WAITING
         self.__result = None
         self.__traceback = ""
@@ -67,6 +65,7 @@ class Future(object):
             self.__status = DONE
             self.__cond.notify_all()
             self.__call_handlers(self.__on_success, result)
+            self.__call_handlers(self.__on_finished, self)
 
     def set_failed(self, exn, traceback=""):
         with self.__cond:
@@ -79,6 +78,15 @@ class Future(object):
             self.__status = FAILED
             self.__cond.notify_all()
             self.__call_handlers(self.__on_failure, exn, traceback)
+            self.__call_handlers(self.__on_finished, self)
+
+    def cancel(self):
+        with self.__cond:
+            if self.__status == WAITING:
+                self.__status = CANCELLED
+                self.__cond.notify_all()
+                self.__call_handlers(self.__on_cancelled, self)
+                self.__call_handlers(self.__on_finished, self)
 
     def wait(self):
         with self.__cond:
@@ -114,7 +122,7 @@ class Future(object):
             self.__check_ready()
             return self.__result
 
-    def bind(self, success=None, failure=None, cancelled=None):
+    def bind(self, success=None, failure=None, cancelled=None, finished=None):
         with self.__cond:
             if success is not None:
                 self.__on_success.append(success)
@@ -128,21 +136,20 @@ class Future(object):
                 self.__on_cancelled.append(cancelled)
                 if self.__status == CANCELLED:
                     self.scheduler.call(cancelled, self)
-
-    def cancel(self):
-        with self.__cond:
-            if self.__status == WAITING:
-                self.__status = CANCELLED
-                self.__cond.notify_all()
-                self.__call_handlers(self.__on_cancelled, self)
+            if finished is not None:
+                self.__on_finished.append(finished)
+                if self.__status != WAITING:
+                    self.scheduler.call(finished, self)
 
     def __del__(self):
-        if self.__status == FAILED and not self.__on_failure:
-            print self.__traceback
+        if Future and self.__status == FAILED and not self.__on_failure:
+            print "Future failed: %s\nContext of Future invocation:\n%s\n" % (
+                self.__traceback.rstrip("\n"),
+                self.__context.rstrip("\n"))
 
 class Coroutine(Future):
-    def __init__(self, scheduler, gen):
-        Future.__init__(self, scheduler)
+    def __init__(self, gen, scheduler, context):
+        Future.__init__(self, scheduler, context)
         if not isinstance(gen, types.GeneratorType):
             raise TypeError("Coroutine expected generator, got %s"
                             % gen.__class__.__name__)
@@ -185,10 +192,16 @@ class Coroutine(Future):
             self.__cont.cancel()
             self.__cont = None
 
+def is_generator_function(func):
+    return isinstance(func, (types.FunctionType, types.MethodType)) \
+       and (func.func_code.co_flags & 0x20) != 0
+
 def coroutine(scheduler, func):
+    if not is_generator_function(func):
+        raise TypeError("@coroutine requires a generator function")
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        co = Coroutine(scheduler, func(*args, **kwargs))
+        co = Coroutine(func(*args, **kwargs), scheduler, "".join(traceback.format_stack()))
         co.start()
         return co
     return wrapper

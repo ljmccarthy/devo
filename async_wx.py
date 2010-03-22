@@ -27,6 +27,8 @@ def coroutine(func):
 
 def queued_coroutine(queue_name):
     def decorator(func):
+        if not async.is_generator_function(func):
+            raise TypeError("@queued_coroutine requires a generator function")
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs):
             queue = getattr(self, queue_name)
@@ -51,19 +53,19 @@ class CoroutineQueue(object):
         self.__queue = []
 
     def run(self, func, args, kwargs):
-        co = async.Coroutine(scheduler, func(*args, **kwargs))
+        co = async.Coroutine(func(*args, **kwargs), scheduler, "".join(traceback.format_stack()))
         if self.__running is not None:
             self.__queue.append(co)
         else:
             self.__running = weakref.ref(co)
-            co.bind(success=self.__next, failure=self.__next, cancelled=self.__next)
+            co.bind(finished=self.__next)
             co.start()
         return co
 
-    def __next(self, *args):
+    def __next(self, future):
         if self.__queue:
             co = self.__queue.pop()
-            co.bind(success=self.__next, failure=self.__next, cancelled=self.__next)
+            co.bind(finished=self.__next)
             co.start()
         else:
             self.__running = None
