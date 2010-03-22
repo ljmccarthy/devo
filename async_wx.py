@@ -1,5 +1,7 @@
-import sys, traceback, functools, weakref, wx
+import sys, traceback, functools, wx
+
 import async
+from async import CoroutineManager, CoroutineQueue, managed, queued_coroutine
 
 class WxScheduler(async.Scheduler):
     def do_call(self, func, args, kwargs):
@@ -25,71 +27,5 @@ def async_function(func):
 def coroutine(func):
     return async.coroutine(scheduler, func)
 
-def queued_coroutine(queue_name):
-    def decorator(func):
-        if not async.is_generator_function(func):
-            raise TypeError("@queued_coroutine requires a generator function")
-        @functools.wraps(func)
-        def wrapper(self, *args, **kwargs):
-            queue = getattr(self, queue_name)
-            return queue.run(func, (self,) + args, kwargs)
-        return wrapper
-    return decorator
-
-def managed(manager_name):
-    def decorator(func):
-        @functools.wraps(func)
-        def wrapper(self, *args, **kwargs):
-            manager = getattr(self, manager_name)
-            f = func(self, *args, **kwargs)
-            manager.add(f)
-            return f
-        return wrapper
-    return decorator
-
-class CoroutineQueue(object):
-    def __init__(self):
-        self.__running = None
-        self.__queue = []
-
-    def run(self, func, args, kwargs):
-        co = async.Coroutine(func(*args, **kwargs), scheduler, "".join(traceback.format_stack()))
-        if self.__running is not None:
-            self.__queue.append(co)
-        else:
-            self.__running = weakref.ref(co)
-            co.bind(finished=self.__next)
-            co.start()
-        return co
-
-    def __next(self, future):
-        if self.__queue:
-            co = self.__queue.pop()
-            co.bind(finished=self.__next)
-            co.start()
-        else:
-            self.__running = None
-
-    def cancel(self):
-        self.__queue = []
-        if self.__running is not None:
-            co = self.__running()
-            if co is not None:
-                co.cancel()
-
-class CoroutineManager(object):
-    def __init__(self):
-        self.__futures = set()
-
-    def add(self, future):
-        self.__futures.add(weakref.ref(future, self.__discard))
-
-    def __discard(self, ref):
-        self.__futures.discard(ref)
-
-    def cancel(self):
-        for ref in self.__futures:
-            future = ref()
-            if future is not None:
-                future.cancel()
-        self.__futures.clear()
+def CoroutineQueue():
+    return async.CoroutineQueue(scheduler)
