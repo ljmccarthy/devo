@@ -38,6 +38,9 @@ IM_FOLDER = 0
 IM_FOLDER_DENIED = 1
 IM_FILE = 2
 
+def sorted_filenames(filenames):
+    return sorted(filenames, key=lambda x: x.lower())
+
 def dirtree_insert(tree, parent_item, text, image):
     i = 0
     text_lower = text.lower()
@@ -98,11 +101,11 @@ class FSNode(object):
     def expand(self, tree, monitor, filter):
         if not self.populated:
             self.populated = True
-            files = []
             self.watch = monitor.add_watch(self.path, self)
             expanded = tree.IsExpanded(self.item)
-            for filename in sorted((yield async_call(os.listdir, self.path)),
-                                   key=lambda x: x.lower()):
+            dirs = []
+            files = []
+            for filename in sorted_filenames((yield async_call(os.listdir, self.path))):
                 if not filter.filter_by_name(filename):
                     continue
                 path = os.path.join(self.path, filename)
@@ -114,27 +117,29 @@ class FSNode(object):
                     if not filter.filter_by_stat(st):
                         continue
                     if stat.S_ISREG(st.st_mode):
-                        files.append((filename, path))
+                        files.append(FSNode(path, 'f'))
                     elif stat.S_ISDIR(st.st_mode):
-                        try:
-                            listable = (yield async_call(os.access, path, os.X_OK))
-                        except OSError, e:
-                            listable = False
-                        image = IM_FOLDER if listable else IM_FOLDER_DENIED
-                        item = tree.AppendItem(self.item, filename, image)
-                        tree.SetItemNode(item, FSNode(path, 'd'))
-                        tree.SetItemHasChildren(item, listable)
-                        if not expanded:
-                            tree.Expand(self.item)
-                            expanded = True
-            for filename, path in files:
-                item = tree.AppendItem(self.item, filename, IM_FILE)
-                tree.SetItemNode(item, FSNode(path, 'f'))
+                        dirs.append(FSNode(path, 'd'))
+            for node in dirs:
+                item = tree.AppendItem(self.item, node.label, IM_FOLDER)
+                tree.SetItemNode(item, node)
+                tree.SetItemHasChildren(item, True)
+            for node in files:
+                item = tree.AppendItem(self.item, node.label, IM_FILE)
+                tree.SetItemNode(item, node)
             if not expanded:
                 tree.Expand(self.item)
                 expanded = True
             tree.SetItemImage(self.item, IM_FOLDER)
             tree.SetItemHasChildren(self.item, tree.GetFirstChild(self.item)[0].IsOk())
+            for node in dirs:
+                try:
+                    listable = (yield async_call(os.access, node.path, os.X_OK))
+                except OSError:
+                    listable = False
+                if not listable:
+                    tree.SetItemImage(node.item, IM_FOLDER_DENIED)
+                    tree.SetItemHasChildren(item, False)
 
     def collapse(self, tree, monitor):
         pass
