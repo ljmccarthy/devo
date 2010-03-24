@@ -101,7 +101,7 @@ class FSNode(object):
     def expand(self, tree, monitor, filter):
         if not self.populated:
             self.populated = True
-            self.watch = monitor.add_watch(self.path, self)
+            self.watch = monitor.add_dir_watch(self.path, user=self)
             expanded = tree.IsExpanded(self.item)
             dirs = []
             files = []
@@ -272,7 +272,7 @@ class DirTreeCtrl(wx.TreeCtrl):
             self.fsevts = []
         for evt in evts:
             if evt.action in (fsmonitor.FSEVT_CREATE, fsmonitor.FSEVT_MOVE_TO):
-                item = (yield evt.userobj.add(evt.name, self, self.monitor, self.filter))
+                item = (yield evt.user.add(evt.name, self, self.monitor, self.filter))
                 if item:
                     if evt.name == self.select_later_name \
                     and self.GetItemParent(item) == self.select_later_parent:
@@ -282,7 +282,7 @@ class DirTreeCtrl(wx.TreeCtrl):
                         self.select_later_parent = None
                         self.select_later_time = 0
             elif evt.action in (fsmonitor.FSEVT_DELETE, fsmonitor.FSEVT_MOVE_FROM):
-                evt.userobj.remove(evt.name, self, self.monitor)
+                evt.user.remove(evt.name, self, self.monitor)
 
     def OnItemActivated(self, evt):
         node = self.GetEventNode(evt)
