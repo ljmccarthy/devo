@@ -86,6 +86,9 @@ class SimpleNode(object):
                 tree.SetItemNode(item, node)
                 tree.SetItemHasChildren(item, True)
 
+    def collapse(self, tree, monitor):
+        pass
+
 class FSNode(object):
     __slots__ = ("populated", "path", "type", "item", "watch", "label")
 
@@ -102,7 +105,6 @@ class FSNode(object):
         if not self.populated:
             self.populated = True
             self.watch = monitor.add_dir_watch(self.path, user=self)
-            expanded = tree.IsExpanded(self.item)
             dirs = []
             files = []
             for filename in sorted_filenames((yield async_call(os.listdir, self.path))):
@@ -127,9 +129,6 @@ class FSNode(object):
             for node in files:
                 item = tree.AppendItem(self.item, node.label, IM_FILE)
                 tree.SetItemNode(item, node)
-            if not expanded:
-                tree.Expand(self.item)
-                expanded = True
             tree.SetItemImage(self.item, IM_FOLDER)
             tree.SetItemHasChildren(self.item, tree.GetFirstChild(self.item)[0].IsOk())
             for node in dirs:
@@ -382,9 +381,10 @@ class DirTreeCtrl(wx.TreeCtrl):
     @managed("cm")
     @queued_coroutine("cq_populate")
     def ExpandNode(self, node):
-        f = node.expand(self, self.monitor, self.filter)
-        if isinstance(f, Future):
-            yield f
+        if not node.populated:
+            f = node.expand(self, self.monitor, self.filter)
+            if isinstance(f, Future):
+                yield f
         self.Expand(node.item)
 
     def CollapseNode(self, node):
@@ -443,6 +443,10 @@ class DirTreeCtrl(wx.TreeCtrl):
         self.SetItemNode(rootitem, rootnode)
         yield self.ExpandNode(rootnode)
 
+    def SetTopLevel(self, toplevel=None):
+        self.toplevel = toplevel or MakeTopLevel()
+        self.InitializeTree()
+
     def _FindExpandedNodes(self, item, nodes):
         if self.IsExpanded(item):
             node = self.GetPyData(item)
@@ -458,15 +462,22 @@ class DirTreeCtrl(wx.TreeCtrl):
 
     @managed("cm")
     @coroutine
-    def _ExpandPathNodes(self, item, paths):
-        node = self.GetPyData(item)
-        if node.type == 'd' and (node.path in paths or not node.path):
-            yield self.ExpandNode(node)
-            for child_item in iter_tree_children(self, item):
-                yield self._ExpandPathNodes(child_item, paths)
+    def _ExpandPathNodes(self, node, paths):
+        yield self.ExpandNode(node)
+        for item in iter_tree_children(self, node.item):
+            node = self.GetPyData(item)
+            if node.type == 'd' and (node.path in paths or not node.path):
+                paths.discard(node.path)
+                yield self._ExpandPathNodes(node, paths)
+                if not paths:
+                    break
 
     def ExpandPathNodes(self, paths):
-        return self._ExpandPathNodes(self.GetRootItem(), paths)
+        rootnode = self.GetPyData(self.GetRootItem())
+        paths = set(paths)
+        paths.discard(rootnode.path)
+        if paths:
+            return self._ExpandPathNodes(rootnode, paths)
 
     def ExpandPath(self, path):
         parts = []
@@ -506,7 +517,7 @@ class DirTreeCtrl(wx.TreeCtrl):
     @managed("cm")
     @queued_coroutine("cq_init")
     def LoadPerspective(self, p):
-        expanded = set(p.get("expanded", ()))
+        expanded = p.get("expanded", ())
         if expanded:
             yield self.ExpandPathNodes(expanded)
         if "selected" in p:
