@@ -10,12 +10,62 @@ def call_task(future, func, args, kwargs):
     else:
         future.set_done(result)
 
-def async_call_task(future, func, args, kwargs):
-    thread = threading.Thread(target=call_task, args=(future, func, args, kwargs))
-    thread.daemon = True
-    thread.start()
+class AsyncCallThreadPool(object):
+    def __init__(self, scheduler, max_threads):
+        self.scheduler = scheduler
+        self.max_threads = max_threads
+        self.num_waiting = 0
+        self.threads = set()
+        self.calls = []
+        self.quit = False
+        self.cond = threading.Condition()
+
+    def call(self, func, args, kwargs):
+        future = Future(self.scheduler)
+        with self.cond:
+            self.calls.append((future, func, args, kwargs))
+            if self.num_waiting == 0 and len(self.threads) < self.max_threads:
+                thread = threading.Thread(target=self._call_thread)
+                thread.daemon = True
+                thread.start()
+                self.threads.add(thread)
+            self.cond.notify()
+        return future
+
+    def _call_thread(self):
+        try:
+            while True:
+                with self.cond:
+                    if not self.calls:
+                        self.num_waiting += 1
+                        try:
+                            self.cond.wait(1)
+                        finally:
+                            self.num_waiting -= 1
+                    if self.quit or not self.calls:
+                        return
+                    args = self.calls.pop()
+                call_task(*args)
+        finally:
+            with self.cond:
+                self.threads.remove(threading.current_thread())
+
+    def shutdown(self):
+        with self.cond:
+            self.quit = True
+            self.cond.notify_all()
+        while True:
+            with self.cond:
+                threads = list(self.threads)
+            if not threads:
+                break
+            for thread in threads:
+                thread.join()
 
 class Scheduler(object):
+    def __init__(self, max_threads=10):
+        self._async_pool = AsyncCallThreadPool(self, max_threads)
+
     def do_call(self):
         raise NotImplementedError()
 
@@ -23,9 +73,10 @@ class Scheduler(object):
         self.do_call(func, args, kwargs)
 
     def async_call(self, func, *args, **kwargs):
-        future = Future(self)
-        async_call_task(future, func, args, kwargs)
-        return future
+        return self._async_pool.call(func, args, kwargs)
+
+    def shutdown(self):
+        self._async_pool.shutdown()
 
 WAITING, DONE, FAILED, CANCELLED = range(4)
 
@@ -168,6 +219,8 @@ class Coroutine(Future):
             ret = func(*args, **kwargs)
         except StopIteration:
             self.set_done(None)
+        except FutureCancelled:
+            self.cancel()
         except Exception, exn:
             self.set_failed(exn, traceback.format_exc())
         else:
@@ -184,7 +237,7 @@ class Coroutine(Future):
         self.__next(self.__gen.throw, exn)
 
     def __cancelled_next(self, future):
-        self.cancel()
+        self.__next(self.__gen.throw, FutureCancelled())
 
     def cancel(self):
         Future.cancel(self)
