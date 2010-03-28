@@ -3,6 +3,9 @@ import sys, traceback, threading, functools, types, weakref
 def call_task(future, func, args, kwargs):
     try:
         result = func(*args, **kwargs)
+    except SystemExit:
+        future.cancel()
+        raise
     except:
         exn = sys.exc_info()[1]
         tbstr = traceback.format_exc()
@@ -23,16 +26,16 @@ class AsyncCallThreadPool(object):
     def call(self, func, args, kwargs):
         future = Future(self.scheduler)
         with self.cond:
-            self.calls.append((future, func, args, kwargs))
+            self.calls.insert(0, (future, func, args, kwargs))
             if self.num_waiting == 0 and len(self.threads) < self.max_threads:
-                thread = threading.Thread(target=self._call_thread)
+                thread = threading.Thread(target=self.__call_thread)
                 thread.daemon = True
                 thread.start()
                 self.threads.add(thread)
             self.cond.notify()
         return future
 
-    def _call_thread(self):
+    def __call_thread(self):
         try:
             while True:
                 with self.cond:
@@ -64,7 +67,7 @@ class AsyncCallThreadPool(object):
 
 class Scheduler(object):
     def __init__(self, max_threads=10):
-        self._async_pool = AsyncCallThreadPool(self, max_threads)
+        self.__async_pool = AsyncCallThreadPool(self, max_threads)
 
     def do_call(self):
         raise NotImplementedError()
@@ -73,10 +76,10 @@ class Scheduler(object):
         self.do_call(func, args, kwargs)
 
     def async_call(self, func, *args, **kwargs):
-        return self._async_pool.call(func, args, kwargs)
+        return self.__async_pool.call(func, args, kwargs)
 
     def shutdown(self):
-        self._async_pool.shutdown()
+        self.__async_pool.shutdown()
 
 WAITING, DONE, FAILED, CANCELLED = range(4)
 
