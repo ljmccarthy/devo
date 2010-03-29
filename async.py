@@ -1,4 +1,4 @@
-import sys, traceback, threading, functools, types, weakref
+import sys, traceback, threading, functools, types, weakref, collections
 
 def call_task(future, func, args, kwargs):
     try:
@@ -19,14 +19,14 @@ class AsyncCallThreadPool(object):
         self.max_threads = max_threads
         self.num_waiting = 0
         self.threads = set()
-        self.calls = []
+        self.calls = collections.deque()
         self.quit = False
         self.cond = threading.Condition()
 
     def call(self, func, args, kwargs):
         future = Future(self.scheduler)
         with self.cond:
-            self.calls.insert(0, (future, func, args, kwargs))
+            self.calls.appendleft((future, func, args, kwargs))
             if self.num_waiting == 0 and len(self.threads) < self.max_threads:
                 thread = threading.Thread(target=self.__call_thread)
                 thread.daemon = True
