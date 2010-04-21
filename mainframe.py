@@ -3,11 +3,11 @@ from functools import wraps
 from wx.lib.agw import aui
 from wx.lib.utils import AdjustRectToScreen
 
-import dialogs, fileutil
-from async_wx import async_call, coroutine, managed, CoroutineManager
-from dirtree import DirTreeCtrl
+import dialogs, fileutil, ID
+from async_wx import async_call, coroutine, managed, CoroutineManager, scheduler
+from dirtree import DirTreeCtrl, DirNode
 from editor import Editor
-from menu_defs import *
+from menu_defs import menubar
 from util import frozen_window, is_text_file
 
 from new_project_dialog import NewProjectDialog
@@ -34,6 +34,9 @@ def with_current_editor(method):
             return method(self, editor, *args, **kwargs)
     return wrapper
 
+NB_STYLE = (aui.AUI_NB_CLOSE_ON_ALL_TABS  | aui.AUI_NB_TOP | aui.AUI_NB_TAB_SPLIT
+           | aui.AUI_NB_TAB_MOVE | aui.AUI_NB_SCROLL_BUTTONS | wx.BORDER_NONE)
+
 class MainFrame(wx.Frame):
     def __init__(self):
         rect = AdjustRectToScreen(wx.Rect(0, 0, 1000, 1500))
@@ -48,19 +51,17 @@ class MainFrame(wx.Frame):
         self.SetMenuBar(menubar.Create())
 
         self.config_dir = fileutil.get_user_config_dir("devo")
-        self.session_file = os.path.join(self.config_dir, "session")
+        self.project = None
 
         self.cm = CoroutineManager()
         self.env = AppEnv(self)
 
         self.manager = aui.AuiManager(self)
-        nbstyle = (aui.AUI_NB_CLOSE_ON_ALL_TABS  | aui.AUI_NB_TOP | aui.AUI_NB_TAB_SPLIT
-                  | aui.AUI_NB_TAB_MOVE | aui.AUI_NB_SCROLL_BUTTONS | wx.BORDER_NONE)
-        self.notebook = aui.AuiNotebook(self, style=nbstyle)
+        self.notebook = aui.AuiNotebook(self, style=NB_STYLE)
         self.tree = DirTreeCtrl(self, self.env)
 
         self.manager.AddPane(self.tree,
-            aui.AuiPaneInfo().Left().BestSize(wx.Size(200, -1)).CaptionVisible(False))
+            aui.AuiPaneInfo().Left().BestSize(wx.Size(220, -1)).CaptionVisible(False))
         self.manager.AddPane(self.notebook,
             aui.AuiPaneInfo().CentrePane())
         self.manager.Update()
@@ -71,46 +72,64 @@ class MainFrame(wx.Frame):
         self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CLOSE, self.OnPageClose)
         self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnPageChanged)
 
-        self.Bind(wx.EVT_MENU, self.OnNewFile, id=wx.ID_NEW)
-        self.Bind(wx.EVT_MENU, self.OnOpenFile, id=wx.ID_OPEN)
-        self.Bind(wx.EVT_MENU, self.OnCloseFile, id=wx.ID_CLOSE)
-        self.Bind(wx.EVT_MENU, self.OnClose, id=wx.ID_EXIT)
+        self.Bind(wx.EVT_MENU, self.OnNewFile, id=ID.NEW)
+        self.Bind(wx.EVT_MENU, self.OnOpenFile, id=ID.OPEN)
+        self.Bind(wx.EVT_MENU, self.OnCloseFile, id=ID.CLOSE)
+        self.Bind(wx.EVT_MENU, self.OnClose, id=ID.EXIT)
 
-        self.Bind(wx.EVT_MENU, self.EditorAction("Save"), id=wx.ID_SAVE)
-        self.Bind(wx.EVT_MENU, self.EditorAction("SaveAs"), id=wx.ID_SAVEAS)
-        self.Bind(wx.EVT_MENU, self.EditorAction("Undo"), id=wx.ID_UNDO)
-        self.Bind(wx.EVT_MENU, self.EditorAction("Redo"), id=wx.ID_REDO)
-        self.Bind(wx.EVT_MENU, self.EditorAction("Cut"), id=wx.ID_CUT)
-        self.Bind(wx.EVT_MENU, self.EditorAction("Copy"), id=wx.ID_COPY)
-        self.Bind(wx.EVT_MENU, self.EditorAction("Paste"), id=wx.ID_PASTE)
-        self.Bind(wx.EVT_MENU, self.EditorAction("SelectAll"), id=wx.ID_SELECTALL)
-        self.Bind(wx.EVT_MENU, self.EditorAction("Find"), id=wx.ID_FIND)
-        self.Bind(wx.EVT_MENU, self.EditorAction("FindSelected"), id=ID_FIND_SELECTED)
-        self.Bind(wx.EVT_MENU, self.EditorAction("FindNext"), id=ID_FIND_NEXT)
-        self.Bind(wx.EVT_MENU, self.EditorAction("GoToLine"), id=ID_GO_TO_LINE)
-        self.Bind(wx.EVT_MENU, self.EditorAction("Unindent"), id=ID_UNINDENT)
+        self.Bind(wx.EVT_MENU, self.EditorAction("Save"), id=ID.SAVE)
+        self.Bind(wx.EVT_MENU, self.EditorAction("SaveAs"), id=ID.SAVEAS)
+        self.Bind(wx.EVT_MENU, self.EditorAction("Undo"), id=ID.UNDO)
+        self.Bind(wx.EVT_MENU, self.EditorAction("Redo"), id=ID.REDO)
+        self.Bind(wx.EVT_MENU, self.EditorAction("Cut"), id=ID.CUT)
+        self.Bind(wx.EVT_MENU, self.EditorAction("Copy"), id=ID.COPY)
+        self.Bind(wx.EVT_MENU, self.EditorAction("Paste"), id=ID.PASTE)
+        self.Bind(wx.EVT_MENU, self.EditorAction("SelectAll"), id=ID.SELECTALL)
+        self.Bind(wx.EVT_MENU, self.EditorAction("Find"), id=ID.FIND)
+        self.Bind(wx.EVT_MENU, self.EditorAction("FindSelected"), id=ID.FIND_SELECTED)
+        self.Bind(wx.EVT_MENU, self.EditorAction("FindNext"), id=ID.FIND_NEXT)
+        self.Bind(wx.EVT_MENU, self.EditorAction("GoToLine"), id=ID.GO_TO_LINE)
+        self.Bind(wx.EVT_MENU, self.EditorAction("Unindent"), id=ID.UNINDENT)
 
-        self.Bind(wx.EVT_MENU, self.OnNewProject, id=ID_NEW_PROJECT)
+        self.Bind(wx.EVT_MENU, self.OnNewProject, id=ID.NEW_PROJECT)
+        self.Bind(wx.EVT_MENU, self.OnOpenProject, id=ID.OPEN_PROJECT)
+        self.Bind(wx.EVT_MENU, self.OnCloseProject, id=ID.CLOSE_PROJECT)
+        self.Bind(wx.EVT_MENU, self.OnEditProject, id=ID.EDIT_PROJECT)
+        self.Bind(wx.EVT_MENU, self.OnOrganiseProjects, id=ID.ORGANISE_PROJECTS)
 
-        self.Bind(wx.EVT_UPDATE_UI, self.EditorUpdateUI("GetModify"), id=wx.ID_SAVE)
-        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_HasEditor, id=wx.ID_SAVEAS)
-        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_HasEditor, id=wx.ID_CLOSE)
-        self.Bind(wx.EVT_UPDATE_UI, self.EditorUpdateUI("CanUndo"), id=wx.ID_UNDO)
-        self.Bind(wx.EVT_UPDATE_UI, self.EditorUpdateUI("CanRedo"), id=wx.ID_REDO)
-        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasSelection, id=wx.ID_CUT)
-        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasSelection, id=wx.ID_COPY)
-        self.Bind(wx.EVT_UPDATE_UI, self.EditorUpdateUI("CanPaste"), id=wx.ID_PASTE)
-        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_HasEditor, id=wx.ID_SELECTALL)
-        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_HasEditor, id=wx.ID_FIND)
-        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasSelection, id=ID_FIND_SELECTED)
-        self.Bind(wx.EVT_UPDATE_UI, self.EditorUpdateUI("CanFindNext"), id=ID_FIND_NEXT)
-        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_HasEditor, id=ID_GO_TO_LINE)
-        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_HasEditor, id=ID_UNINDENT)
+        self.Bind(wx.EVT_UPDATE_UI, self.EditorUpdateUI("GetModify"), id=ID.SAVE)
+        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_HasEditor, id=ID.SAVEAS)
+        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_HasEditor, id=ID.CLOSE)
+        self.Bind(wx.EVT_UPDATE_UI, self.EditorUpdateUI("CanUndo"), id=ID.UNDO)
+        self.Bind(wx.EVT_UPDATE_UI, self.EditorUpdateUI("CanRedo"), id=ID.REDO)
+        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasSelection, id=ID.CUT)
+        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasSelection, id=ID.COPY)
+        self.Bind(wx.EVT_UPDATE_UI, self.EditorUpdateUI("CanPaste"), id=ID.PASTE)
+        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_HasEditor, id=ID.SELECTALL)
+        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_HasEditor, id=ID.FIND)
+        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasSelection, id=ID.FIND_SELECTED)
+        self.Bind(wx.EVT_UPDATE_UI, self.EditorUpdateUI("CanFindNext"), id=ID.FIND_NEXT)
+        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_HasEditor, id=ID.GO_TO_LINE)
+        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_HasEditor, id=ID.UNINDENT)
+
+        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_ProjectIsOpen, id=ID.CLOSE_PROJECT)
+        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_ProjectIsOpen, id=ID.EDIT_PROJECT)
 
     @property
     def editors(self):
         for i in xrange(self.notebook.GetPageCount()):
             yield self.notebook.GetPage(i)
+
+    @property
+    def session_dir(self):
+        return self.project.rootdir if self.project else self.config_dir
+
+    @property
+    def session_file(self):
+        if self.project:
+            return os.path.join(self.project.rootdir, ".devo-session")
+        else:
+            return os.path.join(self.config_dir, "session")
 
     def OnClose(self, evt):
         self.DoClose()
@@ -119,12 +138,18 @@ class MainFrame(wx.Frame):
     @coroutine
     def DoClose(self):
         if (yield self.SaveSession()):
-            self.Destroy()
+            self.Hide()
+            wx.CallAfter(self._DoShutdown)
+
+    def _DoShutdown(self):
+        scheduler.shutdown()
+        self.Destroy()
 
     @managed("cm")
     @coroutine
     def SaveSession(self):
         try:
+            yield async_call(fileutil.mkpath, self.session_dir)
             session = {}
             session["dirtree"] = self.tree.SavePerspective()
             if self.notebook.GetPageCount() > 0:
@@ -137,7 +162,6 @@ class MainFrame(wx.Frame):
                         yield False
                 editors.append(editor.SavePerspective())
             data = pickle.dumps(session, pickle.HIGHEST_PROTOCOL)
-            fileutil.mkpath(self.config_dir)
             yield async_call(fileutil.atomic_write_file, self.session_file, data)
             yield True
         except Exception, e:
@@ -150,42 +174,49 @@ class MainFrame(wx.Frame):
         try:
             with (yield async_call(open, self.session_file, "rb")) as f:
                 session = pickle.loads((yield async_call(f.read)))
+            editors = []
             if "editors" in session:
                 for p in session["editors"]:
-                    editor = self.NewEditor()
-                    yield editor.LoadPerspective(p)
+                    editors.append((self.NewEditor(), p))
                 if "notebook" in session and session["editors"]:
                     self.notebook.LoadPerspective(session["notebook"])
-            if "dirtree" in session:
-                self.tree.LoadPerspective(session["dirtree"])
             if "selection" in session:
                 selection = session["selection"]
                 if 0 <= selection < self.notebook.GetPageCount():
                     self.notebook.SetSelection(selection)
                     self.notebook.GetPage(selection).SetFocus()
+            for editor, p in editors:
+                yield editor.LoadPerspective(p)
+            if "dirtree" in session:
+                self.tree.LoadPerspective(session["dirtree"])
         except (IOError, OSError):
             pass
         except Exception, e:
             dialogs.error(self, "Error loading session:\n\n%s" % traceback.format_exc())
         self.Show()
 
+    def DeleteAllPages(self):
+        with frozen_window(self):
+#            self.manager.DetachPane(self.notebook)
+#            self.notebook.Destroy()
+#            self.notebook = aui.AuiNotebook(self, style=NB_STYLE)
+#            self.manager.AddPane(self.notebook, aui.AuiPaneInfo().CentrePane())
+#            self.manager.Update()
+
+            for i in xrange(self.notebook.GetPageCount()-1, -1, -1):
+                self.notebook.DeletePage(i)
+
     @managed("cm")
     @coroutine
-    def CloseSession(self, shutdown=False):
-        for editor in self.editors:
-            try:
-                if not (yield editor.TryClose()):
-                    yield False
-            except Exception, e:
-                dialogs.error(self, str(e))
-                yield False
-        if shutdown:
-            self.Destroy()
+    def LoadProject(self, project):
+        yield self.SaveSession()
+        self.DeleteAllPages()
+        if project:
+            self.tree.SetTopLevel([DirNode(project.rootdir)])
         else:
-            with frozen_window(self):
-                for i in xrange(self.notebook.GetPageCount()-1, -1, -1):
-                    self.notebook.DeletePage(i)
-        yield True
+            self.tree.SetTopLevel()
+        self.project = project
+        yield self.LoadSession()
 
     def OnPageClose(self, evt):
         evt.Veto()
@@ -262,12 +293,31 @@ class MainFrame(wx.Frame):
     def OnCloseFile(self, editor, evt):
         self.ClosePage(editor)
 
-    def OnNewProject(self, evt):
+    def GetNewProject(self):
         dlg = NewProjectDialog(self)
         try:
-            dlg.ShowModal()
+            if dlg.ShowModal() == wx.ID_OK:
+                return dlg.GetProject()
         finally:
             dlg.Destroy()
+
+    def OnNewProject(self, evt):
+        project = self.GetNewProject()
+        if project:
+            self.LoadProject(project)
+
+    def OnOpenProject(self, evt):
+        pass
+
+    def OnCloseProject(self, evt):
+        if self.project:
+            self.LoadProject(None)
+
+    def OnEditProject(self, evt):
+        pass
+
+    def OnOrganiseProjects(self, evt):
+        pass
 
     def EditorAction(self, method):
         def handler(evt):
@@ -295,3 +345,6 @@ class MainFrame(wx.Frame):
             evt.Enable(start != end)
         else:
             evt.Enable(False)
+
+    def UpdateUI_ProjectIsOpen(self, evt):
+        evt.Enable(self.project is not None)

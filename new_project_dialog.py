@@ -1,6 +1,7 @@
 import os
 import wx
 from file_picker import DirPicker
+from project import Project
 
 class NewProjectDialog(wx.Dialog):
     def __init__(self, parent, path=""):
@@ -15,7 +16,9 @@ class NewProjectDialog(wx.Dialog):
         grid.Add(wx.StaticText(self, label="Root Folder"), 0, wx.ALIGN_CENTRE_VERTICAL)
         grid.Add(self.fp_root, 1, wx.EXPAND | wx.ALIGN_CENTRE_VERTICAL)
         btnsizer = wx.StdDialogButtonSizer()
-        btnsizer.AddButton(wx.Button(self, wx.ID_OK))
+        btn_ok = wx.Button(self, wx.ID_OK)
+        btn_ok.SetDefault()
+        btnsizer.AddButton(btn_ok)
         btnsizer.AddButton(wx.Button(self, wx.ID_CANCEL))
         btnsizer.Realize()
         sizer = wx.BoxSizer(wx.VERTICAL)
@@ -27,13 +30,16 @@ class NewProjectDialog(wx.Dialog):
         self.Bind(wx.EVT_UPDATE_UI, self.__OnUpdateUI_OK, id=wx.ID_OK)
 
     def __OnUpdateUI_OK(self, evt):
-        evt.Enable(os.path.isdir(self.GetRoot()))
+        evt.Enable(bool(self.GetName()) and os.path.isdir(self.GetRoot()))
 
     def GetName(self):
-        return self.text_name.GetValue()
+        return self.text_name.GetValue().strip()
 
     def GetRoot(self):
         return self.fp_root.GetValue()
+
+    def GetProject(self):
+        return Project(self.GetName(), self.GetRoot())
 
 if __name__ == "__main__":
     app = wx.PySimpleApp()
