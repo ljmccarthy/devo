@@ -32,11 +32,11 @@ class FindReplaceDetails(object):
         yield init_pos, editor.GetTextRange(init_pos, line_end)
 
         for line in xrange(init_line + 1, last_line + 1):
-            yield editor.PositionFromLine(line), editor.GetLine(line)[:-1]
+            yield editor.PositionFromLine(line), editor.GetLine(line)
 
         if wrap:
             for line in xrange(0, init_line):
-                yield editor.PositionFromLine(line), editor.GetLine(line)[:-1]
+                yield editor.PositionFromLine(line), editor.GetLine(line)
 
             line_start = editor.PositionFromLine(init_line)
             yield line_start, editor.GetTextRange(line_start, init_pos)
