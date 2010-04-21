@@ -44,8 +44,10 @@ class Menu(object):
         for item in self.items:
             item.Build(menu, hooks)
         last = menu.GetMenuItemCount() - 1
-        if last >= 0 and menu.FindItemByPosition(last).GetKind() == wx.ITEM_SEPARATOR:
-            menu.Delete(last)
+        if last >= 0:
+            item = menu.FindItemByPosition(last)
+            if item.GetKind() == wx.ITEM_SEPARATOR:
+                menu.DeleteItem(item)
         return menu
 
 class MenuBar(object):
