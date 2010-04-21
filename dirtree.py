@@ -1,6 +1,6 @@
 import sys, os, stat, threading, time
 import wx
-import fsmonitor
+from fsmonitor import FSMonitorThread, FSEvent
 
 import dialogs, fileutil
 from async import Future
@@ -131,14 +131,15 @@ class FSNode(object):
                 tree.SetItemNode(item, node)
             tree.SetItemImage(self.item, IM_FOLDER)
             tree.SetItemHasChildren(self.item, tree.GetFirstChild(self.item)[0].IsOk())
-            for node in dirs:
-                try:
-                    listable = (yield async_call(os.access, node.path, os.X_OK))
-                except OSError:
-                    listable = False
-                if not listable:
-                    tree.SetItemImage(node.item, IM_FOLDER_DENIED)
-                    tree.SetItemHasChildren(item, False)
+            if sys.platform != "win32":
+                for node in dirs:
+                    try:
+                        listable = (yield async_call(os.access, node.path, os.X_OK))
+                    except OSError:
+                        listable = False
+                    if not listable:
+                        tree.SetItemImage(node.item, IM_FOLDER_DENIED)
+                        tree.SetItemHasChildren(item, False)
 
     def collapse(self, tree, monitor):
         pass
@@ -231,7 +232,7 @@ class DirTreeCtrl(wx.TreeCtrl):
         self.imglist.Add(load_bitmap("icons/folder_denied.png"))
         self.imglist.Add(load_bitmap("icons/file.png"))
         self.SetImageList(self.imglist)
-        self.monitor = fsmonitor.FSMonitorThread(self._OnFileSystemChanged)
+        self.monitor = FSMonitorThread(self._OnFileSystemChanged)
         self.InitializeTree()
         self.Bind(wx.EVT_CLOSE, self.OnClose)
         self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.OnItemActivated)
@@ -270,7 +271,7 @@ class DirTreeCtrl(wx.TreeCtrl):
             evts = self.fsevts
             self.fsevts = []
         for evt in evts:
-            if evt.action in (fsmonitor.FSEVT_CREATE, fsmonitor.FSEVT_MOVE_TO):
+            if evt.action in (FSEvent.Create, FSEvent.MoveTo):
                 item = (yield evt.user.add(evt.name, self, self.monitor, self.filter))
                 if item:
                     if evt.name == self.select_later_name \
@@ -280,7 +281,7 @@ class DirTreeCtrl(wx.TreeCtrl):
                         self.select_later_name = None
                         self.select_later_parent = None
                         self.select_later_time = 0
-            elif evt.action in (fsmonitor.FSEVT_DELETE, fsmonitor.FSEVT_MOVE_FROM):
+            elif evt.action in (FSEvent.Delete, FSEvent.MoveFrom):
                 evt.user.remove(evt.name, self, self.monitor)
 
     def OnItemActivated(self, evt):
