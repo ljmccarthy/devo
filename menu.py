@@ -17,7 +17,9 @@ class MenuItem(object):
 
 class MenuSeparator(object):
     def Build(self, menu, hooks):
-        menu.AppendSeparator()
+        last = menu.GetMenuItemCount() - 1
+        if last >= 0 and menu.FindItemByPosition(last).GetKind() != wx.ITEM_SEPARATOR:
+            menu.AppendSeparator()
 
 class MenuHook(object):
     def __init__(self, id):
@@ -41,6 +43,9 @@ class Menu(object):
         menu = wx.Menu()
         for item in self.items:
             item.Build(menu, hooks)
+        last = menu.GetMenuItemCount() - 1
+        if last >= 0 and menu.FindItemByPosition(last).GetKind() == wx.ITEM_SEPARATOR:
+            menu.Delete(last)
         return menu
 
 class MenuBar(object):
