@@ -38,9 +38,6 @@ IM_FOLDER = 0
 IM_FOLDER_DENIED = 1
 IM_FILE = 2
 
-def sorted_filenames(filenames):
-    return sorted(filenames, key=lambda x: x.lower())
-
 def dirtree_insert(tree, parent_item, text, image):
     i = 0
     text_lower = text.lower()
@@ -89,6 +86,26 @@ class SimpleNode(object):
     def collapse(self, tree, monitor):
         pass
 
+def listdir(dirpath):
+    result = []
+    for filename in os.listdir(dirpath):
+        path = os.path.join(dirpath, filename)
+        try:
+            st = os.stat(path)
+        except OSError:
+            pass
+        else:
+            if stat.S_ISDIR(st.st_mode):
+                try:
+                    listable = os.access(path, os.X_OK)
+                except OSError:
+                    listable = False
+            else:
+                listable = False
+            result.append((filename, st, listable))
+    result.sort(key=lambda x: x[0].lower())
+    return result
+
 class FSNode(object):
     __slots__ = ("populated", "path", "type", "item", "watch", "label")
 
@@ -107,39 +124,26 @@ class FSNode(object):
             self.watch = monitor.add_dir_watch(self.path, user=self)
             dirs = []
             files = []
-            for filename in sorted_filenames((yield async_call(os.listdir, self.path))):
+            for filename, st, listable in (yield async_call(listdir, self.path)):
                 if not filter.filter_by_name(filename):
                     continue
+                if not filter.filter_by_stat(st):
+                    continue
                 path = os.path.join(self.path, filename)
-                try:
-                    st = (yield async_call(os.stat, path))
-                except OSError:
-                    pass
-                else:
-                    if not filter.filter_by_stat(st):
-                        continue
-                    if stat.S_ISREG(st.st_mode):
-                        files.append(FSNode(path, 'f'))
-                    elif stat.S_ISDIR(st.st_mode):
-                        dirs.append(FSNode(path, 'd'))
-            for node in dirs:
-                item = tree.AppendItem(self.item, node.label, IM_FOLDER)
+                if stat.S_ISREG(st.st_mode):
+                    files.append(FSNode(path, 'f'))
+                elif stat.S_ISDIR(st.st_mode):
+                    dirs.append((FSNode(path, 'd'), listable))
+            for node, listable in dirs:
+                image = IM_FOLDER if listable else IM_FOLDER_DENIED
+                item = tree.AppendItem(self.item, node.label, image)
                 tree.SetItemNode(item, node)
-                tree.SetItemHasChildren(item, True)
+                tree.SetItemHasChildren(item, listable)
             for node in files:
                 item = tree.AppendItem(self.item, node.label, IM_FILE)
                 tree.SetItemNode(item, node)
             tree.SetItemImage(self.item, IM_FOLDER)
             tree.SetItemHasChildren(self.item, tree.GetFirstChild(self.item)[0].IsOk())
-            if sys.platform != "win32":
-                for node in dirs:
-                    try:
-                        listable = (yield async_call(os.access, node.path, os.X_OK))
-                    except OSError:
-                        listable = False
-                    if not listable:
-                        tree.SetItemImage(node.item, IM_FOLDER_DENIED)
-                        tree.SetItemHasChildren(item, False)
 
     def collapse(self, tree, monitor):
         pass
