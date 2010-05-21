@@ -216,10 +216,10 @@ class Coroutine(Future):
             self.__running = True
             self.__next(self.__gen.next)
 
-    def __next(self, func, *args, **kwargs):
+    def __next(self, func, *args):
         self.__cont = None
         try:
-            ret = func(*args, **kwargs)
+            ret = func(*args)
         except StopIteration:
             self.set_done(None)
         except FutureCancelled:
