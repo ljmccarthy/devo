@@ -171,6 +171,9 @@ class MainFrame(wx.Frame):
     @managed("cm")
     @coroutine
     def LoadSession(self):
+        if wx.Platform == "__WXGTK__":
+            self.notebook.Hide()
+        self.notebook.Freeze()
         try:
             with (yield async_call(open, self.session_file, "rb")) as f:
                 session = pickle.loads((yield async_call(f.read)))
@@ -186,25 +189,28 @@ class MainFrame(wx.Frame):
                     self.notebook.SetSelection(selection)
                     self.notebook.GetPage(selection).SetFocus()
             for editor, p in editors:
-                yield editor.LoadPerspective(p)
+                editor.LoadPerspective(p)
             if "dirtree" in session:
                 self.tree.LoadPerspective(session["dirtree"])
         except (IOError, OSError):
             pass
         except Exception, e:
             dialogs.error(self, "Error loading session:\n\n%s" % traceback.format_exc())
-        self.Show()
+        finally:
+            self.notebook.Thaw()
+            self.notebook.Show()
+            self.Show()
 
     def DeleteAllPages(self):
-        with frozen_window(self):
-#            self.manager.DetachPane(self.notebook)
-#            self.notebook.Destroy()
-#            self.notebook = aui.AuiNotebook(self, style=NB_STYLE)
-#            self.manager.AddPane(self.notebook, aui.AuiPaneInfo().CentrePane())
-#            self.manager.Update()
-
+        if wx.Platform == "__WXGTK__":
+            self.notebook.Hide()
+        try:
+            self.notebook.Freeze()
             for i in xrange(self.notebook.GetPageCount()-1, -1, -1):
                 self.notebook.DeletePage(i)
+        finally:
+            self.notebook.Thaw()
+            self.notebook.Show()
 
     @managed("cm")
     @coroutine
@@ -272,10 +278,7 @@ class MainFrame(wx.Frame):
                 self.notebook.SetSelection(i)
         else:
             editor = Editor(self.notebook, self.env, realpath)
-            try:
-                yield editor.LoadFile(realpath)
-            except Exception, e:
-                dialogs.error(self, "Error opening file:\n\n%s" % e)
+            if not (yield editor.TryLoadFile(realpath)):
                 editor.Destroy()
             else:
                 with frozen_window(self.notebook):

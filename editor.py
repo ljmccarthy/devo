@@ -99,6 +99,9 @@ class Editor(wx.stc.StyledTextCtrl):
     def LoadFile(self, path):
         self.SetReadOnly(True)
         self.Disable()
+        old_path = self.path
+        self.path = path
+        self.sig_title_changed.signal(self)
         try:
             with (yield async_call(open, path)) as f:
                 text = (yield async_call(f.read))
@@ -111,11 +114,22 @@ class Editor(wx.stc.StyledTextCtrl):
             self.SetText(text)
             self.EmptyUndoBuffer()
             self.SetSavePoint()
-            self.path = path
+        except:
+            self.path = old_path
+            self.sig_title_changed.signal(self)
+            raise
         finally:
             self.Enable()
             self.SetReadOnly(False)
-            self.sig_title_changed.signal(self)
+
+    @coroutine
+    def TryLoadFile(self, path):
+        try:
+            yield self.LoadFile(path)
+            yield True
+        except Exception, e:
+            dialogs.error(self, "Error opening file:\n\n%s" % e)
+            yield False
 
     @coroutine
     def SaveFile(self, path):
@@ -234,13 +248,12 @@ class Editor(wx.stc.StyledTextCtrl):
             p["text"] = self.GetText()
         return p
 
-    @coroutine
     def LoadPerspective(self, p):
         if "text" in p:
             self.SetSavePoint()
             self.EmptyUndoBuffer()
             self.SetText(p["text"])
         elif "path" in p:
-            yield self.LoadFile(p["path"])
+            self.TryLoadFile(p["path"])
         self.ScrollToLine(p.get("line", 0))
         self.SetSelection(*p.get("selection", (0, 0)))
