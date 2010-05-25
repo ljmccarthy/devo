@@ -37,7 +37,7 @@ def with_current_editor(method):
 NB_STYLE = (aui.AUI_NB_CLOSE_ON_ALL_TABS  | aui.AUI_NB_TOP | aui.AUI_NB_TAB_SPLIT
            | aui.AUI_NB_TAB_MOVE | aui.AUI_NB_SCROLL_BUTTONS | wx.BORDER_NONE)
 
-class MainFrame(wx.Frame):
+class MainFrame(wx.Frame, wx.FileDropTarget):
     def __init__(self):
         rect = AdjustRectToScreen(wx.Rect(0, 0, 1000, 1500))
         if wx.Platform == "__WXGTK__":
@@ -48,6 +48,9 @@ class MainFrame(wx.Frame):
             pos = (25, 25)
 
         wx.Frame.__init__(self, None, title="Devo", pos=pos, size=size)
+        wx.FileDropTarget.__init__(self)
+
+        self.SetDropTarget(self)
         self.SetMenuBar(menubar.Create())
 
         self.config_dir = fileutil.get_user_config_dir("devo")
@@ -295,6 +298,10 @@ class MainFrame(wx.Frame):
     @with_current_editor
     def OnCloseFile(self, editor, evt):
         self.ClosePage(editor)
+
+    def OnDropFiles(self, x, y, filenames):
+        for filename in filenames:
+            self.OpenEditor(filename)
 
     def GetNewProject(self):
         dlg = NewProjectDialog(self)

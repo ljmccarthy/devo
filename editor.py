@@ -20,6 +20,7 @@ class Editor(wx.stc.StyledTextCtrl):
         pre.Hide()
         pre.Create(parent, size=wx.Size(1, 1), style=wx.BORDER_NONE)
         self.PostCreate(pre)
+        self.SetDropTarget(None)
 
         self.env = env
         self.path = path
@@ -33,6 +34,7 @@ class Editor(wx.stc.StyledTextCtrl):
         self.SetNullSyntax()
 
         self.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
+        self.Bind(wx.EVT_RIGHT_DOWN, self.OnRightDown)
         self.Bind(wx.EVT_CONTEXT_MENU, self.OnContextMenu)
         self.Bind(wx.stc.EVT_STC_SAVEPOINTLEFT, self.OnSavePointLeft)
         self.Bind(wx.stc.EVT_STC_SAVEPOINTREACHED, self.OnSavePointReached)
@@ -192,6 +194,14 @@ class Editor(wx.stc.StyledTextCtrl):
                 evt.Skip()
         else:
             evt.Skip()
+
+    def OnRightDown(self, evt):
+        start, end = self.GetSelection()
+        if start == end:
+            pos = self.PositionFromPoint(evt.GetPosition())
+            self.SetSelection(pos, pos)
+            self.SetCurrentPos(pos)
+        evt.Skip()
 
     def OnContextMenu(self, evt):
         self.PopupMenu(edit_menu.Create())
