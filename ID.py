@@ -3,7 +3,7 @@ import wx
 
 __all__ = """\
 FIND_NEXT
-FIND_SELECTED
+FIND_PREV
 GO_TO_LINE
 UNINDENT
 NEW_PROJECT

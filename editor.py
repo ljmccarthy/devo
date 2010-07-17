@@ -212,7 +212,7 @@ class Editor(wx.stc.StyledTextCtrl):
     def OnSavePointReached(self, evt):
         self.sig_title_changed.signal(self)
 
-    def Find(self):
+    def DoFind(self):
         dlg = FindReplaceDialog(self, os.path.basename(self.path), self.find_details)
         try:
             dlg.ShowModal()
@@ -220,9 +220,11 @@ class Editor(wx.stc.StyledTextCtrl):
         finally:
             dlg.Destroy()
 
-    def FindSelected(self):
-        self.find_details.find = self.GetSelectedText()
-        self.Find()
+    def Find(self):
+        selected = self.GetSelectedText().strip().split("\n")[0]
+        if selected:
+            self.find_details.find = selected
+        self.DoFind()
 
     def FindNext(self):
         if self.CanFindNext():

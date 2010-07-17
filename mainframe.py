@@ -1,4 +1,4 @@
-import sys, os, traceback, wx, cPickle as pickle
+import sys, os, traceback, errno, wx
 from functools import wraps
 from wx.lib.agw import aui
 from wx.lib.utils import AdjustRectToScreen
@@ -8,6 +8,7 @@ from async_wx import async_call, coroutine, managed, CoroutineManager, scheduler
 from dirtree import DirTreeCtrl, DirNode
 from editor import Editor
 from menu_defs import menubar
+from project import read_project, write_project
 from util import frozen_window, is_text_file
 
 from new_project_dialog import NewProjectDialog
@@ -69,7 +70,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             aui.AuiPaneInfo().CentrePane())
         self.manager.Update()
 
-        self.LoadSession()
+        self.OpenDefaultProject()
 
         self.Bind(wx.EVT_CLOSE, self.OnClose)
         self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CLOSE, self.OnPageClose)
@@ -89,7 +90,6 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.Bind(wx.EVT_MENU, self.EditorAction("Paste"), id=ID.PASTE)
         self.Bind(wx.EVT_MENU, self.EditorAction("SelectAll"), id=ID.SELECTALL)
         self.Bind(wx.EVT_MENU, self.EditorAction("Find"), id=ID.FIND)
-        self.Bind(wx.EVT_MENU, self.EditorAction("FindSelected"), id=ID.FIND_SELECTED)
         self.Bind(wx.EVT_MENU, self.EditorAction("FindNext"), id=ID.FIND_NEXT)
         self.Bind(wx.EVT_MENU, self.EditorAction("GoToLine"), id=ID.GO_TO_LINE)
         self.Bind(wx.EVT_MENU, self.EditorAction("Unindent"), id=ID.UNINDENT)
@@ -110,7 +110,6 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.Bind(wx.EVT_UPDATE_UI, self.EditorUpdateUI("CanPaste"), id=ID.PASTE)
         self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_HasEditor, id=ID.SELECTALL)
         self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_HasEditor, id=ID.FIND)
-        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasSelection, id=ID.FIND_SELECTED)
         self.Bind(wx.EVT_UPDATE_UI, self.EditorUpdateUI("CanFindNext"), id=ID.FIND_NEXT)
         self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_HasEditor, id=ID.GO_TO_LINE)
         self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_HasEditor, id=ID.UNINDENT)
@@ -123,26 +122,17 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         for i in xrange(self.notebook.GetPageCount()):
             yield self.notebook.GetPage(i)
 
-    @property
-    def session_dir(self):
-        return self.project.rootdir if self.project else self.config_dir
-
-    @property
-    def session_file(self):
-        if self.project:
-            return os.path.join(self.project.rootdir, ".devo-session")
-        else:
-            return os.path.join(self.config_dir, "session")
-
     def OnClose(self, evt):
         self.DoClose()
 
     @managed("cm")
     @coroutine
     def DoClose(self):
-        if (yield self.SaveSession()):
-            self.Hide()
+        self.Hide()
+        if not self.project or (yield self.SaveSession()):
             wx.CallAfter(self._DoShutdown)
+        else:
+            self.Show()
 
     def _DoShutdown(self):
         scheduler.shutdown()
@@ -152,7 +142,6 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     @coroutine
     def SaveSession(self):
         try:
-            yield async_call(fileutil.mkpath, self.session_dir)
             session = {}
             session["dirtree"] = self.tree.SavePerspective()
             if self.notebook.GetPageCount() > 0:
@@ -164,22 +153,18 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                     if not (yield editor.TryClose()):
                         yield False
                 editors.append(editor.SavePerspective())
-            data = pickle.dumps(session, pickle.HIGHEST_PROTOCOL)
-            yield async_call(fileutil.atomic_write_file, self.session_file, data)
+            self.project.session = session
+            yield async_call(write_project, self.project)
             yield True
         except Exception, e:
             dialogs.error(self, "Error saving session:\n\n%s" % e)
             yield False
 
-    @managed("cm")
-    @coroutine
-    def LoadSession(self):
+    def LoadSession(self, session):
         if wx.Platform == "__WXGTK__":
             self.notebook.Hide()
         self.notebook.Freeze()
         try:
-            with (yield async_call(open, self.session_file, "rb")) as f:
-                session = pickle.loads((yield async_call(f.read)))
             editors = []
             if "editors" in session:
                 for p in session["editors"]:
@@ -195,10 +180,6 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                 editor.LoadPerspective(p)
             if "dirtree" in session:
                 self.tree.LoadPerspective(session["dirtree"])
-        except (IOError, OSError):
-            pass
-        except Exception, e:
-            dialogs.error(self, "Error loading session:\n\n%s" % traceback.format_exc())
         finally:
             self.notebook.Thaw()
             self.notebook.Show()
@@ -215,17 +196,48 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             self.notebook.Thaw()
             self.notebook.Show()
 
-    @managed("cm")
-    @coroutine
-    def LoadProject(self, project):
-        yield self.SaveSession()
+    def SetProject(self, project):
         self.DeleteAllPages()
-        if project:
+        if project and project.rootdir:
             self.tree.SetTopLevel([DirNode(project.rootdir)])
         else:
             self.tree.SetTopLevel()
         self.project = project
-        yield self.LoadSession()
+
+    @managed("cm")
+    @coroutine
+    def LoadProject(self, project):
+        if not self.project or (yield self.SaveSession()):
+            old_project = self.project
+            self.SetProject(project)
+            try:
+                self.LoadSession(project.session)
+            except Exception:
+                if old_project:
+                    self.SetProject(old_project)
+                    self.LoadSession(old_project.session)
+                raise
+
+    @managed("cm")
+    @coroutine
+    def OpenNewProject(self, project):
+        if not self.project or (yield self.SaveSession()):
+            self.SetProject(project)
+
+    @managed("cm")
+    @coroutine
+    def OpenProject(self, filename, rootdir):
+        try:
+            project = (yield async_call(read_project, filename, rootdir))
+            yield self.LoadProject(project)
+        except Exception, e:
+            if isinstance(e, IOError) and e.errno == errno.ENOENT:
+                dialogs.error(self, "Project file not found:\n\n" + rootdir)
+            else:
+                dialogs.error(self, "Error loading session:\n\n%s" % traceback.format_exc())
+
+    def OpenDefaultProject(self):
+        return self.OpenProject(os.path.join(self.config_dir, "session"), "")
 
     def OnPageClose(self, evt):
         evt.Veto()
@@ -314,14 +326,16 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     def OnNewProject(self, evt):
         project = self.GetNewProject()
         if project:
-            self.LoadProject(project)
+            self.OpenNewProject(project)
 
     def OnOpenProject(self, evt):
-        pass
+        rootdir = dialogs.get_directory(self)
+        if rootdir:
+            self.OpenProject(os.path.join(rootdir, ".devo-session"), rootdir)
 
     def OnCloseProject(self, evt):
         if self.project:
-            self.LoadProject(None)
+            self.OpenDefaultProject()
 
     def OnEditProject(self, evt):
         pass
@@ -357,4 +371,4 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             evt.Enable(False)
 
     def UpdateUI_ProjectIsOpen(self, evt):
-        evt.Enable(self.project is not None)
+        evt.Enable(bool(self.project and self.project.rootdir))
