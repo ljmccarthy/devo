@@ -40,7 +40,7 @@ NB_STYLE = (aui.AUI_NB_CLOSE_ON_ALL_TABS  | aui.AUI_NB_TOP | aui.AUI_NB_TAB_SPLI
 
 class MainFrame(wx.Frame, wx.FileDropTarget):
     def __init__(self):
-        rect = AdjustRectToScreen(wx.Rect(0, 0, 1000, 1500))
+        rect = AdjustRectToScreen(wx.Rect(0, 0, 1050, 1500))
         if wx.Platform == "__WXGTK__":
             size = rect.Size
             pos = (0, 0)
