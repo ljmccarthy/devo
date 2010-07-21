@@ -218,8 +218,10 @@ class DirTreeCtrl(wx.TreeCtrl):
         style = wx.TR_DEFAULT_STYLE | wx.TR_EDIT_LABELS | wx.BORDER_NONE
         if not show_root:
             style |= wx.TR_HIDE_ROOT
+
         wx.TreeCtrl.__init__(self, parent, style=style)
         self.SetDoubleBuffered(True)
+
         self.env = env
         self.toplevel = toplevel or MakeTopLevel()
         self.filter = filter or DirTreeFilter()
@@ -231,13 +233,16 @@ class DirTreeCtrl(wx.TreeCtrl):
         self.select_later_parent = None
         self.select_later_name = None
         self.select_later_time = 0
+
         self.imglist = wx.ImageList(16, 16)
         self.imglist.Add(load_bitmap("icons/folder.png"))
         self.imglist.Add(load_bitmap("icons/folder_denied.png"))
         self.imglist.Add(load_bitmap("icons/file.png"))
         self.SetImageList(self.imglist)
+
         self.monitor = FSMonitorThread(self._OnFileSystemChanged)
         self.InitializeTree()
+
         self.Bind(wx.EVT_CLOSE, self.OnClose)
         self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.OnItemActivated)
         self.Bind(wx.EVT_TREE_ITEM_EXPANDING, self.OnItemExpanding)
@@ -447,6 +452,8 @@ class DirTreeCtrl(wx.TreeCtrl):
             rootnode = SimpleNode("", self.toplevel)
         self.SetItemNode(rootitem, rootnode)
         yield self.ExpandNode(rootnode)
+        if isinstance(self.toplevel[0], SimpleNode):
+            yield self.ExpandNode(self.toplevel[0])
 
     def SetTopLevel(self, toplevel=None):
         self.toplevel = toplevel or MakeTopLevel()
