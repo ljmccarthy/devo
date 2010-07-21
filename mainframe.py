@@ -329,7 +329,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             self.OpenNewProject(project)
 
     def OnOpenProject(self, evt):
-        rootdir = dialogs.get_directory(self)
+        rootdir = dialogs.get_directory(self, "Select Project Directory")
         if rootdir:
             self.OpenProject(os.path.join(rootdir, ".devo-session"), rootdir)
 
