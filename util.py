@@ -1,4 +1,3 @@
-import mimetypes
 import wx
 
 class frozen_window(object):
@@ -11,9 +10,19 @@ class frozen_window(object):
     def __exit__(self, exn_type, exn_value, exn_traceback):
         self.win.Thaw()
 
+def count_non_printable(s):
+    count = 0
+    for c in s:
+        if ord(c) < 0x20:
+            count += 1
+    return count
+
+# Heuristic idea from Subversion:
+# http://subversion.apache.org/faq.html#binary-files
 def is_text_file(path):
-    filetype, encoding = mimetypes.guess_type(path)
-    return filetype is None or filetype.startswith("text/")
+    with open(path, "rb") as f:
+        data = f.read(1024)
+    return not ("\0" in data or count_non_printable(data) > len(data) // 6)
 
 def iter_tree_children(tree, item):
     item = tree.GetFirstChild(item)[0]
@@ -33,4 +42,3 @@ def CallLater(timer, func, *args, **kwargs):
         _TryCallLater(timer, func, args, kwargs)
     else:
         wx.CallAfter(_TryCallLater, timer, func, args, kwargs)
-        
