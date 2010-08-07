@@ -268,11 +268,13 @@ class Editor(wx.stc.StyledTextCtrl):
         return p
 
     def LoadPerspective(self, p):
+        future = None
         if "text" in p:
             self.SetSavePoint()
             self.EmptyUndoBuffer()
             self.SetText(p["text"])
         elif "path" in p:
-            self.TryLoadFile(p["path"])
+            future = self.LoadFile(p["path"])
         self.ScrollToLine(p.get("line", 0))
         self.SetSelection(*p.get("selection", (0, 0)))
+        return future

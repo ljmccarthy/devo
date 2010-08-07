@@ -160,7 +160,10 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             dialogs.error(self, "Error saving session:\n\n%s" % e)
             yield False
 
+    @managed("cm")
+    @coroutine
     def LoadSession(self, session):
+        errors = []
         if wx.Platform == "__WXGTK__":
             self.notebook.Hide()
         self.notebook.Freeze()
@@ -168,7 +171,9 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             editors = []
             if "editors" in session:
                 for p in session["editors"]:
-                    editors.append((self.NewEditor(), p))
+                    editor = self.NewEditor()
+                    future = editor.LoadPerspective(p)
+                    editors.append((editor, future))
                 if "notebook" in session and session["editors"]:
                     self.notebook.LoadPerspective(session["notebook"])
             if "selection" in session:
@@ -176,14 +181,24 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                 if 0 <= selection < self.notebook.GetPageCount():
                     self.notebook.SetSelection(selection)
                     self.notebook.GetPage(selection).SetFocus()
-            for editor, p in editors:
-                editor.LoadPerspective(p)
             if "dirtree" in session:
                 self.tree.LoadPerspective(session["dirtree"])
+            for i, (editor, future) in reversed(list(enumerate(editors))):
+                try:
+                    if future:
+                        yield future
+                except Exception, e:
+                    if not (isinstance(e, IOError) and e.errno == errno.ENOENT):
+                        errors.append(e)
+                    self.notebook.DeletePage(i)
+            errors.reverse()
         finally:
             self.notebook.Thaw()
             self.notebook.Show()
             self.Show()
+            if errors:
+                dialogs.error(self, "Errors loading session:\n\n%s" %
+                    ("\n\n".join(str(e) for e in errors)))
 
     def DeleteAllPages(self):
         if wx.Platform == "__WXGTK__":
