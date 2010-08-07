@@ -18,7 +18,7 @@ def error(parent, message, caption="Error"):
 def info(parent, message, caption=""):
     message_dialog(parent, message, caption, wx.OK | wx.ICON_INFORMATION)
 
-def get_file_to_open(parent, wildcard="All Files|*.*", message="Open File", path=""):
+def get_file_to_open(parent, wildcard="All Files|*", message="Open File", path=""):
     dlg = wx.FileDialog(parent, wildcard=wildcard, message=message, defaultDir=path)
     try:
         if dlg.ShowModal() == wx.ID_OK:
@@ -26,7 +26,7 @@ def get_file_to_open(parent, wildcard="All Files|*.*", message="Open File", path
     finally:
         dlg.Destroy()
 
-def get_file_to_save(parent, wildcard="All Files|*.*", message="Save File", path=""):
+def get_file_to_save(parent, wildcard="All Files|*", message="Save File", path=""):
     dlg = wx.FileDialog(parent,
         wildcard=wildcard, message=message, defaultDir=path,
         style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
