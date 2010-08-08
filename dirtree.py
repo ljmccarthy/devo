@@ -2,9 +2,10 @@ import sys, os, stat, threading, time
 import wx
 from fsmonitor import FSMonitorThread, FSEvent
 
-import dialogs, fileutil
+import fileutil
 from async import Future
 from async_wx import async_call, coroutine, queued_coroutine, managed, CoroutineQueue, CoroutineManager
+from dialogs import dialogs
 from menu import Menu, MenuItem, MenuSeparator
 from util import iter_tree_children, frozen_window, CallLater
 from resources import load_bitmap

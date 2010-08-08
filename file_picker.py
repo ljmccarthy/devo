@@ -1,6 +1,6 @@
 import wx
 import os
-import dialogs
+from dialogs import dialogs
 
 ID_BROWSE = wx.NewId()
 

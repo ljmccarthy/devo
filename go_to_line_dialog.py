@@ -1,5 +1,5 @@
 import wx
-import dialogs
+from dialogs import dialogs
 from dialog_util import bind_escape_key
 
 class GoToLineDialog(wx.Dialog):

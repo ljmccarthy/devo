@@ -1,13 +1,13 @@
 import os
 import wx, wx.stc
 from async_wx import async_call, coroutine
+from dialogs import dialogs
 from fileutil import atomic_write_file
 from find_replace_dialog import FindReplaceDialog, FindReplaceDetails
 from go_to_line_dialog import GoToLineDialog
 from menu_defs import edit_menu
 from signal_wx import Signal
 from syntax import filename_syntax_re, syntax_dict
-import dialogs
 
 if wx.Platform == "__WXMSW__":
     fontface = "Courier New"

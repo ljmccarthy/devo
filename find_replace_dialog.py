@@ -1,6 +1,6 @@
 import wx
 import re
-import dialogs
+from dialogs import dialogs
 from dialog_util import bind_escape_key
 
 class FindReplaceDetails(object):

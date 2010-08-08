@@ -3,8 +3,9 @@ from functools import wraps
 from wx.lib.agw import aui
 from wx.lib.utils import AdjustRectToScreen
 
-import dialogs, fileutil, ID
+import fileutil, ID
 from async_wx import async_call, coroutine, managed, CoroutineManager, scheduler
+from dialogs import dialogs
 from dirtree import DirTreeCtrl, DirNode
 from editor import Editor
 from menu_defs import menubar
@@ -143,6 +144,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     def SaveSession(self):
         try:
             session = {}
+            session["dialogs"] = dialogs.save_state()
             session["dirtree"] = self.tree.SavePerspective()
             if self.notebook.GetPageCount() > 0:
                 session["notebook"] = self.notebook.SavePerspective()
@@ -168,6 +170,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             self.notebook.Hide()
         self.notebook.Freeze()
         try:
+            if "dialogs" in session:
+                dialogs.load_state(session["dialogs"])
             editors = []
             if "editors" in session:
                 for p in session["editors"]:

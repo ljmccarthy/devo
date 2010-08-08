@@ -1,10 +1,9 @@
 import os
 import wx
 
-from dirtree import DirTreeCtrl, DirTreeFilter, DirNode
-
 class DirDialog(wx.Dialog):
     def __init__(self, parent, size=wx.DefaultSize, message="", path="", select_path=""):
+        from dirtree import DirTreeCtrl, DirTreeFilter, DirNode
         style = wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
         if size == wx.DefaultSize:
             size = wx.Size(450, 600)
