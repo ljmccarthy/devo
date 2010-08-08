@@ -18,23 +18,27 @@ def error(parent, message, caption="Error"):
 def info(parent, message, caption=""):
     message_dialog(parent, message, caption, wx.OK | wx.ICON_INFORMATION)
 
-def get_file_to_open(parent, wildcard="All Files|*", message="Open File", path=""):
-    dlg = wx.FileDialog(parent, wildcard=wildcard, message=message, defaultDir=path)
+_saved_paths = {}
+
+def _get_file_dialog(parent, message, path, wildcard, context, style):
+    if context and not path:
+        path = _saved_paths.get(context, "")
+    dlg = wx.FileDialog(parent, wildcard=wildcard, message=message, defaultDir=path, style=style)
     try:
         if dlg.ShowModal() == wx.ID_OK:
-            return dlg.GetPath()
+            selected_path = dlg.GetPath()
+            if context:
+                _saved_paths[context] = os.path.dirname(selected_path)
+            return selected_path
     finally:
         dlg.Destroy()
 
-def get_file_to_save(parent, wildcard="All Files|*", message="Save File", path=""):
-    dlg = wx.FileDialog(parent,
-        wildcard=wildcard, message=message, defaultDir=path,
-        style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
-    try:
-        if dlg.ShowModal() == wx.ID_OK:
-            return dlg.GetPath()
-    finally:
-        dlg.Destroy()
+def get_file_to_open(parent, message="Open File", path="", wildcard="All Files|*", context=""):
+    return _get_file_dialog(parent, message, path, wildcard, context, 0)
+
+def get_file_to_save(parent, message="Save File", path="", wildcard="All Files|*", context=""):
+    return _get_file_dialog(
+        parent, message, path, wildcard, context, wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
 
 def get_directory(parent, message="Select Folder", path=""):
     dlg = DirDialog(parent, message=message, select_path=path)
