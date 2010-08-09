@@ -75,13 +75,13 @@ class Dialogs(object):
             dlg.Destroy()
 
     def ask_overwrite(self, parent, path):
-        return message_dialog(parent, 
+        return self.message_dialog(parent, 
             "A file named '%s' already exists. Overwrite?" % path,
             "Confirm Overwrite",
             wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION) == wx.ID_YES
 
     def ask_delete(self, parent, path):
-        return message_dialog(parent,
+        return self.message_dialog(parent,
             "Are you sure you want to delete '%s'?" % path,
             "Confirm Delete",
             wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION) == wx.ID_YES
