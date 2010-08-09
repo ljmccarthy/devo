@@ -128,7 +128,7 @@ class FSNode(object):
             for filename, st, listable in (yield async_call(listdir, self.path)):
                 if not filter.filter_by_name(filename):
                     continue
-                if not filter.filter_by_stat(st):
+                if not filter.filter_by_stat(filename, st):
                     continue
                 path = os.path.join(self.path, filename)
                 if stat.S_ISREG(st.st_mode):
@@ -157,7 +157,7 @@ class FSNode(object):
             path = os.path.join(self.path, name)
             try:
                 st = (yield async_call(os.stat, path))
-                if not filter.filter_by_stat(st):
+                if not filter.filter_by_stat(name, st):
                     return
                 if stat.S_ISREG(st.st_mode):
                     type = 'f'
@@ -198,7 +198,7 @@ class DirTreeFilter(object):
     def filter_by_name(self, name):
         return self.show_hidden or not name.startswith(".")
 
-    def filter_by_stat(self, st):
+    def filter_by_stat(self, name, st):
         return (self.show_dirs or not stat.S_ISDIR(st.st_mode)) \
            and (self.show_files or not stat.S_ISREG(st.st_mode))
 
