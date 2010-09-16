@@ -10,6 +10,7 @@ from dirtree import DirTreeCtrl, DirNode
 from editor import Editor
 from menu_defs import menubar
 from project import read_project, write_project
+from terminal_ctrl import TerminalCtrl
 from util import frozen_window, is_text_file
 
 from new_project_dialog import NewProjectDialog
@@ -64,11 +65,14 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.manager = aui.AuiManager(self)
         self.notebook = aui.AuiNotebook(self, style=NB_STYLE)
         self.tree = DirTreeCtrl(self, self.env)
+        self.terminal = TerminalCtrl(self)
 
         self.manager.AddPane(self.tree,
             aui.AuiPaneInfo().Left().BestSize(wx.Size(220, -1)).CaptionVisible(False))
         self.manager.AddPane(self.notebook,
             aui.AuiPaneInfo().CentrePane())
+        self.manager.AddPane(self.terminal,
+            aui.AuiPaneInfo().Hide().Bottom().BestSize(self.terminal.Size).Caption("Terminal"))
         self.manager.Update()
 
         self.OpenDefaultProject()
