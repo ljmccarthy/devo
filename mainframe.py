@@ -6,6 +6,7 @@ from wx.lib.utils import AdjustRectToScreen
 import fileutil, ID
 from async_wx import async_call, coroutine, managed, CoroutineManager, scheduler
 from dialogs import dialogs
+from commands_dialog import CommandsDialog
 from dirtree import DirTreeCtrl, DirNode
 from editor import Editor
 from menu_defs import menubar
@@ -104,6 +105,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.Bind(wx.EVT_MENU, self.OnCloseProject, id=ID.CLOSE_PROJECT)
         self.Bind(wx.EVT_MENU, self.OnEditProject, id=ID.EDIT_PROJECT)
         self.Bind(wx.EVT_MENU, self.OnOrganiseProjects, id=ID.ORGANISE_PROJECTS)
+        self.Bind(wx.EVT_MENU, self.OnConfigureCommands, id=ID.CONFIGURE_COMMANDS)
 
         self.Bind(wx.EVT_UPDATE_UI, self.EditorUpdateUI("GetModify"), id=ID.SAVE)
         self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_HasEditor, id=ID.SAVEAS)
@@ -189,8 +191,9 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                 if 0 <= selection < self.notebook.GetPageCount():
                     self.notebook.SetSelection(selection)
                     self.notebook.GetPage(selection).SetFocus()
+            tree_future = None
             if "dirtree" in session:
-                self.tree.LoadPerspective(session["dirtree"])
+                tree_future = self.tree.LoadPerspective(session["dirtree"])
             for i, (editor, future) in reversed(list(enumerate(editors))):
                 try:
                     if future:
@@ -200,6 +203,10 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                         errors.append(e)
                     self.notebook.DeletePage(i)
             errors.reverse()
+            try:
+                yield tree_future
+            except Exception, e:
+                errors.append(e)
         finally:
             self.notebook.Thaw()
             self.notebook.Show()
@@ -365,6 +372,13 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
 
     def OnOrganiseProjects(self, evt):
         pass
+
+    def OnConfigureCommands(self, evt):
+        dlg = CommandsDialog(self)
+        try:
+            dlg.ShowModal()
+        finally:
+            dlg.Destroy()
 
     def EditorAction(self, method):
         def handler(evt):
