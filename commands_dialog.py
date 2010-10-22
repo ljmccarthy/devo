@@ -141,7 +141,7 @@ class CommandsDialog(wx.Dialog):
     def OnRemove(self, evt):
         selection = self.cmdlist.GetSelection()
         if selection != wx.NOT_FOUND:
-            pass
+            self.cmdlist.Delete(selection)
 
     def OnUpdateHasSelection(self, ui):
         ui.Enable(self.cmdlist.GetSelection() != wx.NOT_FOUND)
