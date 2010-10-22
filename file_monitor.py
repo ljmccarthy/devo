@@ -8,8 +8,8 @@ class FileMonitor(wx.EvtHandler):
         self.path_mtime = {}
 
         self.timer = wx.Timer(self)
-        self.timer.Start(200)
         self.Bind(wx.EVT_TIMER, self.OnTimer, self.timer)
+        self.Start()
 
     def AddPath(self, path):
         path = os.path.realpath(path)
@@ -36,3 +36,10 @@ class FileMonitor(wx.EvtHandler):
                 print "Warning:", e
         if updated_paths:
             self.callback(updated_paths)
+
+    def Start(self):
+        if not self.timer.IsRunning():
+            self.timer.Start(200)
+
+    def Stop(self):
+        self.timer.Stop()

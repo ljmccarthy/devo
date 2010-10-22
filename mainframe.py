@@ -162,6 +162,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             self.Show()
 
     def _DoShutdown(self):
+        self.fmon.Stop()
         scheduler.shutdown()
         self.Destroy()
 
