@@ -86,6 +86,12 @@ class Dialogs(object):
             "Confirm Delete",
             wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION) == wx.ID_YES
 
+    def ask_reload(self, parent, path):
+        return self.message_dialog(parent,
+            "The file '%s' has been modified by another program. Do you want to reload?" % path,
+            "Modified File",
+            wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION) == wx.ID_YES
+
     def get_text_input(self, *args, **kwargs):
         dlg = TextInputDialog(*args, **kwargs)
         try:

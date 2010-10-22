@@ -60,12 +60,17 @@ class Editor(wx.stc.StyledTextCtrl):
             result = dialogs.ask_save_changes(self, self.path)
             if result == wx.ID_YES:
                 try:
-                    yield (yield self.Save())
+                    save_result = (yield self.Save())
+                    if save_result:
+                        self.env.RemoveMonitorPath(self.path)
+                    yield save_result
                 except Exception:
                     yield False
             else:
                 yield result == wx.ID_NO
         else:
+            if self.path:
+                self.env.RemoveMonitorPath(self.path)
             yield True
 
     def SetNullSyntax(self):
@@ -104,9 +109,11 @@ class Editor(wx.stc.StyledTextCtrl):
     def LoadFile(self, path):
         self.SetReadOnly(True)
         self.Disable()
+
         old_path = self.path
         self.path = path
         self.sig_title_changed.signal(self)
+
         try:
             with (yield async_call(open, path)) as f:
                 text = (yield async_call(f.read))
@@ -114,6 +121,7 @@ class Editor(wx.stc.StyledTextCtrl):
                 text = text.decode("utf-8")
             except UnicodeDecodeError:
                 text = text.decode("iso-8859-1")
+
             self.SetReadOnly(False)
             self.SetSyntaxFromFilename(path)
             self.SetText(text)
@@ -123,6 +131,10 @@ class Editor(wx.stc.StyledTextCtrl):
             width = max(self.TextWidth(wx.stc.STC_STYLE_DEFAULT, line)
                              for line in text.split("\n"))
             self.SetScrollWidth(max(width, self.default_scroll_width))
+
+            if old_path:
+                self.env.RemoveMonitorPath(old_path)
+            self.env.AddMonitorPath(path)
         except:
             self.path = old_path
             self.sig_title_changed.signal(self)
@@ -139,6 +151,9 @@ class Editor(wx.stc.StyledTextCtrl):
         except Exception, e:
             dialogs.error(self, "Error opening file:\n\n%s" % e)
             yield False
+
+    def Reload(self):
+        return self.LoadFile(self.path)
 
     @coroutine
     def SaveFile(self, path):
@@ -161,6 +176,7 @@ class Editor(wx.stc.StyledTextCtrl):
             else:
                 self.SetSyntaxFromFilename(path)
                 self.path = path
+                self.env.AddMonitorPath(path)
                 self.sig_title_changed.signal(self)
                 yield True
         yield False

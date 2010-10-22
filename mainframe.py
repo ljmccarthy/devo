@@ -9,6 +9,7 @@ from dialogs import dialogs
 from commands_dialog import CommandsDialog
 from dirtree import DirTreeCtrl, DirNode
 from editor import Editor
+from file_monitor import FileMonitor
 from menu_defs import menubar
 from project import read_project, write_project
 from terminal_ctrl import TerminalCtrl
@@ -18,17 +19,23 @@ from new_project_dialog import NewProjectDialog
 
 class AppEnv(object):
     def __init__(self, mainframe):
-        self.mainframe = mainframe
+        self._mainframe = mainframe
 
     @coroutine
     def OpenFile(self, path):
         if not (yield async_call(is_text_file, path)):
-            dialogs.error(self.mainframe, "Selected file is not a text file:\n\n%s" % path)
+            dialogs.error(self._mainframe, "Selected file is not a text file:\n\n%s" % path)
         else:
-            yield self.mainframe.OpenEditor(path)
+            yield self._mainframe.OpenEditor(path)
 
     def NewEditor(self):
-        self.mainframe.NewEditor()
+        self._mainframe.NewEditor()
+
+    def AddMonitorPath(self, path):
+        self._mainframe.fmon.AddPath(path)
+
+    def RemoveMonitorPath(self, path):
+        self._mainframe.fmon.RemovePath(path)
 
 def with_current_editor(method):
     @wraps(method)
@@ -62,6 +69,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
 
         self.cm = CoroutineManager()
         self.env = AppEnv(self)
+        self.fmon = FileMonitor(self.OnFilesChanged)
+        self.updated_paths = set()
 
         self.manager = aui.AuiManager(self)
         self.notebook = aui.AuiNotebook(self, style=NB_STYLE)
@@ -79,6 +88,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.OpenDefaultProject()
 
         self.Bind(wx.EVT_CLOSE, self.OnClose)
+        self.Bind(wx.EVT_ACTIVATE, self.OnActivate)
         self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CLOSE, self.OnPageClose)
         self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnPageChanged)
 
@@ -379,6 +389,25 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             dlg.ShowModal()
         finally:
             dlg.Destroy()
+
+    def NotifyUpdatedPaths(self):
+        if self.updated_paths:
+            updated_paths = self.updated_paths
+            self.updated_paths = set()
+            for i, editor in enumerate(self.editors):
+                if editor.path in updated_paths:
+                    self.notebook.SetSelection(i)
+                    if dialogs.ask_reload(self, editor.path):
+                        editor.Reload()
+
+    def OnActivate(self, evt):
+        self.NotifyUpdatedPaths()
+
+    def OnFilesChanged(self, paths):
+        for path in paths:
+            self.updated_paths.add(path)
+        if self.IsActive():
+            self.NotifyUpdatedPaths()
 
     def EditorAction(self, method):
         def handler(evt):
