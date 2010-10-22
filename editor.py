@@ -160,10 +160,8 @@ class Editor(wx.stc.StyledTextCtrl):
         text = self.GetText().encode("utf-8")
         if not text.endswith("\n"):
             text += "\n"
-        self.env.RemoveMonitorPath(path)
         yield async_call(atomic_write_file, path, text)
         self.SetSavePoint()
-        self.env.AddMonitorPath(path)
 
     @coroutine
     def SaveAs(self):
@@ -187,7 +185,9 @@ class Editor(wx.stc.StyledTextCtrl):
     def Save(self):
         if self.path:
             try:
+                self.env.RemoveMonitorPath(self.path)
                 yield self.SaveFile(self.path)
+                self.env.AddMonitorPath(self.path)
                 yield True
             except Exception, exn:
                 dialogs.error(self, "Error saving file '%s'\n\n%s" % (self.path, exn))
