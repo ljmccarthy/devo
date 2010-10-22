@@ -160,8 +160,10 @@ class Editor(wx.stc.StyledTextCtrl):
         text = self.GetText().encode("utf-8")
         if not text.endswith("\n"):
             text += "\n"
+        self.env.RemoveMonitorPath(path)
         yield async_call(atomic_write_file, path, text)
         self.SetSavePoint()
+        self.env.AddMonitorPath(path)
 
     @coroutine
     def SaveAs(self):
