@@ -408,14 +408,19 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         if self.updated_paths and not self.reloading:
             try:
                 self.reloading = True
+                to_reload = []
                 for i, editor in enumerate(self.editors):
                     if editor.path in self.updated_paths:
-                        self.notebook.SetSelection(i)
-                        if dialogs.ask_reload(self, os.path.basename(editor.path)):
-                            yield editor.Reload()
+                        to_reload.append((i, editor))
                 self.updated_paths.clear()
+                for i, editor in to_reload:
+                    self.notebook.SetSelection(i)
+                    if dialogs.ask_reload(self, os.path.basename(editor.path)):
+                        yield editor.Reload()
             finally:
                 self.reloading = False
+            if self.updated_paths:
+                self.NotifyUpdatedPaths()
 
     def OnActivate(self, evt):
         self.NotifyUpdatedPaths()
