@@ -80,6 +80,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.env = AppEnv(self)
         self.fmon = FileMonitor(self.OnFilesChanged)
         self.updated_paths = set()
+        self.reloading = False
         self.find_details = FindReplaceDetails("", "")
 
         self.manager = aui.AuiManager(self)
@@ -401,15 +402,20 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         finally:
             dlg.Destroy()
 
+    @managed("cm")
+    @coroutine
     def NotifyUpdatedPaths(self):
-        if self.updated_paths:
-            updated_paths = self.updated_paths
-            self.updated_paths = set()
-            for i, editor in enumerate(self.editors):
-                if editor.path in updated_paths:
-                    self.notebook.SetSelection(i)
-                    if dialogs.ask_reload(self, editor.path):
-                        editor.Reload()
+        if self.updated_paths and not self.reloading:
+            try:
+                self.reloading = True
+                for i, editor in enumerate(self.editors):
+                    if editor.path in self.updated_paths:
+                        self.notebook.SetSelection(i)
+                        if dialogs.ask_reload(self, os.path.basename(editor.path)):
+                            yield editor.Reload()
+                self.updated_paths.clear()
+            finally:
+                self.reloading = False
 
     def OnActivate(self, evt):
         self.NotifyUpdatedPaths()
