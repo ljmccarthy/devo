@@ -10,6 +10,7 @@ from commands_dialog import CommandsDialog
 from dirtree import DirTreeCtrl, DirNode
 from editor import Editor
 from file_monitor import FileMonitor
+from find_replace_dialog import FindReplaceDetails
 from menu_defs import menubar
 from project import read_project, write_project
 from terminal_ctrl import TerminalCtrl
@@ -36,6 +37,14 @@ class AppEnv(object):
 
     def RemoveMonitorPath(self, path):
         self._mainframe.fmon.RemovePath(path)
+
+    @property
+    def find_details(self):
+        return self._mainframe.find_details
+
+    @find_details.setter
+    def find_details(self, find_details):
+        self._mainframe.find_details = find_details
 
 def with_current_editor(method):
     @wraps(method)
@@ -71,6 +80,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.env = AppEnv(self)
         self.fmon = FileMonitor(self.OnFilesChanged)
         self.updated_paths = set()
+        self.find_details = FindReplaceDetails("", "")
 
         self.manager = aui.AuiManager(self)
         self.notebook = aui.AuiNotebook(self, style=NB_STYLE)

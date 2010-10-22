@@ -3,7 +3,7 @@ import wx, wx.stc
 from async_wx import async_call, coroutine
 from dialogs import dialogs
 from fileutil import atomic_write_file
-from find_replace_dialog import FindReplaceDialog, FindReplaceDetails
+from find_replace_dialog import FindReplaceDialog
 from go_to_line_dialog import GoToLineDialog
 from menu_defs import edit_menu
 from signal_wx import Signal
@@ -20,11 +20,11 @@ class Editor(wx.stc.StyledTextCtrl):
         pre.Hide()
         pre.Create(parent, size=wx.Size(1, 1), style=wx.BORDER_NONE)
         self.PostCreate(pre)
+        self.UsePopUp(False)
         self.SetDropTarget(None)
 
         self.env = env
         self.path = path
-        self.find_details = FindReplaceDetails("", "")
         self.sig_title_changed = Signal(self)
 
         self.SetTabIndents(True)
@@ -238,25 +238,25 @@ class Editor(wx.stc.StyledTextCtrl):
         self.sig_title_changed.signal(self)
 
     def DoFind(self):
-        dlg = FindReplaceDialog(self, os.path.basename(self.path), self.find_details)
+        dlg = FindReplaceDialog(self, os.path.basename(self.path), self.env.find_details)
         try:
             dlg.ShowModal()
-            self.find_details = dlg.GetFindDetails()
+            self.env.find_details = dlg.GetFindDetails()
         finally:
             dlg.Destroy()
 
     def Find(self):
         selected = self.GetSelectedText().strip().split("\n")[0]
         if selected:
-            self.find_details.find = selected
+            self.env.find_details.find = selected
         self.DoFind()
 
     def FindNext(self):
         if self.CanFindNext():
-            self.find_details.Find(self)
+            self.env.find_details.Find(self)
 
     def CanFindNext(self):
-        return self.find_details is not None
+        return self.env.find_details is not None
 
     def GoToLine(self):
         dlg = GoToLineDialog(self, os.path.basename(self.path))
