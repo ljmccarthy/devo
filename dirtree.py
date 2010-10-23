@@ -393,9 +393,7 @@ class DirTreeCtrl(wx.TreeCtrl):
     @queued_coroutine("cq_populate")
     def ExpandNode(self, node):
         if not node.populated:
-            f = node.expand(self, self.monitor, self.filter)
-            if isinstance(f, Future):
-                yield f
+            yield node.expand(self, self.monitor, self.filter)
         self.Expand(node.item)
 
     def CollapseNode(self, node):
@@ -485,12 +483,13 @@ class DirTreeCtrl(wx.TreeCtrl):
                 if not paths:
                     break
 
+    @coroutine
     def ExpandPathNodes(self, paths):
         rootnode = self.GetPyData(self.GetRootItem())
         paths = set(paths)
         paths.discard(rootnode.path)
         if paths:
-            return self._ExpandPathNodes(rootnode, paths)
+            yield self._ExpandPathNodes(rootnode, paths)
 
     def ExpandPath(self, path):
         parts = []
@@ -534,4 +533,4 @@ class DirTreeCtrl(wx.TreeCtrl):
         if expanded:
             yield self.ExpandPathNodes(expanded)
         if "selected" in p:
-            self.SelectPath(p["selected"])
+            yield self.SelectPath(p["selected"])
