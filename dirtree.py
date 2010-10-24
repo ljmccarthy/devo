@@ -303,12 +303,12 @@ class DirTreeCtrl(wx.TreeCtrl):
 
     def OnItemExpanding(self, evt):
         node = self.GetEventNode(evt)
-        if node.type == 'd' and not node.populated:
+        if node.type == 'd':
             self.ExpandNode(node)
 
     def OnItemCollapsed(self, evt):
         node = self.GetEventNode(evt)
-        if node.type == 'd' and node.populated:
+        if node.type == 'd':
             self.CollapseNode(node)
 
     def OnItemRightClicked(self, evt):
