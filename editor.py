@@ -285,6 +285,7 @@ class Editor(wx.stc.StyledTextCtrl):
             p["text"] = self.GetText()
         return p
 
+    @coroutine
     def LoadPerspective(self, p):
         future = None
         if "text" in p:
@@ -292,7 +293,6 @@ class Editor(wx.stc.StyledTextCtrl):
             self.EmptyUndoBuffer()
             self.SetText(p["text"])
         elif "path" in p:
-            future = self.LoadFile(p["path"])
+            yield self.LoadFile(p["path"])
         self.ScrollToLine(p.get("line", 0))
         self.SetSelection(*p.get("selection", (0, 0)))
-        return future
