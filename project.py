@@ -1,4 +1,6 @@
-import os, cPickle as pickle
+import os
+import json
+
 import fileutil
 
 class Project(object):
@@ -10,10 +12,10 @@ class Project(object):
 
 def read_project(filename, rootdir):
     with open(filename, "rb") as f:
-        session = pickle.loads(f.read())
+        session = json.loads(f.read())
     return Project("", rootdir, filename, session)
 
 def write_project(project):
     fileutil.mkpath(os.path.dirname(project.filename))
-    data = pickle.dumps(project.session, pickle.HIGHEST_PROTOCOL)
+    data = json.dumps(project.session, indent=2)
     fileutil.atomic_write_file(project.filename, data)
