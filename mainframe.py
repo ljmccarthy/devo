@@ -15,7 +15,7 @@ from menu import MenuItem
 from menu_defs import menubar
 from project import read_project, write_project
 from terminal_ctrl import TerminalCtrl
-from util import frozen_window, is_text_file
+from util import frozen_window, is_text_file, is_focused
 
 from new_project_dialog import NewProjectDialog
 
@@ -472,25 +472,26 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     def EditorAction(self, method):
         def handler(evt):
             editor = self.GetCurrentEditor()
-            if editor is not None:
+            if editor is not None and is_focused(editor):
                 return getattr(editor, method)()
         return handler
 
     def EditorUpdateUI(self, method):
         def handler(evt):
             editor = self.GetCurrentEditor()
-            if editor is not None:
+            if editor is not None and is_focused(editor):
                 evt.Enable(getattr(editor, method)())
             else:
                 evt.Enable(False)
         return handler
 
     def UpdateUI_HasEditor(self, evt):
-        evt.Enable(self.GetCurrentEditor() is not None)
+        editor = self.GetCurrentEditor()
+        evt.Enable(editor is not None and is_focused(editor))
 
     def UpdateUI_EditorHasSelection(self, evt):
         editor = self.GetCurrentEditor()
-        if editor is not None:
+        if editor is not None and is_focused(editor):
             start, end = editor.GetSelection()
             evt.Enable(start != end)
         else:

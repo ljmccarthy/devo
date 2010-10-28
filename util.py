@@ -30,6 +30,14 @@ def iter_tree_children(tree, item):
         yield item
         item = tree.GetNextSibling(item)
 
+def is_focused(win):
+    focus = wx.Window.FindFocus()
+    while focus:
+        if win is focus:
+            return True
+        focus = focus.Parent
+    return False
+
 def _TryCallLater(timer, func, args, kwargs):
     try:
         wx.CallLater(timer, func, *args, **kwargs)
