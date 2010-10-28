@@ -25,23 +25,33 @@ class TerminalCtrl(wx.TextCtrl):
     def run(self, args, env=None, cwd=None):
         if self.thread:
             return
+
         process = subprocess.Popen(args,
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
             close_fds=True, shell=True, cwd=cwd, env=env)
         self.thread = threading.Thread(target=self.__thread, args=(process,))
         self.thread.start()
+
+        self.SetDefaultStyle(wx.TextAttr(colText=wx.BLUE))
+        self.AppendText("[Running: %s]\n\n" % args)
+        self.SetDefaultStyle(wx.TextAttr())
+
         self.timer.Start(10)
 
     def __thread(self, process):
+        rc = None
         try:
             for line in process.stdout:
                 self.queue.put(line)
             rc = process.wait()
-            self.queue.put("\n[Process terminated with return code %d]" % rc)
         finally:
-            wx.CallAfter(self.__thread_exit)
+            wx.CallAfter(self.__thread_exit, rc)
 
-    def __thread_exit(self):
+    def __thread_exit(self, rc):
         self.thread = None
         self.timer.Stop()
         self.__flush()
+        if rc is not None:
+            self.SetDefaultStyle(wx.TextAttr(colText=wx.BLUE if rc == 0 else wx.RED))
+            self.AppendText("\n[Process terminated with return code %d]\n" % rc)
+            self.SetDefaultStyle(wx.TextAttr())

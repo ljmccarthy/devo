@@ -1,4 +1,3 @@
-import collections
 import string
 import wx
 from accelerator import parse_accelerator, unparse_accelerator
@@ -17,8 +16,6 @@ Commands may use the following environment variables:
     $CURRENT_BASENAME - Base filename of current file
     $PROJECT_ROOT - Project root directory
 """
-
-Command = collections.namedtuple("Command", "name accel cmdline")
 
 class EditCommandDialog(wx.Dialog):
     def __init__(self, parent, name="", accel="", cmdline="", title="Edit Command"):
@@ -64,13 +61,12 @@ class EditCommandDialog(wx.Dialog):
     def _GetField(self, ctrl):
         value = ctrl.Value.strip()
         if not value:
-            ctrl.SetFocus()
             raise Exception("Field is required")
         return value
 
     def _GetAccel(self, ctrl):
-        value = self._GetField(ctrl)
-        return parse_accelerator(value)
+        value = ctrl.Value.strip()
+        return value and unparse_accelerator(*parse_accelerator(value))
 
     def _GetCmdline(self, ctrl):
         value = self._GetField(ctrl)
@@ -84,27 +80,27 @@ class EditCommandDialog(wx.Dialog):
         return value
 
     _fields = (
-        ("text_name", _GetField),
-        ("text_accel", _GetAccel),
-        ("text_cmdline", _GetCmdline),
+        ("name", _GetField),
+        ("accel", _GetAccel),
+        ("cmdline", _GetCmdline),
     )
 
     def OnOK(self, evt):
-        command = []
+        command = {}
         for field_name, getter_method in self._fields:
-            ctrl = getattr(self, field_name)
+            ctrl = getattr(self, "text_" + field_name)
             try:
                 value = getter_method(self, ctrl)
             except Exception, e:
                 ctrl.SetFocus()
                 dialogs.error(self, "Error: %s" % e)
                 return
-            command.append(value)
-        self.command = Command(*command)
+            command[field_name] = value
+        self.command = command
         evt.Skip()
 
 class CommandsDialog(wx.Dialog):
-    def __init__(self, parent):
+    def __init__(self, parent, commands=[]):
         style = wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
         wx.Dialog.__init__(self, parent, title="Configure Commands", style=style)
         
@@ -115,6 +111,9 @@ class CommandsDialog(wx.Dialog):
         btn_remove = wx.Button(self, label="&Remove")
         btn_move_up = wx.Button(self, label="Move &Up")
         btn_move_down = wx.Button(self, label="Move &Down")
+
+        for command in commands:
+            self.cmdlist.Append(command["name"], command)
 
         right_sizer = wx.BoxSizer(wx.VERTICAL)
         right_sizer.Add(btn_add, 0, wx.EXPAND)
@@ -151,7 +150,6 @@ class CommandsDialog(wx.Dialog):
         self.Bind(wx.EVT_BUTTON, self.OnRemove, btn_remove)
         self.Bind(wx.EVT_BUTTON, self.OnMoveUp, btn_move_up)
         self.Bind(wx.EVT_BUTTON, self.OnMoveDown, btn_move_down)
-        self.Bind(wx.EVT_BUTTON, self.OnOK, btn_ok)
         self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateHasSelection, btn_edit)
         self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateHasSelection, btn_remove)
         self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateHasSelection, btn_move_up)
@@ -161,7 +159,7 @@ class CommandsDialog(wx.Dialog):
         return self.cmdlist.GetClientData(i)
 
     def _SetCommand(self, i, command):
-        self.cmdlist.SetString(i, command.name)
+        self.cmdlist.SetString(i, command["name"])
         self.cmdlist.SetClientData(i, command)
 
     def _SwapCommands(self, a, b):
@@ -174,7 +172,7 @@ class CommandsDialog(wx.Dialog):
         dlg = EditCommandDialog(self, title="Add Command")
         try:
             if dlg.ShowModal() == wx.ID_OK:
-                self.cmdlist.Append(dlg.command.name, dlg.command)
+                self.cmdlist.Append(dlg.command["name"], dlg.command)
         finally:
             dlg.Destroy()
 
@@ -182,10 +180,7 @@ class CommandsDialog(wx.Dialog):
         selection = self.cmdlist.GetSelection()
         if selection != wx.NOT_FOUND:
             command = self._GetCommand(selection)
-            dlg = EditCommandDialog(self,
-                name    = command.name,
-                accel   = unparse_accelerator(*command.accel),
-                cmdline = command.cmdline)
+            dlg = EditCommandDialog(self, **command)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     self._SetCommand(selection, dlg.command)
@@ -211,10 +206,6 @@ class CommandsDialog(wx.Dialog):
 
     def OnUpdateHasSelection(self, ui):
         ui.Enable(self.cmdlist.GetSelection() != wx.NOT_FOUND)
-
-    def OnOK(self, evt):
-        evt.Skip()
-        print self.GetCommands()
 
     def GetCommands(self):
         return [self.cmdlist.GetClientData(i) for i in xrange(self.cmdlist.GetCount())]

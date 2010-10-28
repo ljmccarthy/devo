@@ -39,8 +39,8 @@ class NewProjectDialog(wx.Dialog):
         return self.fp_root.GetValue()
 
     def GetProject(self):
-        return Project(self.GetName(), self.GetRoot(),
-                       os.path.join(self.GetRoot(), ".devo-session"))
+        return Project(name=self.GetName(), rootdir=self.GetRoot(),
+                       filename=os.path.join(self.GetRoot(), ".devo-session"))
 
 if __name__ == "__main__":
     app = wx.PySimpleApp()

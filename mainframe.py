@@ -11,6 +11,7 @@ from dirtree import DirTreeCtrl, DirNode
 from editor import Editor
 from file_monitor import FileMonitor
 from find_replace_dialog import FindReplaceDetails
+from menu import MenuItem
 from menu_defs import menubar
 from project import read_project, write_project
 from terminal_ctrl import TerminalCtrl
@@ -73,6 +74,10 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.SetDropTarget(self)
         self.SetMenuBar(menubar.Create())
 
+        self.user_first_id = wx.NewId()
+        self.user_last_id = self.user_first_id + 1000
+        wx.RegisterId(self.user_last_id)
+
         self.config_dir = fileutil.get_user_config_dir("devo")
         self.project = None
 
@@ -127,6 +132,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.Bind(wx.EVT_MENU, self.OnEditProject, id=ID.EDIT_PROJECT)
         self.Bind(wx.EVT_MENU, self.OnOrganiseProjects, id=ID.ORGANISE_PROJECTS)
         self.Bind(wx.EVT_MENU, self.OnConfigureCommands, id=ID.CONFIGURE_COMMANDS)
+        self.Bind(wx.EVT_MENU_RANGE, self.OnUserCommand,
+                  id=self.user_first_id, id2=self.user_last_id)
 
         self.Bind(wx.EVT_UPDATE_UI, self.EditorUpdateUI("GetModify"), id=ID.SAVE)
         self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_HasEditor, id=ID.SAVEAS)
@@ -150,19 +157,34 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         for i in xrange(self.notebook.GetPageCount()):
             yield self.notebook.GetPage(i)
 
+    def GetMenuHooks(self):
+        return {
+            "commands" : [MenuItem(i + self.user_first_id, command["name"], command["accel"])
+                          for i, command in enumerate(self.project.commands)],
+        }
+
+    def UpdateMenuBar(self):
+        print "UpdateMenuBar"
+        with frozen_window(self):
+            old_menubar = self.GetMenuBar()
+            new_menubar = menubar.Create(self.GetMenuHooks())
+            self.SetMenuBar(new_menubar)
+            if old_menubar:
+                old_menubar.Destroy()
+
     def OnClose(self, evt):
         self.DoClose()
 
     @managed("cm")
     @coroutine
     def DoClose(self):
-        self.Hide()
         if not self.project or (yield self.SaveSession()):
             wx.CallAfter(self._DoShutdown)
         else:
             self.Show()
 
     def _DoShutdown(self):
+        self.Hide()
         self.fmon.Stop()
         scheduler.shutdown()
         self.Destroy()
@@ -215,7 +237,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                     self.notebook.GetPage(selection).SetFocus()
             tree_future = None
             if "dirtree" in session:
-                tree_future = self.tree.LoadPerspective(session["dirtree"])
+                self.tree.LoadPerspective(session["dirtree"])
             for i, (editor, future) in reversed(list(enumerate(editors))):
                 try:
                     if future:
@@ -225,10 +247,6 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                         errors.append(e)
                     self.notebook.DeletePage(i)
             errors.reverse()
-            try:
-                yield tree_future
-            except Exception, e:
-                errors.append(e)
         finally:
             self.notebook.Thaw()
             self.notebook.Show()
@@ -255,6 +273,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         else:
             self.tree.SetTopLevel()
         self.project = project
+        self.UpdateMenuBar()
 
     @managed("cm")
     @coroutine
@@ -278,18 +297,18 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
 
     @managed("cm")
     @coroutine
-    def OpenProject(self, filename, rootdir):
+    def OpenProject(self, filename):
         try:
-            project = (yield async_call(read_project, filename, rootdir))
+            project = (yield async_call(read_project, filename))
             yield self.LoadProject(project)
         except Exception, e:
             if isinstance(e, IOError) and e.errno == errno.ENOENT:
-                dialogs.error(self, "Project file not found:\n\n" + rootdir)
+                dialogs.error(self, "Project file not found:\n\n" + filename)
             else:
                 dialogs.error(self, "Error loading session:\n\n%s" % traceback.format_exc())
 
     def OpenDefaultProject(self):
-        return self.OpenProject(os.path.join(self.config_dir, "session"), "")
+        return self.OpenProject(os.path.join(self.config_dir, "session"))
 
     def OnPageClose(self, evt):
         evt.Veto()
@@ -319,10 +338,10 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             self.notebook.SetPageText(i, win.title)
 
     def NewEditor(self):
-        editor = Editor(self.notebook, self.env)      
         with frozen_window(self.notebook):
+            editor = Editor(self.notebook, self.env)
             self.AddPage(editor)
-        return editor
+            return editor
 
     def FindEditor(self, path):
         for editor in self.editors:
@@ -383,7 +402,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     def OnOpenProject(self, evt):
         rootdir = dialogs.get_directory(self, "Select Project Directory")
         if rootdir:
-            self.OpenProject(os.path.join(rootdir, ".devo-session"), rootdir)
+            self.OpenProject(os.path.join(rootdir, ".devo-session"))
 
     def OnCloseProject(self, evt):
         if self.project:
@@ -396,11 +415,29 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         pass
 
     def OnConfigureCommands(self, evt):
-        dlg = CommandsDialog(self)
+        dlg = CommandsDialog(self, self.project.commands)
         try:
-            dlg.ShowModal()
+            if dlg.ShowModal() == wx.ID_OK:
+                self.project.commands = dlg.GetCommands()
+                self.UpdateMenuBar()
         finally:
             dlg.Destroy()
+
+    def ShowTerminal(self):
+        pane = self.manager.GetPane(self.terminal)
+        if not pane.IsShown():
+            pane.Show()
+            self.manager.Update()
+
+    def RunCommand(self, cmdline):
+        self.terminal.run(cmdline, cwd = self.project.rootdir or None)
+        self.ShowTerminal()
+
+    def OnUserCommand(self, evt):
+        index = evt.GetId() - self.user_first_id
+        if 0 <= index < len(self.project.commands):
+            command = self.project.commands[index]
+            self.RunCommand(command["cmdline"])
 
     @managed("cm")
     @coroutine

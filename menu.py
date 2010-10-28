@@ -39,7 +39,7 @@ class Menu(object):
     def Build(self, menu, hooks):
         menu.AppendSubMenu(self.Create(), self.label)
 
-    def Create(self, **hooks):
+    def Create(self, hooks={}):
         menu = wx.Menu()
         for item in self.items:
             item.Build(menu, hooks)
@@ -54,8 +54,8 @@ class MenuBar(object):
     def __init__(self, menus):
         self.menus = menus
 
-    def Create(self, **hooks):
+    def Create(self, hooks={}):
         menubar = wx.MenuBar()
         for menu in self.menus:
-            menubar.Append(menu.Create(**hooks), menu.label)
+            menubar.Append(menu.Create(hooks), menu.label)
         return menubar
