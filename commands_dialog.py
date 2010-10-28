@@ -1,4 +1,6 @@
-import wx, collections
+import collections
+import string
+import wx
 from accelerator import parse_accelerator, unparse_accelerator
 from dialogs import dialogs
 
@@ -52,22 +54,44 @@ class EditCommandDialog(wx.Dialog):
 
         self.Bind(wx.EVT_BUTTON, self.OnOK, id=wx.ID_OK)
 
+    def _GetField(self, ctrl):
+        value = ctrl.Value.strip()
+        if not value:
+            ctrl.SetFocus()
+            raise Exception("Field is required")
+        return value
+
+    def _GetAccel(self, ctrl):
+        value = self._GetField(ctrl)
+        return parse_accelerator(value)
+
+    def _GetCmdline(self, ctrl):
+        value = self._GetField(ctrl)
+        try:
+            string.Template(value).substitute(
+                CURRENT_FILE="", CURRENT_DIR="", CURRENT_BASENAME="", PROJECT_ROOT="")
+        except KeyError, e:
+            raise Exception("Unknown variable name: %s" % e.args)
+        except ValueError, e:
+            raise Exception("Variable name missing after $")
+        return value
+
+    _fields = (
+        ("text_name", _GetField),
+        ("text_accel", _GetAccel),
+        ("text_cmdline", _GetCmdline),
+    )
+
     def OnOK(self, evt):
         command = []
-        for field in ("text_name", "text_accel", "text_cmdline"):
-            ctrl = getattr(self, field)
-            value = ctrl.Value.strip()
-            if not value:
+        for field_name, getter_method in self._fields:
+            ctrl = getattr(self, field_name)
+            try:
+                value = getter_method(self, ctrl)
+            except Exception, e:
                 ctrl.SetFocus()
-                dialogs.error(self, "Field is required")
+                dialogs.error(self, "Error: %s" % e)
                 return
-            if ctrl is self.text_accel:
-                try:
-                    value = parse_accelerator(value)
-                except Exception, e:
-                    ctrl.SetFocus()
-                    dialogs.error(self, "Error: %s" % e)
-                    return
             command.append(value)
         self.command = Command(*command)
         evt.Skip()
@@ -82,6 +106,8 @@ class CommandsDialog(wx.Dialog):
         btn_add = wx.Button(self, label="&Add")
         btn_edit = wx.Button(self, label="&Edit")
         btn_remove = wx.Button(self, label="&Remove")
+        btn_move_up = wx.Button(self, label="Move &Up")
+        btn_move_down = wx.Button(self, label="Move &Down")
 
         right_sizer = wx.BoxSizer(wx.VERTICAL)
         right_sizer.Add(btn_add, 0, wx.EXPAND)
@@ -89,6 +115,10 @@ class CommandsDialog(wx.Dialog):
         right_sizer.Add(btn_edit, 0, wx.EXPAND)
         right_sizer.AddSpacer(5)
         right_sizer.Add(btn_remove, 0, wx.EXPAND)
+        right_sizer.AddSpacer(15)
+        right_sizer.Add(btn_move_up, 0, wx.EXPAND)
+        right_sizer.AddSpacer(5)
+        right_sizer.Add(btn_move_down, 0, wx.EXPAND)
         right_sizer.AddStretchSpacer()
         main_sizer = wx.BoxSizer(wx.HORIZONTAL)
         main_sizer.Add(self.cmdlist, 1, wx.EXPAND | wx.ALL, 5)
@@ -112,14 +142,31 @@ class CommandsDialog(wx.Dialog):
         self.Bind(wx.EVT_BUTTON, self.OnAdd, btn_add)
         self.Bind(wx.EVT_BUTTON, self.OnEdit, btn_edit)
         self.Bind(wx.EVT_BUTTON, self.OnRemove, btn_remove)
+        self.Bind(wx.EVT_BUTTON, self.OnMoveUp, btn_move_up)
+        self.Bind(wx.EVT_BUTTON, self.OnMoveDown, btn_move_down)
+        self.Bind(wx.EVT_BUTTON, self.OnOK, btn_ok)
         self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateHasSelection, btn_edit)
         self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateHasSelection, btn_remove)
+        self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateHasSelection, btn_move_up)
+        self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateHasSelection, btn_move_down)
+
+    def _GetCommand(self, i):
+        return self.cmdlist.GetClientData(i)
+
+    def _SetCommand(self, i, command):
+        self.cmdlist.SetString(i, command.name)
+        self.cmdlist.SetClientData(i, command)
+
+    def _SwapCommands(self, a, b):
+        command_a = self._GetCommand(a)
+        command_b = self._GetCommand(b)
+        self._SetCommand(a, command_b)
+        self._SetCommand(b, command_a)
 
     def OnAdd(self, evt):
         dlg = EditCommandDialog(self)
         try:
             if dlg.ShowModal() == wx.ID_OK:
-                print dlg.command
                 self.cmdlist.Append(dlg.command.name, dlg.command)
         finally:
             dlg.Destroy()
@@ -127,14 +174,14 @@ class CommandsDialog(wx.Dialog):
     def OnEdit(self, evt):
         selection = self.cmdlist.GetSelection()
         if selection != wx.NOT_FOUND:
-            command = self.cmdlist.GetClientData(selection)
+            command = self._GetCommand(selection)
             dlg = EditCommandDialog(self,
                 name    = command.name,
                 accel   = unparse_accelerator(*command.accel),
                 cmdline = command.cmdline)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
-                    print dlg.command
+                    self._SetCommand(selection, dlg.command)
             finally:
                 dlg.Destroy()        
 
@@ -143,8 +190,27 @@ class CommandsDialog(wx.Dialog):
         if selection != wx.NOT_FOUND:
             self.cmdlist.Delete(selection)
 
+    def OnMoveUp(self, evt):
+        selection = self.cmdlist.GetSelection()
+        if 0 < selection < self.cmdlist.GetCount():
+            self._SwapCommands(selection, selection - 1)
+            self.cmdlist.SetSelection(selection - 1)
+
+    def OnMoveDown(self, evt):
+        selection = self.cmdlist.GetSelection()
+        if 0 <= selection < self.cmdlist.GetCount() - 1:
+            self._SwapCommands(selection, selection + 1)
+            self.cmdlist.SetSelection(selection + 1)
+
     def OnUpdateHasSelection(self, ui):
         ui.Enable(self.cmdlist.GetSelection() != wx.NOT_FOUND)
+
+    def OnOK(self, evt):
+        evt.Skip()
+        print self.GetCommands()
+
+    def GetCommands(self):
+        return [self.cmdlist.GetClientData(i) for i in xrange(self.cmdlist.GetCount())]
 
 if __name__ == "__main__":
     app = wx.PySimpleApp()
