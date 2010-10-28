@@ -28,7 +28,9 @@ class FindReplaceDetails(object):
         init_line = editor.LineFromPosition(init_pos)
         last_line = editor.LineFromPosition(editor.GetTextLength())
 
+        line_start = editor.PositionFromLine(init_line)
         line_end = editor.GetLineEndPosition(init_line)
+
         yield init_pos, editor.GetTextRange(init_pos, line_end)
 
         for line in xrange(init_line + 1, last_line + 1):
@@ -38,8 +40,26 @@ class FindReplaceDetails(object):
             for line in xrange(0, init_line):
                 yield editor.PositionFromLine(line), editor.GetLine(line)
 
-            line_start = editor.PositionFromLine(init_line)
             yield line_start, editor.GetTextRange(line_start, init_pos)
+
+    def _IterFindLinesReversed(self, editor, wrap=True):
+        init_pos = editor.GetSelection()[0]
+        init_line = editor.LineFromPosition(init_pos)
+        last_line = editor.LineFromPosition(editor.GetTextLength())
+
+        line_start = editor.PositionFromLine(init_line)
+        line_end = editor.GetLineEndPosition(init_line)
+
+        yield line_start, editor.GetTextRange(line_start, init_pos)
+
+        for line in xrange(init_line - 1, -1, -1):
+            yield editor.PositionFromLine(line), editor.GetLine(line)
+
+        if wrap:
+            for line in xrange(last_line, init_line, -1):
+                yield editor.PositionFromLine(line), editor.GetLine(line)
+
+            yield init_pos, editor.GetTextRange(init_pos, line_end)
 
     def _ReplaceSelected(self, editor):
         text = editor.GetSelectedText()
@@ -54,9 +74,18 @@ class FindReplaceDetails(object):
             else:
                 editor.ReplaceSelection(self.replace)
 
-    def Find(self, editor, wrap=True):
-        for pos, line in self._IterFindLines(editor, wrap):
+    def Find(self, editor, wrap=True, reverse=False):
+        reverse = reverse ^ self.reverse
+        iterator = self._IterFindLines if not reverse else self._IterFindLinesReversed
+        for pos, line in iterator(editor, wrap):
             m = self.rx_find.search(line)
+            if m and reverse:
+                while True:
+                    start = m.end()
+                    m2 = self.rx_find.search(line, start)
+                    if not m2:
+                        break
+                    m = m2
             if m and m.start() != m.end():
                 editor.SetSelection(pos + m.start(), pos + m.end())
                 return True

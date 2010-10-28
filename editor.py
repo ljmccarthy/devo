@@ -258,8 +258,14 @@ class Editor(wx.stc.StyledTextCtrl):
         if self.CanFindNext():
             self.env.find_details.Find(self)
 
+    def FindPrev(self):
+        if self.CanFindPrev():
+            self.env.find_details.Find(self, reverse=True)
+
     def CanFindNext(self):
         return self.env.find_details is not None
+
+    CanFindPrev = CanFindNext
 
     def GoToLine(self):
         dlg = GoToLineDialog(self, os.path.basename(self.path))
