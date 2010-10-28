@@ -152,8 +152,11 @@ class Editor(wx.stc.StyledTextCtrl):
             dialogs.error(self, "Error opening file:\n\n%s" % e)
             yield False
 
+    @coroutine
     def Reload(self):
-        return self.LoadFile(self.path)
+        line_num = self.GetFirstVisibleLine()
+        yield self.LoadFile(self.path)
+        self.ScrollToLine(line_num)
 
     @coroutine
     def SaveFile(self, path):
