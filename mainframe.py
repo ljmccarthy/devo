@@ -166,7 +166,6 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         }
 
     def UpdateMenuBar(self):
-        print "UpdateMenuBar"
         with frozen_window(self):
             old_menubar = self.GetMenuBar()
             new_menubar = menubar.Create(self.GetMenuHooks())
