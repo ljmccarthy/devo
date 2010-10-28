@@ -5,12 +5,17 @@ from accelerator import parse_accelerator, unparse_accelerator
 from dialogs import dialogs
 
 command_help = """\
+Accelerators may use modifers, for example:
+
+    Alt+Shift+X
+    Ctrl+F10
+
 Commands may use the following environment variables:
 
-$CURRENT_FILE - Current file
-$CURRENT_DIR - Directory of current file
-$CURRENT_BASENAME - Base filename of current file
-$PROJECT_ROOT - Project root directory
+    $CURRENT_FILE - Current file
+    $CURRENT_DIR - Directory of current file
+    $CURRENT_BASENAME - Base filename of current file
+    $PROJECT_ROOT - Project root directory
 """
 
 Command = collections.namedtuple("Command", "name accel cmdline")
@@ -34,8 +39,9 @@ class EditCommandDialog(wx.Dialog):
         grid.Add(self.text_cmdline, 0, wx.EXPAND)
 
         main_sizer = wx.BoxSizer(wx.VERTICAL)
-        main_sizer.Add(wx.StaticText(self, label=command_help), 0, wx.ALL, 5)
-        main_sizer.Add(grid, 1, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 5)
+        main_sizer.Add(grid, 1, wx.EXPAND | wx.ALL, 5)
+        main_sizer.AddSpacer(15)
+        main_sizer.Add(wx.StaticText(self, label=command_help), 0, wx.LEFT | wx.RIGHT, 5)
 
         btn_sizer = wx.StdDialogButtonSizer()
         btn_ok = wx.Button(self, wx.ID_OK)
