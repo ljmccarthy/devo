@@ -5,7 +5,7 @@ from accelerator import parse_accelerator, unparse_accelerator
 from dialogs import dialogs
 
 command_help = """\
-Accelerators may use modifers, for example:
+Accelerator keys may use modifers, for example:
 
     Alt+Shift+X
     Ctrl+F10
@@ -56,6 +56,7 @@ class EditCommandDialog(wx.Dialog):
         self.SetSizer(sizer)
         self.Fit()
         self.SetMinSize(self.Size)
+        self.SetMaxSize(wx.Size(-1, self.Size.height))
         self.text_name.SetFocus()
 
         self.Bind(wx.EVT_BUTTON, self.OnOK, id=wx.ID_OK)
