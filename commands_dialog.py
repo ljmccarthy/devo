@@ -33,7 +33,7 @@ class EditCommandDialog(wx.Dialog):
         grid.AddGrowableCol(1, 1)
         grid.Add(wx.StaticText(self, label="Name in Menu"), 0, wx.ALIGN_CENTER_VERTICAL)
         grid.Add(self.text_name, 0, wx.EXPAND)
-        grid.Add(wx.StaticText(self, label="Accelerator"), 0, wx.ALIGN_CENTER_VERTICAL)
+        grid.Add(wx.StaticText(self, label="Accelerator Key"), 0, wx.ALIGN_CENTER_VERTICAL)
         grid.Add(self.text_accel, 0, wx.EXPAND)
         grid.Add(wx.StaticText(self, label="Shell Command"), 0, wx.ALIGN_CENTER_VERTICAL)
         grid.Add(self.text_cmdline, 0, wx.EXPAND)
