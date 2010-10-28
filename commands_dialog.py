@@ -21,9 +21,9 @@ Commands may use the following environment variables:
 Command = collections.namedtuple("Command", "name accel cmdline")
 
 class EditCommandDialog(wx.Dialog):
-    def __init__(self, parent, name="", accel="", cmdline=""):
+    def __init__(self, parent, name="", accel="", cmdline="", title="Edit Command"):
         style = wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
-        wx.Dialog.__init__(self, parent, title="Edit Command", style=style)
+        wx.Dialog.__init__(self, parent, title=title, style=style)
 
         self.text_name = wx.TextCtrl(self, value=name)
         self.text_accel = wx.TextCtrl(self, value=accel)
@@ -171,7 +171,7 @@ class CommandsDialog(wx.Dialog):
         self._SetCommand(b, command_a)
 
     def OnAdd(self, evt):
-        dlg = EditCommandDialog(self)
+        dlg = EditCommandDialog(self, title="Add Command")
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 self.cmdlist.Append(dlg.command.name, dlg.command)
