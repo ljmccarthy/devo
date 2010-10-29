@@ -3,8 +3,7 @@ import wx
 from fsmonitor import FSMonitorThread, FSEvent
 
 import fileutil
-from async import Future
-from async_wx import async_call, coroutine, queued_coroutine, managed, CoroutineQueue, CoroutineManager
+from async import async_call, coroutine, queued_coroutine, managed, CoroutineQueue, CoroutineManager
 from dialogs import dialogs
 from menu import Menu, MenuItem, MenuSeparator
 from util import iter_tree_children, frozen_window, CallLater
@@ -108,10 +107,11 @@ def listdir(dirpath):
     return result
 
 class FSNode(object):
-    __slots__ = ("populated", "path", "type", "item", "watch", "label")
+    __slots__ = ("_populated", "_populated_future", "path", "type", "item", "watch", "label")
 
     def __init__(self, path, type, label=""):
-        self.populated = False
+        self._populated = False
+        self._populated_future = None
         self.path = path
         self.type = type
         self.item = None
@@ -119,32 +119,37 @@ class FSNode(object):
         self.label = label or os.path.basename(path) or path
 
     @coroutine
+    def _do_expand(self, tree, monitor, filter):
+        self.watch = monitor.add_dir_watch(self.path, user=self)
+        dirs = []
+        files = []            
+        for filename, st, listable in (yield async_call(listdir, self.path)):
+            if not filter.filter_by_name(filename):
+                continue
+            if not filter.filter_by_stat(filename, st):
+                continue
+            path = os.path.join(self.path, filename)
+            if stat.S_ISREG(st.st_mode):
+                files.append(FSNode(path, 'f'))
+            elif stat.S_ISDIR(st.st_mode):
+                dirs.append((FSNode(path, 'd'), listable))
+        for node, listable in dirs:
+            image = IM_FOLDER if listable else IM_FOLDER_DENIED
+            item = tree.AppendItem(self.item, node.label, image)
+            tree.SetItemNode(item, node)
+            tree.SetItemHasChildren(item, listable)
+        for node in files:
+            item = tree.AppendItem(self.item, node.label, IM_FILE)
+            tree.SetItemNode(item, node)
+        tree.SetItemImage(self.item, IM_FOLDER)
+        tree.SetItemHasChildren(self.item, tree.GetFirstChild(self.item)[0].IsOk())
+
+    @coroutine
     def expand(self, tree, monitor, filter):
-        if not self.populated:
-            self.populated = True
-            self.watch = monitor.add_dir_watch(self.path, user=self)
-            dirs = []
-            files = []
-            for filename, st, listable in (yield async_call(listdir, self.path)):
-                if not filter.filter_by_name(filename):
-                    continue
-                if not filter.filter_by_stat(filename, st):
-                    continue
-                path = os.path.join(self.path, filename)
-                if stat.S_ISREG(st.st_mode):
-                    files.append(FSNode(path, 'f'))
-                elif stat.S_ISDIR(st.st_mode):
-                    dirs.append((FSNode(path, 'd'), listable))
-            for node, listable in dirs:
-                image = IM_FOLDER if listable else IM_FOLDER_DENIED
-                item = tree.AppendItem(self.item, node.label, image)
-                tree.SetItemNode(item, node)
-                tree.SetItemHasChildren(item, listable)
-            for node in files:
-                item = tree.AppendItem(self.item, node.label, IM_FILE)
-                tree.SetItemNode(item, node)
-            tree.SetItemImage(self.item, IM_FOLDER)
-            tree.SetItemHasChildren(self.item, tree.GetFirstChild(self.item)[0].IsOk())
+        if not self._populated:
+            self._populated = True
+            self._populated_future = self._do_expand(tree, monitor, filter)
+        yield self._populated_future
 
     def collapse(self, tree, monitor):
         pass
@@ -153,7 +158,7 @@ class FSNode(object):
 
     @coroutine
     def add(self, name, tree, monitor, filter):
-        if self.populated and filter.filter_by_name(name):
+        if self._populated and filter.filter_by_name(name):
             path = os.path.join(self.path, name)
             try:
                 st = (yield async_call(os.stat, path))
@@ -176,7 +181,7 @@ class FSNode(object):
                 pass
 
     def remove(self, name, tree, monitor):
-        if self.populated:
+        if self._populated:
             dirtree_delete(tree, self.item, name)
 
     @property
@@ -226,8 +231,7 @@ class DirTreeCtrl(wx.TreeCtrl):
         self.env = env
         self.toplevel = toplevel or MakeTopLevel()
         self.filter = filter or DirTreeFilter()
-        self.cq_init = CoroutineQueue()
-        self.cq_populate = CoroutineQueue()
+        self.cq = CoroutineQueue()
         self.cm = CoroutineManager()
         self.fsevts = []
         self.fsevts_lock = threading.Lock()
@@ -275,7 +279,7 @@ class DirTreeCtrl(wx.TreeCtrl):
         self.select_later_time = time.time() + timeout
 
     @managed("cm")
-    @queued_coroutine("cq_populate")
+    @queued_coroutine("cq")
     def OnFileSystemChanged(self):
         with self.fsevts_lock:
             evts = self.fsevts
@@ -390,10 +394,9 @@ class DirTreeCtrl(wx.TreeCtrl):
                 wx.TreeCtrl.Expand(self, item)
 
     @managed("cm")
-    @queued_coroutine("cq_populate")
+    @queued_coroutine("cq")
     def ExpandNode(self, node):
-        if not node.populated:
-            yield node.expand(self, self.monitor, self.filter)
+        yield node.expand(self, self.monitor, self.filter)
         self.Expand(node.item)
 
     def CollapseNode(self, node):
@@ -439,8 +442,6 @@ class DirTreeCtrl(wx.TreeCtrl):
         except OSError, e:
             dialogs.error(self, str(e))
 
-    @managed("cm")
-    @queued_coroutine("cq_init")
     def InitializeTree(self):
         self.DeleteAllItems()
         if len(self.toplevel) == 1:
@@ -450,9 +451,9 @@ class DirTreeCtrl(wx.TreeCtrl):
             rootitem = self.AddRoot("")
             rootnode = SimpleNode("", self.toplevel)
         self.SetItemNode(rootitem, rootnode)
-        yield self.ExpandNode(rootnode)
+        self.ExpandNode(rootnode)
         if isinstance(self.toplevel[0], SimpleNode):
-            yield self.ExpandNode(self.toplevel[0])
+            self.ExpandNode(self.toplevel[0])
 
     def SetTopLevel(self, toplevel=None):
         self.toplevel = toplevel or MakeTopLevel()
@@ -527,7 +528,7 @@ class DirTreeCtrl(wx.TreeCtrl):
         return p
 
     @managed("cm")
-    @queued_coroutine("cq_init")
+    @coroutine
     def LoadPerspective(self, p):
         expanded = p.get("expanded", ())
         if expanded:

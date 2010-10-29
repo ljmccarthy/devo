@@ -3,8 +3,8 @@ from functools import wraps
 from wx.lib.agw import aui
 from wx.lib.utils import AdjustRectToScreen
 
-import fileutil, ID
-from async_wx import async_call, coroutine, managed, CoroutineManager, scheduler
+import async, fileutil, ID
+from async import async_call, coroutine, managed, CoroutineManager
 from dialogs import dialogs
 from commands_dialog import CommandsDialog
 from dirtree import DirTreeCtrl, DirNode
@@ -187,7 +187,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     def _DoShutdown(self):
         self.Hide()
         self.fmon.Stop()
-        scheduler.shutdown()
+        async.shutdown_scheduler()
         self.Destroy()
 
     @managed("cm")

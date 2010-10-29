@@ -14,8 +14,7 @@ def call_task(future, func, args, kwargs):
         future.set_done(result)
 
 class AsyncCallThreadPool(object):
-    def __init__(self, scheduler, max_threads):
-        self.scheduler = scheduler
+    def __init__(self, max_threads):
         self.max_threads = max_threads
         self.num_waiting = 0
         self.threads = set()
@@ -24,7 +23,7 @@ class AsyncCallThreadPool(object):
         self.cond = threading.Condition()
 
     def call(self, func, args, kwargs):
-        future = Future(self.scheduler)
+        future = Future()
         with self.cond:
             self.calls.appendleft((future, func, args, kwargs))
             if self.num_waiting == 0 and len(self.threads) < self.max_threads:
@@ -67,7 +66,7 @@ class AsyncCallThreadPool(object):
 
 class Scheduler(object):
     def __init__(self, max_threads=10):
-        self.__async_pool = AsyncCallThreadPool(self, max_threads)
+        self.__async_pool = AsyncCallThreadPool(max_threads)
 
     def do_call(self):
         raise NotImplementedError()
@@ -81,6 +80,21 @@ class Scheduler(object):
     def shutdown(self):
         self.__async_pool.shutdown()
 
+_global_scheduler = None
+
+def set_scheduler(scheduler):
+    global _global_scheduler
+    if _global_scheduler:
+        raise Exception("async scheduler already set")
+    if not isinstance(scheduler, Scheduler):
+        raise TypeError("scheduler must be a subclass of async.Scheduler")
+    _global_scheduler = scheduler
+
+def shutdown_scheduler():
+    global _global_scheduler
+    if _global_scheduler:
+        _global_scheduler.shutdown()
+
 WAITING, DONE, FAILED, CANCELLED = range(4)
 
 class FutureNotReady(Exception):
@@ -93,8 +107,7 @@ class FutureCancelled(Exception):
     pass
 
 class Future(object):
-    def __init__(self, scheduler, context=""):
-        self.scheduler = scheduler
+    def __init__(self, context=""):
         self.__context = context
         self.__on_success = []
         self.__on_failure = []
@@ -107,7 +120,7 @@ class Future(object):
 
     def __call_handlers(self, handlers, *args):
         for handler in handlers:
-            self.scheduler.call(handler, *args)
+            _global_scheduler.call(handler, *args)
 
     def set_done(self, result):
         with self.__cond:
@@ -136,11 +149,12 @@ class Future(object):
 
     def cancel(self):
         with self.__cond:
-            if self.__status == WAITING:
-                self.__status = CANCELLED
-                self.__cond.notify_all()
-                self.__call_handlers(self.__on_cancelled, self)
-                self.__call_handlers(self.__on_finished, self)
+            if self.__status != WAITING:
+                return
+            self.__status = CANCELLED
+            self.__cond.notify_all()
+            self.__call_handlers(self.__on_cancelled, self)
+            self.__call_handlers(self.__on_finished, self)
 
     def wait(self):
         with self.__cond:
@@ -181,19 +195,19 @@ class Future(object):
             if success is not None:
                 self.__on_success.append(success)
                 if self.__status == DONE:
-                    self.scheduler.call(success, self.__result)
+                    _global_scheduler.call(success, self.__result)
             if failure is not None:
                 self.__on_failure.append(failure)
                 if self.__status == FAILED:
-                    self.scheduler.call(failure, self.__result, self.__traceback)
+                    _global_scheduler.call(failure, self.__result, self.__traceback)
             if cancelled is not None:
                 self.__on_cancelled.append(cancelled)
                 if self.__status == CANCELLED:
-                    self.scheduler.call(cancelled, self)
+                    _global_scheduler.call(cancelled, self)
             if finished is not None:
                 self.__on_finished.append(finished)
                 if self.__status != WAITING:
-                    self.scheduler.call(finished, self)
+                    _global_scheduler.call(finished, self)
 
     def __del__(self):
         if Future and self.__status == FAILED and not self.__on_failure:
@@ -202,8 +216,8 @@ class Future(object):
                 self.__context.rstrip("\n"))
 
 class Coroutine(Future):
-    def __init__(self, gen, scheduler, context):
-        Future.__init__(self, scheduler, context)
+    def __init__(self, gen, context):
+        Future.__init__(self, context)
         if not isinstance(gen, types.GeneratorType):
             raise TypeError("Coroutine expected generator, got %s"
                             % gen.__class__.__name__)
@@ -266,13 +280,12 @@ class CoroutineManager(object):
         self.__futures.clear()
 
 class CoroutineQueue(object):
-    def __init__(self, scheduler):
-        self.scheduler = scheduler
+    def __init__(self):
         self.__running = None
         self.__queue = []
 
     def run(self, func, args, kwargs):
-        co = Coroutine(func(*args, **kwargs), self.scheduler, "".join(traceback.format_stack()))
+        co = Coroutine(func(*args, **kwargs), "".join(traceback.format_stack()))
         if self.__running is not None:
             self.__queue.append(co)
         else:
@@ -300,12 +313,12 @@ def is_generator_function(func):
     return isinstance(func, (types.FunctionType, types.MethodType)) \
        and (func.func_code.co_flags & 0x20) != 0
 
-def coroutine(scheduler, func):
+def coroutine(func):
     if not is_generator_function(func):
         raise TypeError("@coroutine requires a generator function")
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        co = Coroutine(func(*args, **kwargs), scheduler, "".join(traceback.format_stack()))
+        co = Coroutine(func(*args, **kwargs), "".join(traceback.format_stack()))
         co.start()
         return co
     return wrapper
@@ -331,3 +344,12 @@ def queued_coroutine(queue_name):
             return queue.run(func, (self,) + args, kwargs)
         return wrapper
     return decorator
+
+def async_call(func, *args, **kwargs):
+    return _global_scheduler.async_call(func, *args, **kwargs)
+
+def async_function(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        return async_call(func, *args, **kwargs)
+    return wrapper
