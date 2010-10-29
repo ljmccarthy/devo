@@ -1,4 +1,4 @@
-import sys, os, traceback, errno, wx
+import sys, os, string, traceback, errno, wx
 from functools import wraps
 from wx.lib.agw import aui
 from wx.lib.utils import AdjustRectToScreen
@@ -438,7 +438,15 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         index = evt.GetId() - self.user_first_id
         if 0 <= index < len(self.project.commands):
             command = self.project.commands[index]
-            self.RunCommand(command["cmdline"])
+            editor = self.GetCurrentEditor()
+            current_file = editor.path if editor else ""
+            cmdline = string.Template(command["cmdline"]).safe_substitute(
+                CURRENT_FILE = current_file,
+                CURRENT_DIR = os.path.dirname(current_file),
+                CURRENT_BASENAME = os.path.basename(current_file),
+                PROJECT_ROOT = self.project.rootdir,
+            )
+            self.RunCommand(cmdline)
 
     @managed("cm")
     @coroutine
