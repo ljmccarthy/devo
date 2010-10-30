@@ -63,6 +63,10 @@ def dirtree_delete(tree, parent_item, text):
             tree.Delete(item)
             break
 
+NODE_UNPOPULATED = 0
+NODE_POPULATING = 1
+NODE_POPULATED = 2
+
 class SimpleNode(object):
     type = 'd'
     path = ""
@@ -71,17 +75,17 @@ class SimpleNode(object):
     def __init__(self, label, children):
         self.label = label
         self.children = children
-        self.populated = False
+        self.state = NODE_UNPOPULATED
         self.item = None
 
     def expand(self, tree, monitor, filter):
-        if not self.populated:
-            self.populated = True
+        if self.state == NODE_UNPOPULATED:
             tree.SetItemImage(self.item, IM_FOLDER)
             for node in self.children:
                 item = tree.AppendItem(self.item, node.label, IM_FOLDER)
                 tree.SetItemNode(item, node)
                 tree.SetItemHasChildren(item, True)
+            self.state = NODE_POPULATED
 
     def collapse(self, tree, monitor):
         pass
@@ -107,11 +111,10 @@ def listdir(dirpath):
     return result
 
 class FSNode(object):
-    __slots__ = ("_populated", "_populated_future", "path", "type", "item", "watch", "label")
+    __slots__ = ("state", "path", "type", "item", "watch", "label")
 
     def __init__(self, path, type, label=""):
-        self._populated = False
-        self._populated_future = None
+        self.state = NODE_UNPOPULATED
         self.path = path
         self.type = type
         self.item = None
@@ -146,10 +149,10 @@ class FSNode(object):
 
     @coroutine
     def expand(self, tree, monitor, filter):
-        if not self._populated:
-            self._populated = True
-            self._populated_future = self._do_expand(tree, monitor, filter)
-        yield self._populated_future
+        if self.state == NODE_UNPOPULATED:
+            self.state = NODE_POPULATING
+            yield self._do_expand(tree, monitor, filter)
+            self.state = NODE_POPULATED
 
     def collapse(self, tree, monitor):
         pass
@@ -158,7 +161,7 @@ class FSNode(object):
 
     @coroutine
     def add(self, name, tree, monitor, filter):
-        if self._populated and filter.filter_by_name(name):
+        if self.state == NODE_POPULATED and filter.filter_by_name(name):
             path = os.path.join(self.path, name)
             try:
                 st = (yield async_call(os.stat, path))
@@ -181,7 +184,7 @@ class FSNode(object):
                 pass
 
     def remove(self, name, tree, monitor):
-        if self._populated:
+        if self.state == NODE_POPULATED:
             dirtree_delete(tree, self.item, name)
 
     @property
@@ -396,8 +399,10 @@ class DirTreeCtrl(wx.TreeCtrl):
     @managed("cm")
     @queued_coroutine("cq")
     def ExpandNode(self, node):
-        yield node.expand(self, self.monitor, self.filter)
-        self.Expand(node.item)
+        if node.state == NODE_UNPOPULATED:
+            yield node.expand(self, self.monitor, self.filter)
+        if node.state != NODE_POPULATING:
+            self.Expand(node.item)
 
     def CollapseNode(self, node):
         node.collapse(self, self.monitor)
