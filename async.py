@@ -1,18 +1,5 @@
 import sys, traceback, threading, functools, types, weakref, collections
 
-def call_task(future, func, args, kwargs):
-    try:
-        result = func(*args, **kwargs)
-    except SystemExit:
-        future.cancel()
-        raise
-    except:
-        exn = sys.exc_info()[1]
-        tbstr = traceback.format_exc()
-        future.set_failed(exn, tbstr)
-    else:
-        future.set_done(result)
-
 class AsyncCallThreadPool(object):
     def __init__(self, max_threads):
         self.max_threads = max_threads
@@ -46,8 +33,8 @@ class AsyncCallThreadPool(object):
                             self.num_waiting -= 1
                     if self.quit or not self.calls:
                         return
-                    args = self.calls.pop()
-                call_task(*args)
+                    future, func, args, kwargs = self.calls.pop()
+                future.call(func, *args, **kwargs)
         finally:
             with self.cond:
                 self.threads.remove(threading.current_thread())
@@ -156,6 +143,19 @@ class Future(object):
             self.__call_handlers(self.__on_cancelled, self)
             self.__call_handlers(self.__on_finished, self)
 
+    def call(self, func, *args, **kwargs):
+        try:
+            result = func(*args, **kwargs)
+        except SystemExit:
+            self.cancel()
+            raise
+        except:
+            exn = sys.exc_info()[1]
+            tbstr = traceback.format_exc()
+            self.set_failed(exn, tbstr)
+        else:
+            self.set_done(result)
+
     def wait(self):
         with self.__cond:
             while self.__status == WAITING:
@@ -238,8 +238,13 @@ class Coroutine(Future):
             self.set_done(None)
         except FutureCancelled:
             self.cancel()
-        except Exception, exn:
-            self.set_failed(exn, traceback.format_exc())
+        except SystemExit:
+            self.cancel()
+            raise
+        except:
+            exn = sys.exc_info()[1]
+            tbstr = traceback.format_exc()
+            self.set_failed(exn, tbstr)
         else:
             if isinstance(ret, Future):
                 self.__cont = ret
