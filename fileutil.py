@@ -1,9 +1,9 @@
 import sys, os, errno, shutil
 
-def atomic_write_file(path, data):
+def atomic_write_file(path, data, mode="wb"):
     temp = os.path.join(os.path.dirname(path), ".saving." + os.path.basename(path))
     try:
-        with open(temp, "wb") as out:
+        with open(temp, mode) as out:
             try:
                 shutil.copystat(path, temp)
             except OSError:
@@ -18,7 +18,7 @@ def atomic_write_file(path, data):
     else:
         rename(temp, path)
 
-def read_file(path, mode="r"):
+def read_file(path, mode="rb"):
     with open(path, mode) as f:
         return f.read()
 

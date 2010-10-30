@@ -115,7 +115,7 @@ class Editor(wx.stc.StyledTextCtrl):
         self.sig_title_changed.signal(self)
 
         try:
-            text = (yield async_call(read_file, path))
+            text = (yield async_call(read_file, path, "r"))
             try:
                 text = text.decode("utf-8")
             except UnicodeDecodeError:
