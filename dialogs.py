@@ -48,7 +48,7 @@ class Dialogs(object):
             dlg.Destroy()
 
     def get_file_to_open(self, parent, message="Open File", path="", wildcard="All Files|*", context=""):
-        return self._get_file_dialog(parent, message, path, wildcard, context, 0)
+        return self._get_file_dialog(parent, message, path, wildcard, context, wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
 
     def get_file_to_save(self, parent, message="Save File", path="", wildcard="All Files|*", context=""):
         return self._get_file_dialog(
