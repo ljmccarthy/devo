@@ -124,7 +124,6 @@ class Editor(wx.stc.StyledTextCtrl):
             self.SetReadOnly(False)
             self.SetSyntaxFromFilename(path)
             self.SetText(text)
-            self.EmptyUndoBuffer()
             self.SetSavePoint()
 
             width = max(self.TextWidth(wx.stc.STC_STYLE_DEFAULT, line)
@@ -146,6 +145,7 @@ class Editor(wx.stc.StyledTextCtrl):
     def TryLoadFile(self, path):
         try:
             yield self.LoadFile(path)
+            self.EmptyUndoBuffer()
             yield True
         except Exception, e:
             dialogs.error(self, "Error opening file:\n\n%s" % e)
@@ -298,9 +298,9 @@ class Editor(wx.stc.StyledTextCtrl):
         future = None
         if "text" in p:
             self.SetSavePoint()
-            self.EmptyUndoBuffer()
             self.SetText(p["text"])
         elif "path" in p:
             yield self.LoadFile(p["path"])
+            self.EmptyUndoBuffer()
         self.ScrollToLine(p.get("line", 0))
         self.SetSelection(*p.get("selection", (0, 0)))
