@@ -15,7 +15,7 @@ from menu import MenuItem
 from menu_defs import menubar
 from project import read_project, write_project
 from terminal_ctrl import TerminalCtrl
-from util import frozen_window, is_text_file, is_focused
+from util import frozen_window, is_text_file
 
 from new_project_dialog import NewProjectDialog
 
@@ -87,6 +87,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.updated_paths = set()
         self.reloading = False
         self.find_details = FindReplaceDetails("", "")
+        self.editor_focus = None
 
         self.manager = aui.AuiManager(self)
         self.notebook = aui.AuiNotebook(self, style=NB_STYLE)
@@ -105,6 +106,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
 
         self.Bind(wx.EVT_CLOSE, self.OnClose)
         self.Bind(wx.EVT_ACTIVATE, self.OnActivate)
+        self.Bind(wx.EVT_CHILD_FOCUS, self.OnChildFocus)
         self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CLOSE, self.OnPageClose)
         self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnPageChanged)
 
@@ -320,6 +322,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     @coroutine
     def ClosePage(self, editor):
         if (yield editor.TryClose()):
+            if editor is self.editor_focus:
+                self.editor_focus = None
             with frozen_window(self.notebook):
                 self.notebook.DeletePage(self.notebook.GetPageIndex(editor))
 
@@ -471,23 +475,30 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     def OnActivate(self, evt):
         self.NotifyUpdatedPaths()
 
+    def OnChildFocus(self, evt):
+        focus = wx.Window.FindFocus()
+        self.editor_focus = focus if isinstance(focus, Editor) else None
+
     def OnFilesChanged(self, paths):
         for path in paths:
             self.updated_paths.add(path)
         if self.IsActive():
             self.NotifyUpdatedPaths()
 
+    def IsEditorFocused(self, editor):
+        return editor is self.editor_focus
+
     def EditorAction(self, method):
         def handler(evt):
             editor = self.GetCurrentEditor()
-            if editor is not None and is_focused(editor):
+            if editor is not None and self.IsEditorFocused(editor):
                 return getattr(editor, method)()
         return handler
 
     def EditorUpdateUI(self, method):
         def handler(evt):
             editor = self.GetCurrentEditor()
-            if editor is not None and is_focused(editor):
+            if editor is not None and self.IsEditorFocused(editor):
                 evt.Enable(getattr(editor, method)())
             else:
                 evt.Enable(False)
@@ -495,11 +506,11 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
 
     def UpdateUI_HasEditor(self, evt):
         editor = self.GetCurrentEditor()
-        evt.Enable(editor is not None and is_focused(editor))
+        evt.Enable(editor is not None and self.IsEditorFocused(editor))
 
     def UpdateUI_EditorHasSelection(self, evt):
         editor = self.GetCurrentEditor()
-        if editor is not None and is_focused(editor):
+        if editor is not None and self.IsEditorFocused(editor):
             start, end = editor.GetSelection()
             evt.Enable(start != end)
         else:
