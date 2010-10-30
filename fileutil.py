@@ -9,14 +9,18 @@ def atomic_write_file(path, data):
             except OSError:
                 pass
             out.write(data)
-    except (IOError, OSError):
+    except Exception:
         try:
             os.remove(temp)
-        except OSError:
+        except Exception:
             pass
         raise
     else:
         rename(temp, path)
+
+def read_file(path, mode="r"):
+    with open(path, mode) as f:
+        return f.read()
 
 rename = os.rename
 

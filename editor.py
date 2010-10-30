@@ -2,7 +2,7 @@ import os
 import wx, wx.stc
 from async import async_call, coroutine
 from dialogs import dialogs
-from fileutil import atomic_write_file
+from fileutil import atomic_write_file, read_file
 from find_replace_dialog import FindReplaceDialog
 from go_to_line_dialog import GoToLineDialog
 from menu_defs import edit_menu
@@ -115,8 +115,7 @@ class Editor(wx.stc.StyledTextCtrl):
         self.sig_title_changed.signal(self)
 
         try:
-            with (yield async_call(open, path)) as f:
-                text = (yield async_call(f.read))
+            text = (yield async_call(read_file, path))
             try:
                 text = text.decode("utf-8")
             except UnicodeDecodeError:
