@@ -489,7 +489,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                         editor.Undo()
             finally:
                 self.reloading = False
-            if self.updated_paths:
+            if self.updated_paths or self.deleted_paths:
                 self.NotifyUpdatedPaths()
 
     def OnActivate(self, evt):
