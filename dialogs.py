@@ -92,6 +92,12 @@ class Dialogs(object):
             "Modified File",
             wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION) == wx.ID_YES
 
+    def ask_unload(self, parent, path):
+        return self.message_dialog(parent,
+            "The file '%s' has been deleted by another program. Do you want to keep the file open?" % path,
+            "Deleted File",
+            wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION) != wx.ID_YES
+
     def get_text_input(self, *args, **kwargs):
         dlg = TextInputDialog(*args, **kwargs)
         try:

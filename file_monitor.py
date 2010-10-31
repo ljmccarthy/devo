@@ -1,4 +1,5 @@
 import os
+import errno
 import wx
 
 class FileMonitor(wx.EvtHandler):
@@ -26,6 +27,7 @@ class FileMonitor(wx.EvtHandler):
 
     def OnTimer(self, evt):
         updated_paths = []
+        deleted_paths = []
         for path, old_mtime in sorted(self.path_mtime.iteritems()):
             try:
                 new_mtime = os.stat(path).st_mtime
@@ -33,9 +35,14 @@ class FileMonitor(wx.EvtHandler):
                     self.path_mtime[path] = new_mtime
                     updated_paths.append(path)
             except OSError, e:
-                print "Warning:", e
-        if updated_paths:
-            self.callback(updated_paths)
+                if e.errno == errno.ENOENT:
+                    deleted_paths.append(path)
+                else:
+                    print "Warning:", e
+        for path in deleted_paths:
+            del self.path_mtime[path]
+        if updated_paths or deleted_paths:
+            self.callback(updated_paths, deleted_paths)
 
     def Start(self):
         if not self.timer.IsRunning():

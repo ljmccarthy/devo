@@ -85,6 +85,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.env = AppEnv(self)
         self.fmon = FileMonitor(self.OnFilesChanged)
         self.updated_paths = set()
+        self.deleted_paths = set()
         self.reloading = False
         self.find_details = FindReplaceDetails("", "")
         self.editor_focus = None
@@ -461,18 +462,31 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     @managed("cm")
     @coroutine
     def NotifyUpdatedPaths(self):
-        if self.updated_paths and not self.reloading:
+        if (self.updated_paths or self.deleted_paths) and not self.reloading:
             try:
                 self.reloading = True
                 to_reload = []
-                for i, editor in enumerate(self.editors):
+                to_unload = []
+                for editor in self.editors:
                     if editor.path in self.updated_paths:
-                        to_reload.append((i, editor))
+                        to_reload.append(editor)
+                    elif editor.path in self.deleted_paths:
+                        to_unload.append(editor)
                 self.updated_paths.clear()
-                for i, editor in to_reload:
-                    self.notebook.SetSelection(i)
+                self.deleted_paths.clear()
+                for editor in to_reload:
+                    self.notebook.SetSelection(self.notebook.GetPageIndex(editor))
                     if dialogs.ask_reload(self, os.path.basename(editor.path)):
                         yield editor.Reload()
+                for editor in reversed(to_unload):
+                    self.notebook.SetSelection(self.notebook.GetPageIndex(editor))
+                    if dialogs.ask_unload(self, os.path.basename(editor.path)):
+                        yield self.ClosePage(editor)
+                    else:
+                        # Mark as modified
+                        editor.AppendText(" ")
+                        editor.SetSavePoint()
+                        editor.Undo()
             finally:
                 self.reloading = False
             if self.updated_paths:
@@ -485,9 +499,12 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         focus = wx.Window.FindFocus()
         self.editor_focus = focus if isinstance(focus, Editor) else None
 
-    def OnFilesChanged(self, paths):
-        for path in paths:
+    def OnFilesChanged(self, updated_paths, deleted_paths):
+        for path in updated_paths:
             self.updated_paths.add(path)
+        for path in deleted_paths:
+            self.deleted_paths.add(path)
+        self.updated_paths.difference_update(self.deleted_paths)
         if self.IsActive():
             self.NotifyUpdatedPaths()
 
