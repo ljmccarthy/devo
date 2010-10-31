@@ -95,11 +95,11 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.terminal = TerminalCtrl(self)
 
         self.manager.AddPane(self.tree,
-            aui.AuiPaneInfo().Left().BestSize(wx.Size(220, -1)).CaptionVisible(False))
+            aui.AuiPaneInfo().Left().BestSize((220, -1)).CaptionVisible(False))
         self.manager.AddPane(self.notebook,
             aui.AuiPaneInfo().CentrePane())
         self.manager.AddPane(self.terminal,
-            aui.AuiPaneInfo().Hide().Bottom().BestSize(self.terminal.Size).Caption("Terminal"))
+            aui.AuiPaneInfo().Hide().Bottom().BestSize((-1, 200)).Caption("Terminal"))
         self.manager.Update()
 
         self.OpenDefaultProject()
@@ -221,38 +221,44 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         errors = []
         if wx.Platform == "__WXGTK__":
             self.notebook.Hide()
-        self.notebook.Freeze()
+        else:
+            self.notebook.Freeze()
         try:
             if "dialogs" in session:
                 dialogs.load_state(session["dialogs"])
+
             editors = []
             if "editors" in session:
                 for p in session["editors"]:
                     editor = self.NewEditor()
                     future = editor.LoadPerspective(p)
                     editors.append((editor, future))
-                if "notebook" in session and session["editors"]:
-                    self.notebook.LoadPerspective(session["notebook"])
-            if "selection" in session:
-                selection = session["selection"]
-                if 0 <= selection < self.notebook.GetPageCount():
-                    self.notebook.SetSelection(selection)
-                    self.notebook.GetPage(selection).SetFocus()
-            tree_future = None
+
             if "dirtree" in session:
                 self.tree.LoadPerspective(session["dirtree"])
+
             for i, (editor, future) in reversed(list(enumerate(editors))):
                 try:
-                    if future:
-                        yield future
+                    yield future
                 except Exception, e:
                     if not (isinstance(e, IOError) and e.errno == errno.ENOENT):
                         errors.append(e)
                     self.notebook.DeletePage(i)
             errors.reverse()
+
+            if "notebook" in session:
+                self.notebook.LoadPerspective(session["notebook"])
+
+            if "selection" in session:
+                selection = session["selection"]
+                if 0 <= selection < self.notebook.GetPageCount():
+                    self.notebook.SetSelection(selection)
+                    self.notebook.GetPage(selection).SetFocus()
         finally:
-            self.notebook.Thaw()
-            self.notebook.Show()
+            if wx.Platform == "__WXGTK__":
+                self.notebook.Show()
+            else:
+                self.notebook.Thaw()
             self.Show()
             if errors:
                 dialogs.error(self, "Errors loading session:\n\n%s" %
@@ -285,11 +291,11 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             old_project = self.project
             self.SetProject(project)
             try:
-                self.LoadSession(project.session)
+                yield self.LoadSession(project.session)
             except Exception:
                 if old_project:
                     self.SetProject(old_project)
-                    self.LoadSession(old_project.session)
+                    yield self.LoadSession(old_project.session)
                 raise
 
     @managed("cm")
