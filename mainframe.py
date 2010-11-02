@@ -284,6 +284,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             self.tree.SetTopLevel()
         self.project = project
         self.UpdateMenuBar()
+        self.SetTitle("Devo" + (project.name and " [%s]" % project.name))
 
     @managed("cm")
     @coroutine
@@ -312,7 +313,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         yield self.LoadProject(project)
         self.Show()
 
-    def _ShowLoadProjectError(self, exn):
+    def _ShowLoadProjectError(self, exn, filename):
         self.Show()
         if isinstance(exn, IOError) and exn.errno == errno.ENOENT:
             dialogs.error(self, "Project file not found:\n\n" + filename)
@@ -325,7 +326,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         try:
             project = (yield self._OpenProject(filename))
         except Exception, e:
-            self._ShowLoadProjectError(e)
+            self._ShowLoadProjectError(e, filename)
 
     @managed("cm")
     @coroutine
@@ -338,7 +339,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                 yield self.LoadProject(Project(filename=filename))
                 self.Show()
             except Exception, e:
-                self._ShowLoadProjectError(e)            
+                self._ShowLoadProjectError(e, filename)
 
     def OnPageClose(self, evt):
         evt.Veto()
