@@ -496,11 +496,9 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                 self.updated_paths.clear()
                 self.deleted_paths.clear()
                 for editor in to_reload:
-                    self.notebook.SetSelection(self.notebook.GetPageIndex(editor))
                     if dialogs.ask_reload(self, os.path.basename(editor.path)):
                         yield editor.Reload()
                 for editor in reversed(to_unload):
-                    self.notebook.SetSelection(self.notebook.GetPageIndex(editor))
                     if dialogs.ask_unload(self, os.path.basename(editor.path)):
                         yield self.ClosePage(editor)
                     else:
