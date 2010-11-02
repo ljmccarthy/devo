@@ -55,11 +55,11 @@ class Scheduler(object):
     def __init__(self, max_threads=10):
         self.__async_pool = AsyncCallThreadPool(max_threads)
 
-    def do_call(self):
+    def call(self, func, *args, **kwargs):
         raise NotImplementedError()
 
-    def call(self, func, *args, **kwargs):
-        self.do_call(func, args, kwargs)
+    def post_call(self, func, *args, **kwargs):
+        raise NotImplementedError()
 
     def async_call(self, func, *args, **kwargs):
         return self.__async_pool.call(func, args, kwargs)
@@ -93,6 +93,10 @@ class FutureAlreadySet(Exception):
 class FutureCancelled(Exception):
     pass
 
+def call_handlers(handlers, *args):
+    for handler in handlers:
+        _global_scheduler.call(handler, *args)
+
 class Future(object):
     def __init__(self, context=""):
         self.__context = context
@@ -105,9 +109,11 @@ class Future(object):
         self.__traceback = ""
         self.__cond = threading.Condition()
 
-    def __call_handlers(self, handlers, *args):
-        for handler in handlers:
-            _global_scheduler.call(handler, *args)
+    def __clear_handlers(self):
+        self.__on_success = []
+        self.__on_failure = []
+        self.__on_cancelled = []
+        self.__on_finished = []
 
     def set_done(self, result):
         with self.__cond:
@@ -117,11 +123,14 @@ class Future(object):
                 raise FutureAlreadySet()
             self.__result = result
             self.__status = DONE
+            success_handlers = self.__on_success
+            finished_handlers = self.__on_finished
+            self.__clear_handlers()
             self.__cond.notify_all()
-            self.__call_handlers(self.__on_success, result)
-            self.__call_handlers(self.__on_finished, self)
+        _global_scheduler.post_call(call_handlers, success_handlers, result)
+        _global_scheduler.post_call(call_handlers, finished_handlers, self)
 
-    def set_failed(self, exn, traceback=""):
+    def set_failed(self, exn, traceback):
         with self.__cond:
             if self.__status == CANCELLED:
                 return
@@ -130,18 +139,24 @@ class Future(object):
             self.__result = exn
             self.__traceback = traceback
             self.__status = FAILED
+            failure_handlers = self.__on_failure
+            finished_handlers = self.__on_finished
+            self.__clear_handlers()
             self.__cond.notify_all()
-            self.__call_handlers(self.__on_failure, exn, traceback)
-            self.__call_handlers(self.__on_finished, self)
+        _global_scheduler.post_call(call_handlers, failure_handlers, exn, traceback)
+        _global_scheduler.post_call(call_handlers, finished_handlers, self)
 
     def cancel(self):
         with self.__cond:
             if self.__status != WAITING:
                 return
             self.__status = CANCELLED
+            cancelled_handlers = self.__on_cancelled
+            finished_handlers = self.__on_finished
+            self.__clear_handlers()
             self.__cond.notify_all()
-            self.__call_handlers(self.__on_cancelled, self)
-            self.__call_handlers(self.__on_finished, self)
+        _global_scheduler.post_call(call_handlers, cancelled_handlers, self)
+        _global_scheduler.post_call(call_handlers, finished_handlers, self)
 
     def call(self, func, *args, **kwargs):
         try:
@@ -193,27 +208,32 @@ class Future(object):
     def bind(self, success=None, failure=None, cancelled=None, finished=None):
         with self.__cond:
             if success is not None:
-                self.__on_success.append(success)
                 if self.__status == DONE:
-                    _global_scheduler.call(success, self.__result)
+                    _global_scheduler.post_call(success, self.__result)
+                elif self.__status == WAITING:
+                    self.__on_success.append(success)
             if failure is not None:
-                self.__on_failure.append(failure)
                 if self.__status == FAILED:
-                    _global_scheduler.call(failure, self.__result, self.__traceback)
+                    _global_scheduler.post_call(failure, self.__result, self.__traceback)
+                elif self.__status == WAITING:
+                    self.__on_failure.append(failure)
             if cancelled is not None:
-                self.__on_cancelled.append(cancelled)
                 if self.__status == CANCELLED:
-                    _global_scheduler.call(cancelled, self)
+                    _global_scheduler.post_call(cancelled, self)
+                elif self.__status == WAITING:
+                    self.__on_cancelled.append(cancelled)
             if finished is not None:
-                self.__on_finished.append(finished)
                 if self.__status != WAITING:
-                    _global_scheduler.call(finished, self)
+                    _global_scheduler.post_call(finished, self)
+                elif self.__status == WAITING:
+                    self.__on_finished.append(finished)
 
     def __del__(self):
         if Future and self.__status == FAILED and not self.__on_failure:
-            print "Future failed: %s\nContext of Future invocation:\n%s\n" % (
-                self.__traceback.rstrip("\n"),
-                self.__context.rstrip("\n"))
+            message = "Future failed: %s\n" % self.__traceback.rstrip("\n")
+            if self.__context:
+                message += "Context of Future invocation:\n%s\n" % self.__context.rstrip("\n")
+            print message
 
 class Coroutine(Future):
     def __init__(self, gen, context):
