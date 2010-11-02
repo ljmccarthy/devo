@@ -260,8 +260,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                 self.notebook.Show()
             else:
                 self.notebook.Thaw()
-            self.Show()
             if errors:
+                self.Show()
                 dialogs.error(self, "Errors loading session:\n\n%s" %
                     ("\n\n".join(str(e) for e in errors)))
 
@@ -310,8 +310,10 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     def _OpenProject(self, filename):
         project = (yield async_call(read_project, filename))
         yield self.LoadProject(project)
+        self.Show()
 
     def _ShowLoadProjectError(self, exn):
+        self.Show()
         if isinstance(exn, IOError) and exn.errno == errno.ENOENT:
             dialogs.error(self, "Project file not found:\n\n" + filename)
         else:
