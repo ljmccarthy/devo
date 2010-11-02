@@ -310,7 +310,7 @@ class DirTreeCtrl(wx.TreeCtrl):
 
     def OnItemExpanding(self, evt):
         node = self.GetEventNode(evt)
-        if node.type == 'd':
+        if node.type == 'd' and node.state == NODE_UNPOPULATED:
             self.ExpandNode(node)
 
     def OnItemCollapsed(self, evt):
@@ -398,9 +398,15 @@ class DirTreeCtrl(wx.TreeCtrl):
 
     @managed("cm")
     @queued_coroutine("cq")
-    def ExpandNode(self, node):
+    def PopulateNode(self, node):
         if node.state == NODE_UNPOPULATED:
             yield node.expand(self, self.monitor, self.filter)
+
+    @managed("cm")
+    @coroutine
+    def ExpandNode(self, node):
+        if node.state == NODE_UNPOPULATED:
+            yield self.PopulateNode(node)
         if node.state != NODE_POPULATING:
             self.Expand(node.item)
 
@@ -447,6 +453,13 @@ class DirTreeCtrl(wx.TreeCtrl):
         except OSError, e:
             dialogs.error(self, str(e))
 
+    @managed("cm")
+    @coroutine
+    def _InitialExpand(self, rootnode):
+        yield self.ExpandNode(rootnode)
+        if isinstance(self.toplevel[0], SimpleNode):
+            yield self.ExpandNode(self.toplevel[0])
+
     def InitializeTree(self):
         self.DeleteAllItems()
         if len(self.toplevel) == 1:
@@ -456,9 +469,7 @@ class DirTreeCtrl(wx.TreeCtrl):
             rootitem = self.AddRoot("")
             rootnode = SimpleNode("", self.toplevel)
         self.SetItemNode(rootitem, rootnode)
-        self.ExpandNode(rootnode)
-        if isinstance(self.toplevel[0], SimpleNode):
-            self.ExpandNode(self.toplevel[0])
+        self._InitialExpand(rootnode)
 
     def SetTopLevel(self, toplevel=None):
         self.toplevel = toplevel or MakeTopLevel()
