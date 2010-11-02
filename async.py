@@ -328,6 +328,7 @@ class CoroutineQueue(object):
     def __next(self, future):
         if self.__queue:
             co = self.__queue.pop()
+            self.__running = weakref.ref(co)
             co.bind(finished=self.__next)
             co.start()
         else:
