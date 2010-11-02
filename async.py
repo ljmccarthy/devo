@@ -301,10 +301,7 @@ class CoroutineManager(object):
         self.__futures = set()
 
     def add(self, future):
-        self.__futures.add(weakref.ref(future, self.__discard))
-
-    def __discard(self, ref):
-        self.__futures.discard(ref)
+        self.__futures.add(weakref.ref(future, self.__futures.discard))
 
     def cancel(self):
         for ref in self.__futures:
