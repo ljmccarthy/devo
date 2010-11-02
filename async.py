@@ -93,10 +93,6 @@ class FutureAlreadySet(Exception):
 class FutureCancelled(Exception):
     pass
 
-def call_handlers(handlers, *args):
-    for handler in handlers:
-        _global_scheduler.call(handler, *args)
-
 class Future(object):
     def __init__(self, context=""):
         self.__context = context
@@ -109,11 +105,28 @@ class Future(object):
         self.__traceback = ""
         self.__cond = threading.Condition()
 
-    def __clear_handlers(self):
-        self.__on_success = []
-        self.__on_failure = []
-        self.__on_cancelled = []
-        self.__on_finished = []
+    def __finish(self):
+        with self.__cond:
+            if self.__status == DONE:
+                handlers = self.__on_success
+                args = (self.__result,)
+            elif self.__status == FAILED:
+                handlers = self.__on_failure
+                args = (self.__result, self.__traceback)
+            elif self.__status == CANCELLED:
+                handlers = self.__on_cancelled
+                args = (self,)
+            else:
+                return
+            finished_handlers = self.__on_finished
+            self.__on_success = []
+            self.__on_failure = []
+            self.__on_cancelled = []
+            self.__on_finished = []
+        for handler in handlers:
+            _global_scheduler.call(handler, *args)
+        for handler in finished_handlers:
+            _global_scheduler.call(handler, self)
 
     def set_done(self, result):
         with self.__cond:
@@ -123,12 +136,8 @@ class Future(object):
                 raise FutureAlreadySet()
             self.__result = result
             self.__status = DONE
-            success_handlers = self.__on_success
-            finished_handlers = self.__on_finished
-            self.__clear_handlers()
             self.__cond.notify_all()
-        _global_scheduler.post_call(call_handlers, success_handlers, result)
-        _global_scheduler.post_call(call_handlers, finished_handlers, self)
+        _global_scheduler.post_call(self.__finish)
 
     def set_failed(self, exn, traceback):
         with self.__cond:
@@ -139,24 +148,17 @@ class Future(object):
             self.__result = exn
             self.__traceback = traceback
             self.__status = FAILED
-            failure_handlers = self.__on_failure
-            finished_handlers = self.__on_finished
-            self.__clear_handlers()
             self.__cond.notify_all()
-        _global_scheduler.post_call(call_handlers, failure_handlers, exn, traceback)
-        _global_scheduler.post_call(call_handlers, finished_handlers, self)
+        _global_scheduler.post_call(self.__finish)
 
     def cancel(self):
         with self.__cond:
             if self.__status != WAITING:
                 return
             self.__status = CANCELLED
-            cancelled_handlers = self.__on_cancelled
-            finished_handlers = self.__on_finished
             self.__clear_handlers()
             self.__cond.notify_all()
-        _global_scheduler.post_call(call_handlers, cancelled_handlers, self)
-        _global_scheduler.post_call(call_handlers, finished_handlers, self)
+        _global_scheduler.post_call(self.__finish)
 
     def call(self, func, *args, **kwargs):
         try:
