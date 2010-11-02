@@ -100,6 +100,7 @@ class Future(object):
         self.__on_failure = []
         self.__on_cancelled = []
         self.__on_finished = []
+        self.__failure_handled = False
         self.__status = WAITING
         self.__result = None
         self.__traceback = ""
@@ -113,12 +114,16 @@ class Future(object):
             elif self.__status == FAILED:
                 handlers = self.__on_failure
                 args = (self.__result, self.__traceback)
+                if handlers:
+                    self.__failure_handled = True
             elif self.__status == CANCELLED:
                 handlers = self.__on_cancelled
                 args = (self,)
             else:
                 return
             finished_handlers = self.__on_finished
+            if finished_handlers:
+                self.__failure_handled = True
             self.__on_success = []
             self.__on_failure = []
             self.__on_cancelled = []
@@ -216,6 +221,7 @@ class Future(object):
                     self.__on_success.append(success)
             if failure is not None:
                 if self.__status == FAILED:
+                    self.__failure_handled = True
                     _global_scheduler.post_call(failure, self.__result, self.__traceback)
                 elif self.__status == WAITING:
                     self.__on_failure.append(failure)
@@ -226,12 +232,13 @@ class Future(object):
                     self.__on_cancelled.append(cancelled)
             if finished is not None:
                 if self.__status != WAITING:
+                    self.__failure_handled = True
                     _global_scheduler.post_call(finished, self)
                 elif self.__status == WAITING:
                     self.__on_finished.append(finished)
 
     def __del__(self):
-        if Future and self.__status == FAILED and not self.__on_failure:
+        if Future and self.__status == FAILED and not self.__failure_handled:
             message = "Future failed: %s\n" % self.__traceback.rstrip("\n")
             if self.__context:
                 message += "Context of Future invocation:\n%s\n" % self.__context.rstrip("\n")
