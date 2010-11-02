@@ -63,7 +63,7 @@ class TerminalCtrl(wx.Panel):
 
         self.process = subprocess.Popen(args,
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-            close_fds=True, shell=True, cwd=cwd, env=env)
+            close_fds=(sys.platform != "win32"), shell=True, cwd=cwd, env=env)
         self.thread = threading.Thread(target=self.__thread, args=(self.process,))
         self.thread.start()
 
