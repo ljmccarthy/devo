@@ -16,7 +16,14 @@ def atomic_write_file(path, data, mode="wb"):
             pass
         raise
     else:
-        rename(temp, path)
+        try:
+            rename(temp, path)
+        except Exception, e:
+            try:
+                os.remove(temp)
+            except Exception:
+                pass
+            raise
 
 def read_file(path, mode="rb"):
     with open(path, mode) as f:
