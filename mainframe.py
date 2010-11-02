@@ -336,6 +336,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         except Exception:
             try:
                 yield self.LoadProject(Project(filename=filename))
+                self.Show()
             except Exception, e:
                 self._ShowLoadProjectError(e)            
 
