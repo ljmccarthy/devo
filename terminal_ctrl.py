@@ -90,7 +90,8 @@ class TerminalCtrl(wx.Panel):
     def __thread_exit(self, process, rc):
         self.__flush()
         self.status_label.SetLabel(
-            "%s\nProcess terminated with return code %d" % (self.process_args, rc))
+            "%s\nProcess terminated%s" % (self.process_args,
+                " with return code %d" % rc if rc is not None else ""))
         if self.process is process:
             self.thread = None
             self.process = None
