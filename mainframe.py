@@ -13,7 +13,7 @@ from file_monitor import FileMonitor
 from find_replace_dialog import FindReplaceDetails
 from menu import MenuItem
 from menu_defs import menubar
-from project import read_project, write_project
+from project import read_project, write_project, Project
 from terminal_ctrl import TerminalCtrl
 from util import frozen_window, is_text_file
 
@@ -307,18 +307,35 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
 
     @managed("cm")
     @coroutine
+    def _OpenProject(self, filename):
+        project = (yield async_call(read_project, filename))
+        yield self.LoadProject(project)
+
+    def _ShowLoadProjectError(self, exn):
+        if isinstance(exn, IOError) and exn.errno == errno.ENOENT:
+            dialogs.error(self, "Project file not found:\n\n" + filename)
+        else:
+            dialogs.error(self, "Error loading session:\n\n%s" % traceback.format_exc())
+
+    @managed("cm")
+    @coroutine
     def OpenProject(self, filename):
         try:
-            project = (yield async_call(read_project, filename))
-            yield self.LoadProject(project)
+            project = (yield self._OpenProject(filename))
         except Exception, e:
-            if isinstance(e, IOError) and e.errno == errno.ENOENT:
-                dialogs.error(self, "Project file not found:\n\n" + filename)
-            else:
-                dialogs.error(self, "Error loading session:\n\n%s" % traceback.format_exc())
+            self._ShowLoadProjectError(e)
 
+    @managed("cm")
+    @coroutine
     def OpenDefaultProject(self):
-        return self.OpenProject(os.path.join(self.config_dir, "session"))
+        filename = os.path.join(self.config_dir, "session")
+        try:
+            yield self._OpenProject(filename)
+        except Exception:
+            try:
+                yield self.LoadProject(Project(filename=filename))
+            except Exception, e:
+                self._ShowLoadProjectError(e)            
 
     def OnPageClose(self, evt):
         evt.Veto()
