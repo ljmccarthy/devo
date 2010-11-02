@@ -1,5 +1,5 @@
 import wx
-import subprocess, threading, Queue
+import sys, subprocess, threading, Queue
 
 class TerminalCtrl(wx.Panel):
     def __init__(self, parent):
