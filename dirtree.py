@@ -248,10 +248,7 @@ class DirTreeCtrl(wx.TreeCtrl):
         self.imglist.Add(load_bitmap("icons/file.png"))
         self.SetImageList(self.imglist)
 
-        self.monitor = FSMonitorThread(self._OnFileSystemChanged)
-        self.InitializeTree()
-
-        self.Bind(wx.EVT_CLOSE, self.OnClose)
+        self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
         self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.OnItemActivated)
         self.Bind(wx.EVT_TREE_ITEM_EXPANDING, self.OnItemExpanding)
         self.Bind(wx.EVT_TREE_ITEM_COLLAPSED, self.OnItemCollapsed)
@@ -264,8 +261,12 @@ class DirTreeCtrl(wx.TreeCtrl):
         self.Bind(wx.EVT_MENU, self.OnItemDelete, id=ID_DELETE)
         self.Bind(wx.EVT_MENU, self.OnNewFolder, id=ID_NEW_FOLDER)
 
-    def OnClose(self, evt):
+        self.monitor = FSMonitorThread(self._OnFileSystemChanged)
+
+    def OnDestroy(self, evt):
+        self.monitor.remove_all_watches()
         self.cm.cancel()
+        self._GetFSEvents()
 
     def _OnFileSystemChanged(self, evt):
         if isinstance(self, wx._core._wxPyDeadObject):
@@ -281,12 +282,16 @@ class DirTreeCtrl(wx.TreeCtrl):
         self.select_later_name = name
         self.select_later_time = time.time() + timeout
 
-    @managed("cm")
-    @queued_coroutine("cq")
-    def OnFileSystemChanged(self):
+    def _GetFSEvents(self):
         with self.fsevts_lock:
             evts = self.fsevts
             self.fsevts = []
+        return evts
+
+    @managed("cm")
+    @queued_coroutine("cq")
+    def OnFileSystemChanged(self):
+        evts = self._GetFSEvents()
         for evt in evts:
             if evt.action in (FSEvent.Create, FSEvent.MoveTo):
                 item = (yield evt.user.add(evt.name, self, self.monitor, self.filter))
@@ -461,6 +466,9 @@ class DirTreeCtrl(wx.TreeCtrl):
             yield self.ExpandNode(self.toplevel[0])
 
     def InitializeTree(self):
+        self.monitor.remove_all_watches()
+        self.cm.cancel()
+        self._GetFSEvents()
         self.DeleteAllItems()
         if len(self.toplevel) == 1:
             rootitem = self.AddRoot(self.toplevel[0].label)
@@ -469,11 +477,11 @@ class DirTreeCtrl(wx.TreeCtrl):
             rootitem = self.AddRoot("")
             rootnode = SimpleNode("", self.toplevel)
         self.SetItemNode(rootitem, rootnode)
-        self._InitialExpand(rootnode)
+        return self._InitialExpand(rootnode)
 
     def SetTopLevel(self, toplevel=None):
         self.toplevel = toplevel or MakeTopLevel()
-        self.InitializeTree()
+        return self.InitializeTree()
 
     def _FindExpandedNodes(self, item, nodes):
         if self.IsExpanded(item):
@@ -500,6 +508,7 @@ class DirTreeCtrl(wx.TreeCtrl):
                 if not paths:
                     break
 
+    @managed("cm")
     @coroutine
     def ExpandPathNodes(self, paths):
         rootnode = self.GetPyData(self.GetRootItem())
