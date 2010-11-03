@@ -1,7 +1,6 @@
 import os
 import wx
 from file_picker import DirPicker
-from project import Project
 
 class NewProjectDialog(wx.Dialog):
     def __init__(self, parent, path=""):
@@ -37,10 +36,6 @@ class NewProjectDialog(wx.Dialog):
 
     def GetRoot(self):
         return self.fp_root.GetValue()
-
-    def GetProject(self):
-        return Project(name=self.GetName(), rootdir=self.GetRoot(),
-                       filename=os.path.join(self.GetRoot(), ".devo-session"))
 
 if __name__ == "__main__":
     app = wx.PySimpleApp()

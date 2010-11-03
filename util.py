@@ -10,6 +10,21 @@ class frozen_window(object):
     def __exit__(self, exn_type, exn_value, exn_traceback):
         self.win.Thaw()
 
+class hidden_window(object):
+    def __init__(self, win):
+        self.win = win
+
+    def __enter__(self):
+        self.win.Hide()
+
+    def __exit__(self, exn_type, exn_value, exn_traceback):
+        self.win.Show()
+
+if wx.Platform == "__WXGTK__":
+    frozen_or_hidden_window = hidden_window
+else:
+    frozen_or_hidden_window = frozen_window
+
 def count_non_printable(s):
     count = 0
     for c in s:

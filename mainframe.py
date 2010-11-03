@@ -13,9 +13,9 @@ from file_monitor import FileMonitor
 from find_replace_dialog import FindReplaceDetails
 from menu import MenuItem
 from menu_defs import menubar
-from project import read_project, write_project, Project
+from settings import read_settings, write_settings
 from terminal_ctrl import TerminalCtrl
-from util import frozen_window, is_text_file
+from util import frozen_window, frozen_or_hidden_window, is_text_file
 
 from new_project_dialog import NewProjectDialog
 
@@ -79,7 +79,10 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         wx.RegisterId(self.user_last_id)
 
         self.config_dir = fileutil.get_user_config_dir("devo")
-        self.project = None
+        self.project = {"name": ""}
+        self.project_root = ""
+        self.project_filename = ""
+        self.session_filename = ""
 
         self.cm = CoroutineManager()
         self.env = AppEnv(self)
@@ -163,9 +166,10 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             yield self.notebook.GetPage(i)
 
     def GetMenuHooks(self):
+        commands = self.project.get("commands", [])
         return {
             "commands" : [MenuItem(i + self.user_first_id, command["name"], command["accel"])
-                          for i, command in enumerate(self.project.commands)],
+                          for i, command in enumerate(commands)],
         }
 
     def UpdateMenuBar(self):
@@ -182,7 +186,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     @managed("cm")
     @coroutine
     def DoClose(self):
-        if not self.project or (yield self.SaveSession()):
+        if (yield self.SaveProject()):
             wx.CallAfter(self._DoShutdown)
         else:
             self.Show()
@@ -196,150 +200,146 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     @managed("cm")
     @coroutine
     def SaveSession(self):
-        try:
-            session = {}
-            session["dialogs"] = dialogs.save_state()
-            session["dirtree"] = self.tree.SavePerspective()
-            if self.notebook.GetPageCount() > 0:
-                session["notebook"] = self.notebook.SavePerspective()
-                session["editors"] = editors = []
-                session["selection"] = self.notebook.GetSelection()
-            for editor in self.editors:
-                if editor.path and editor.changed:
-                    if not (yield editor.TryClose()):
-                        yield False
-                editors.append(editor.SavePerspective())
-            self.project.session = session
-            yield async_call(write_project, self.project)
-            yield True
-        except Exception, e:
-            dialogs.error(self, "Error saving session:\n\n%s" % e)
-            yield False
+        session = {}
+        session["dialogs"] = dialogs.save_state()
+        session["dirtree"] = self.tree.SavePerspective()
+        if self.notebook.GetPageCount() > 0:
+            session["notebook"] = self.notebook.SavePerspective()
+            session["editors"] = editors = []
+            session["selection"] = self.notebook.GetSelection()
+        for editor in self.editors:
+            if editor.path and editor.changed:
+                if not (yield editor.TryClose()):
+                    yield False
+            editors.append(editor.SavePerspective())
+        yield async_call(write_settings, self.session_filename, session)
 
     @managed("cm")
     @coroutine
-    def LoadSession(self, session):
-        errors = []
-        if wx.Platform == "__WXGTK__":
-            self.notebook.Hide()
-        else:
-            self.notebook.Freeze()
-        try:
-            if "dialogs" in session:
-                dialogs.load_state(session["dialogs"])
+    def SaveProject(self):
+        if self.session_filename:
+            try:
+                yield self.SaveSession()
+            except Exception, e:
+                dialogs.error(self, "Error saving session:\n\n%s" % e)
+                yield False
+        if self.project_filename:
+            try:
+                yield async_call(write_settings, self.project_filename, self.project)
+            except Exception, e:
+                dialogs.error(self, "Error saving project:\n\n%s" % e)
+                yield False
+        yield True
 
-            editors = []
-            if "editors" in session:
-                for p in session["editors"]:
-                    editor = self.NewEditor()
-                    future = editor.LoadPerspective(p)
-                    editors.append((editor, future))
+    @managed("cm")
+    @coroutine
+    def LoadSession(self):
+        session = (yield async_call(read_settings, self.session_filename))
 
-            if "dirtree" in session:
-                self.tree.LoadPerspective(session["dirtree"])
+        with frozen_or_hidden_window(self.notebook):
+            errors = []
+            try:
+                if "dialogs" in session:
+                    dialogs.load_state(session["dialogs"])
 
-            for i, (editor, future) in reversed(list(enumerate(editors))):
-                try:
-                    yield future
-                except Exception, e:
-                    if not (isinstance(e, IOError) and e.errno == errno.ENOENT):
-                        errors.append(e)
-                    self.notebook.DeletePage(i)
-            errors.reverse()
+                editors = []
+                if "editors" in session:
+                    for p in session["editors"]:
+                        editor = self.NewEditor()
+                        future = editor.LoadPerspective(p)
+                        editors.append((editor, future))
 
-            if "notebook" in session:
-                self.notebook.LoadPerspective(session["notebook"])
+                if "dirtree" in session:
+                    self.tree.LoadPerspective(session["dirtree"])
 
-            if "selection" in session:
-                selection = session["selection"]
-                if 0 <= selection < self.notebook.GetPageCount():
-                    self.notebook.SetSelection(selection)
-                    self.notebook.GetPage(selection).SetFocus()
-        finally:
-            if wx.Platform == "__WXGTK__":
-                self.notebook.Show()
-            else:
-                self.notebook.Thaw()
-            if errors:
-                self.Show()
-                dialogs.error(self, "Errors loading session:\n\n%s" %
-                    ("\n\n".join(str(e) for e in errors)))
+                for i, (editor, future) in reversed(list(enumerate(editors))):
+                    try:
+                        yield future
+                    except Exception, e:
+                        if not (isinstance(e, IOError) and e.errno == errno.ENOENT):
+                            errors.append(e)
+                        self.notebook.DeletePage(i)
+                errors.reverse()
+
+                if "notebook" in session:
+                    self.notebook.LoadPerspective(session["notebook"])
+
+                if "selection" in session:
+                    selection = session["selection"]
+                    if 0 <= selection < self.notebook.GetPageCount():
+                        self.notebook.SetSelection(selection)
+                        self.notebook.GetPage(selection).SetFocus()
+            finally:
+                if errors:
+                    self.Show()
+                    dialogs.error(self, "Errors loading session:\n\n%s" %
+                        ("\n\n".join(str(e) for e in errors)))
 
     def DeleteAllPages(self):
-        if wx.Platform == "__WXGTK__":
-            self.notebook.Hide()
-        try:
-            self.notebook.Freeze()
+        with frozen_or_hidden_window(self.notebook):
             for i in xrange(self.notebook.GetPageCount()-1, -1, -1):
                 self.notebook.DeletePage(i)
-        finally:
-            self.notebook.Thaw()
-            self.notebook.Show()
 
-    def SetProject(self, project):
-        self.DeleteAllPages()
-        if project and project.rootdir:
-            self.tree.SetTopLevel([DirNode(project.rootdir)])
-        else:
-            self.tree.SetTopLevel()
+    def SetProject(self, project, project_filename):
+        name = os.path.splitext(os.path.basename(project_filename))[0]
         self.project = project
+        self.project_root = os.path.dirname(project_filename)
+        self.project_filename = project_filename
+        self.session_filename = os.path.join(self.project_root, ".%s.devo-session" % name)
+        project.setdefault("name", name)
+        name = project["name"]
+
+        self.DeleteAllPages()
+        self.tree.SetTopLevel([DirNode(self.project_root)])
         self.UpdateMenuBar()
-        self.SetTitle("Devo" + (project.name and " [%s]" % project.name))
+        self.SetTitle("Devo [%s]" % name)
 
     @managed("cm")
     @coroutine
-    def LoadProject(self, project):
-        if not self.project or (yield self.SaveSession()):
-            old_project = self.project
-            self.SetProject(project)
-            try:
-                yield self.LoadSession(project.session)
-            except Exception:
-                if old_project:
-                    self.SetProject(old_project)
-                    yield self.LoadSession(old_project.session)
-                raise
-
-    @managed("cm")
-    @coroutine
-    def OpenNewProject(self, project):
-        if not self.project or (yield self.SaveSession()):
-            self.SetProject(project)
-
-    @managed("cm")
-    @coroutine
-    def _OpenProject(self, filename):
-        project = (yield async_call(read_project, filename))
-        yield self.LoadProject(project)
-        self.Show()
+    def OpenNewProject(self, project, project_filename):
+        if (yield self.SaveProject()):
+            self.SetProject(project, project_filename)
 
     def _ShowLoadProjectError(self, exn, filename):
         self.Show()
         if isinstance(exn, IOError) and exn.errno == errno.ENOENT:
             dialogs.error(self, "Project file not found:\n\n" + filename)
         else:
-            dialogs.error(self, "Error loading session:\n\n%s" % traceback.format_exc())
+            dialogs.error(self, "Error loading project:\n\n%s" % traceback.format_exc())
 
     @managed("cm")
     @coroutine
-    def OpenProject(self, filename):
-        try:
-            project = (yield self._OpenProject(filename))
-        except Exception, e:
-            self._ShowLoadProjectError(e, filename)
+    def OpenProject(self, project_filename):
+        if (yield self.SaveProject()):
+            try:
+                project = (yield async_call(read_settings, project_filename))
+                self.SetProject(project, project_filename)
+                try:
+                    yield self.LoadSession()
+                except IOError:
+                    pass
+            except Exception, e:
+                self._ShowLoadProjectError(e, project_filename)
 
     @managed("cm")
     @coroutine
     def OpenDefaultProject(self):
-        filename = os.path.join(self.config_dir, "session")
-        try:
-            yield self._OpenProject(filename)
-        except Exception:
+        if (yield self.SaveProject()):
+            self.project = {"name": ""}
+            self.project_root = ""
+            self.project_filename = ""
+            self.session_filename = os.path.join(self.config_dir, "session")
+
+            self.DeleteAllPages()
+            self.tree.SetTopLevel()
             try:
-                yield self.LoadProject(Project(filename=filename))
+                yield self.LoadSession()
+            except Exception:
+                pass
+            finally:
                 self.Show()
-            except Exception, e:
-                self._ShowLoadProjectError(e, filename)
+                self.UpdateMenuBar()
+                self.SetTitle("Devo")
 
     def OnPageClose(self, evt):
         evt.Veto()
@@ -423,22 +423,26 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         dlg = NewProjectDialog(self)
         try:
             if dlg.ShowModal() == wx.ID_OK:
-                return dlg.GetProject()
+                rootdir = dlg.GetRoot()
+                name = dlg.GetName()
+                project = {"name": name}
+                project_filename = os.path.join(rootdir, name + ".devo")
+                return project, project_filename
         finally:
             dlg.Destroy()
 
     def OnNewProject(self, evt):
-        project = self.GetNewProject()
+        project, project_filename = self.GetNewProject()
         if project:
-            self.OpenNewProject(project)
+            self.OpenNewProject(project, project_filename)
 
     def OnOpenProject(self, evt):
         rootdir = dialogs.get_directory(self, "Select Project Directory")
         if rootdir:
-            self.OpenProject(os.path.join(rootdir, ".devo-session"))
+            self.OpenProject(os.path.join(rootdir, os.path.basename(rootdir) + ".devo"))
 
     def OnCloseProject(self, evt):
-        if self.project:
+        if self.project_filename:
             self.OpenDefaultProject()
 
     def OnEditProject(self, evt):
@@ -448,10 +452,10 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         pass
 
     def OnConfigureCommands(self, evt):
-        dlg = CommandsDialog(self, self.project.commands)
+        dlg = CommandsDialog(self, self.project.get("commands", []))
         try:
             if dlg.ShowModal() == wx.ID_OK:
-                self.project.commands = dlg.GetCommands()
+                self.project["commands"] = dlg.GetCommands()
                 self.UpdateMenuBar()
         finally:
             dlg.Destroy()
@@ -463,20 +467,21 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             self.manager.Update()
 
     def RunCommand(self, cmdline):
-        self.terminal.run(cmdline, cwd = self.project.rootdir or None)
+        self.terminal.run(cmdline, cwd = self.project_root or None)
         self.ShowTerminal()
 
     def OnUserCommand(self, evt):
         index = evt.GetId() - self.user_first_id
-        if 0 <= index < len(self.project.commands):
-            command = self.project.commands[index]
+        commands = self.project.get("commands", [])
+        if 0 <= index < len(commands):
+            command = commands[index]
             editor = self.GetCurrentEditor()
             current_file = editor.path if editor else ""
             cmdline = string.Template(command["cmdline"]).safe_substitute(
                 CURRENT_FILE = current_file,
                 CURRENT_DIR = os.path.dirname(current_file),
                 CURRENT_BASENAME = os.path.basename(current_file),
-                PROJECT_ROOT = self.project.rootdir,
+                PROJECT_ROOT = self.project_root,
             )
             self.RunCommand(cmdline)
 
@@ -559,4 +564,4 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             evt.Enable(False)
 
     def UpdateUI_ProjectIsOpen(self, evt):
-        evt.Enable(bool(self.project and self.project.rootdir))
+        evt.Enable(bool(self.project_filename))
