@@ -277,7 +277,7 @@ class Editor(wx.stc.StyledTextCtrl):
     def Unindent(self):
         start, end = self.GetSelection()
         self.BeginUndoAction()
-        for line in xrange(self.LineFromPosition(start), self.LineFromPosition(end) + 1):
+        for line in xrange(self.LineFromPosition(start), self.LineFromPosition(end - 1) + 1):
             indent = self.GetLineIndentation(line)
             self.SetLineIndentation(line, indent - self.GetIndent())
         self.EndUndoAction()
