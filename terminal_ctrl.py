@@ -82,9 +82,6 @@ class TerminalCtrl(wx.Panel):
         rc = None
         try:
             while True:
-                rc = process.poll()
-                if rc is not None:
-                    break
                 line = process.stdout.readline()
                 if not line:
                     break
