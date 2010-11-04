@@ -263,6 +263,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                     yield False
             editors.append(editor.SavePerspective())
         yield async_call(write_settings, self.session_filename, session)
+        yield True
 
     @managed("cm")
     @coroutine
@@ -270,7 +271,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.fmon.Stop()
         if self.session_filename:
             try:
-                yield self.SaveSession()
+                if not (yield self.SaveSession()):
+                    yield False
             except Exception, e:
                 dialogs.error(self, "Error saving session:\n\n%s" % e)
                 yield False
