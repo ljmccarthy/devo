@@ -161,7 +161,6 @@ class Future(object):
             if self.__status != WAITING:
                 return
             self.__status = CANCELLED
-            self.__clear_handlers()
             self.__cond.notify_all()
         _global_scheduler.post_call(self.__finish)
 
