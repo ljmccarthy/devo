@@ -19,6 +19,12 @@ from util import frozen_window, frozen_or_hidden_window, is_text_file
 
 from new_project_dialog import NewProjectDialog
 
+def make_project_filename(project_root):
+    return os.path.join(project_root, ".devo-project")
+
+def make_session_filename(project_root):
+    return os.path.join(project_root, ".devo-session")
+
 class AppEnv(object):
     def __init__(self, mainframe):
         self._mainframe = mainframe
@@ -235,7 +241,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     @coroutine
     def SaveSettings(self):
         self.settings["projects"] = self.projects
-        self.settings["last_project"] = self.project_filename
+        self.settings["last_project"] = self.project_root
         self.settings["dialogs"] = dialogs.save_state()
         try:
             yield async_call(write_settings, self.settings_filename, self.settings)
@@ -327,15 +333,15 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.deleted_paths.clear()
         self.fmon.Start()
 
-    def SetProject(self, project, project_filename):
-        name = os.path.splitext(os.path.basename(project_filename))[0]
+    def SetProject(self, project, project_root):
+        name = os.path.basename(project_root)
         self.project = project
-        self.project_root = os.path.dirname(project_filename)
-        self.project_filename = project_filename
-        self.session_filename = os.path.join(self.project_root, ".%s.devo-session" % name)
+        self.project_root = project_root
+        self.project_filename = make_project_filename(project_root)
+        self.session_filename = make_session_filename(project_root)
         project.setdefault("name", name)
         name = project["name"]
-        self.projects[project_filename] = {"name": name}
+        self.projects[project_root] = {"name": name}
 
         self.DeleteAllPages()
         self.tree.SetTopLevel([DirNode(self.project_root)])
@@ -345,9 +351,9 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
 
     @managed("cm")
     @coroutine
-    def OpenNewProject(self, project, project_filename):
+    def OpenNewProject(self, project, project_root):
         if (yield self.SaveProject()):
-            self.SetProject(project, project_filename)
+            self.SetProject(project, project_root)
 
     def _ShowLoadProjectError(self, exn, filename):
         self.Show()
@@ -358,18 +364,18 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
 
     @managed("cm")
     @coroutine
-    def OpenProject(self, project_filename):
+    def OpenProject(self, project_root):
         if (yield self.SaveProject()):
             try:
-                project = (yield async_call(read_settings, project_filename))
-                self.SetProject(project, project_filename)
+                project = (yield async_call(read_settings, make_project_filename(project_root)))
+                self.SetProject(project, project_root)
                 try:
                     yield self.LoadSession()
                 except IOError:
                     pass
                 self.Show()
             except Exception, e:
-                self._ShowLoadProjectError(e, project_filename)
+                self._ShowLoadProjectError(e, project_root)
             finally:
                 self.StartFileMonitor()
 
@@ -479,24 +485,22 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         dlg = NewProjectDialog(self)
         try:
             if dlg.ShowModal() == wx.ID_OK:
-                rootdir = dlg.GetRoot()
-                name = dlg.GetName()
-                project = {"name": name}
-                project_filename = os.path.join(rootdir, name + ".devo")
-                return project, project_filename
+                project_root = dlg.GetRoot()
+                project = {"name": dlg.GetName()}
+                return project, project_root
         finally:
             dlg.Destroy()
         return None, None
 
     def OnNewProject(self, evt):
-        project, project_filename = self.GetNewProject()
+        project, project_root = self.GetNewProject()
         if project:
-            self.OpenNewProject(project, project_filename)
+            self.OpenNewProject(project, project_root)
 
     def OnOpenProject(self, evt):
-        rootdir = dialogs.get_directory(self, "Select Project Directory")
-        if rootdir:
-            self.OpenProject(os.path.join(rootdir, os.path.basename(rootdir) + ".devo"))
+        project_root = dialogs.get_directory(self, "Select Project Directory")
+        if project_root:
+            self.OpenProject(project_root)
 
     def OnCloseProject(self, evt):
         if self.project_filename:
@@ -626,4 +630,4 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             evt.Enable(False)
 
     def UpdateUI_ProjectIsOpen(self, evt):
-        evt.Enable(bool(self.project_filename))
+        evt.Enable(bool(self.project_root))
