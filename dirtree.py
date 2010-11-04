@@ -202,13 +202,29 @@ class DirTreeFilter(object):
         self.show_hidden = show_hidden
         self.show_files = show_files
         self.show_dirs = show_dirs
+        self.hidden_exts = [".pyc", ".pyo", ".o", ".a", ".obj", ".lib"]
+        self.hidden_dirs = ["CVS"]
 
     def filter_by_name(self, name):
-        return self.show_hidden or not name.startswith(".")
+        if not self.show_hidden and name.startswith("."):
+            return False
+        for ext in self.hidden_exts:
+            if name.endswith(ext):
+                return False
+        return True
 
     def filter_by_stat(self, name, st):
-        return (self.show_dirs or not stat.S_ISDIR(st.st_mode)) \
-           and (self.show_files or not stat.S_ISREG(st.st_mode))
+        if stat.S_ISREG(st.st_mode):
+            if not self.show_files:
+                return False
+        elif stat.S_ISDIR(st.st_mode):
+            if not self.show_dirs:
+                return False
+            if name in self.hidden_dirs:
+                return False
+        else:
+            return False
+        return True
 
 def MakeTopLevel():
     if sys.platform == "win32":
