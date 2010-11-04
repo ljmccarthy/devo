@@ -14,7 +14,7 @@ Commands may use the following environment variables:
     $CURRENT_FILE - Current file
     $CURRENT_DIR - Directory of current file
     $CURRENT_BASENAME - Base filename of current file
-    $PROJECT_ROOT - Project root directory
+    $PROJECT_ROOT - Project root directory\
 """
 
 def check_variables(s):
@@ -52,28 +52,25 @@ class EditCommandDialog(wx.Dialog):
         grid.Add(wx.StaticText(self, label="Before Executing"), 0, wx.ALIGN_CENTER_VERTICAL)
         grid.Add(self.field_before, 0, wx.EXPAND)
 
-        main_sizer = wx.BoxSizer(wx.VERTICAL)
-        main_sizer.Add(grid, 1, wx.EXPAND | wx.ALL, 5)
-        main_sizer.AddSpacer(15)
-        main_sizer.Add(wx.StaticText(self, label=command_help), 0, wx.LEFT | wx.RIGHT, 5)
-
         btn_sizer = wx.StdDialogButtonSizer()
         btn_ok = wx.Button(self, wx.ID_OK)
         btn_ok.SetDefault()
         btn_sizer.AddButton(btn_ok)
         btn_sizer.AddButton(wx.Button(self, wx.ID_CANCEL))
+        btn_sizer.AddButton(wx.Button(self, wx.ID_HELP))
         btn_sizer.Realize()
 
         sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(main_sizer, 1, wx.EXPAND)
+        sizer.Add(grid, 1, wx.EXPAND | wx.ALL, 5)
         sizer.Add(btn_sizer, 0, wx.EXPAND | wx.ALL, 5)
         self.SetSizer(sizer)
         self.Fit()
-        self.SetMinSize(self.Size)
+        self.SetMinSize((max(self.Size.width, 400), self.Size.height))
         self.SetMaxSize(wx.Size(-1, self.Size.height))
         self.field_name.SetFocus()
 
         self.Bind(wx.EVT_BUTTON, self.OnOK, id=wx.ID_OK)
+        self.Bind(wx.EVT_BUTTON, self.OnHelp, id=wx.ID_HELP)
 
     def _GetField(self, ctrl):
         value = ctrl.Value.strip()
@@ -119,6 +116,9 @@ class EditCommandDialog(wx.Dialog):
             command[field_name] = value
         self.command = command
         evt.Skip()
+
+    def OnHelp(self, evt):
+        dialogs.info(self, command_help, "Edit Command Help")
 
 class CommandsDialog(wx.Dialog):
     def __init__(self, parent, commands=[]):
