@@ -39,6 +39,7 @@ menubar = MenuBar([
         MenuSeparator,
         MenuItem(ID.EDIT_PROJECT, "&Edit Current Project..."),
         MenuItem(ID.ORGANISE_PROJECTS, "O&rganise Projects..."),
+        MenuSeparator,
         MenuHook("projects"),
     ]),
     Menu("&Commands", [

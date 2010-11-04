@@ -39,6 +39,9 @@ class AppEnv(object):
     def RemoveMonitorPath(self, path):
         self._mainframe.fmon.RemovePath(path)
 
+    def UpdatingPath(self, path):
+        return self._mainframe.fmon.UpdatingPath(path)
+
     @property
     def find_details(self):
         return self._mainframe.find_details
@@ -77,12 +80,19 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.user_first_id = wx.NewId()
         self.user_last_id = self.user_first_id + 1000
         wx.RegisterId(self.user_last_id)
+        self.project_first_id = wx.NewId()
+        self.project_last_id = self.project_first_id + 1000
+        wx.RegisterId(self.project_last_id)
 
         self.config_dir = fileutil.get_user_config_dir("devo")
-        self.project = {"name": ""}
-        self.project_root = ""
+        self.settings_filename = os.path.join(self.config_dir, "devo.conf")
         self.project_filename = ""
         self.session_filename = ""
+
+        self.settings = {}
+        self.project = {"name": ""}
+        self.project_root = ""
+        self.projects = {}
 
         self.cm = CoroutineManager()
         self.env = AppEnv(self)
@@ -106,7 +116,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             aui.AuiPaneInfo().Hide().Bottom().BestSize((-1, 200)).Caption("Terminal"))
         self.manager.Update()
 
-        self.OpenDefaultProject()
+        self.Startup()
 
         self.Bind(wx.EVT_CLOSE, self.OnClose)
         self.Bind(wx.EVT_ACTIVATE, self.OnActivate)
@@ -141,6 +151,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.Bind(wx.EVT_MENU, self.OnConfigureCommands, id=ID.CONFIGURE_COMMANDS)
         self.Bind(wx.EVT_MENU_RANGE, self.OnUserCommand,
                   id=self.user_first_id, id2=self.user_last_id)
+        self.Bind(wx.EVT_MENU_RANGE, self.OnSelectProject,
+                  id=self.project_first_id, id2=self.project_last_id)
 
         self.Bind(wx.EVT_UPDATE_UI, self.EditorUpdateUI("GetModify"), id=ID.SAVE)
         self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_HasEditor, id=ID.SAVEAS)
@@ -170,6 +182,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         return {
             "commands" : [MenuItem(i + self.user_first_id, command["name"], command["accel"])
                           for i, command in enumerate(commands)],
+            "projects" : [MenuItem(i + self.project_first_id, p["name"])
+                          for i, (_, p) in enumerate(sorted(self.projects.iteritems()))],
         }
 
     def UpdateMenuBar(self):
@@ -187,6 +201,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     @coroutine
     def DoClose(self):
         if (yield self.SaveProject()):
+            yield self.SaveSettings()
             wx.CallAfter(self._DoShutdown)
         else:
             self.Show()
@@ -199,9 +214,38 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
 
     @managed("cm")
     @coroutine
+    def Startup(self):
+        try:
+            self.settings = (yield async_call(read_settings, self.settings_filename))
+        except Exception:
+            yield self.OpenDefaultProject()
+        else:
+            self.projects = self.settings.get("projects", {})
+
+            if "dialogs" in self.settings:
+                dialogs.load_state(self.settings["dialogs"])
+
+            last_project = self.settings.get("last_project")
+            if last_project:
+                yield self.OpenProject(last_project)
+            else:
+                yield self.OpenDefaultProject()
+
+    @managed("cm")
+    @coroutine
+    def SaveSettings(self):
+        self.settings["projects"] = self.projects
+        self.settings["last_project"] = self.project_filename
+        self.settings["dialogs"] = dialogs.save_state()
+        try:
+            yield async_call(write_settings, self.settings_filename, self.settings)
+        except Exception, e:
+            dialogs.error(self, "Error saving settings:\n\n%s" % e)
+
+    @managed("cm")
+    @coroutine
     def SaveSession(self):
         session = {}
-        session["dialogs"] = dialogs.save_state()
         session["dirtree"] = self.tree.SavePerspective()
         if self.notebook.GetPageCount() > 0:
             session["notebook"] = self.notebook.SavePerspective()
@@ -217,6 +261,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     @managed("cm")
     @coroutine
     def SaveProject(self):
+        self.fmon.Stop()
         if self.session_filename:
             try:
                 yield self.SaveSession()
@@ -239,9 +284,6 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         with frozen_or_hidden_window(self.notebook):
             errors = []
             try:
-                if "dialogs" in session:
-                    dialogs.load_state(session["dialogs"])
-
                 editors = []
                 if "editors" in session:
                     for p in session["editors"]:
@@ -280,6 +322,11 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             for i in xrange(self.notebook.GetPageCount()-1, -1, -1):
                 self.notebook.DeletePage(i)
 
+    def StartFileMonitor(self):
+        self.updated_paths.clear()
+        self.deleted_paths.clear()
+        self.fmon.Start()
+
     def SetProject(self, project, project_filename):
         name = os.path.splitext(os.path.basename(project_filename))[0]
         self.project = project
@@ -288,11 +335,13 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.session_filename = os.path.join(self.project_root, ".%s.devo-session" % name)
         project.setdefault("name", name)
         name = project["name"]
+        self.projects[project_filename] = {"name": name}
 
         self.DeleteAllPages()
         self.tree.SetTopLevel([DirNode(self.project_root)])
         self.UpdateMenuBar()
         self.SetTitle("Devo [%s]" % name)
+        self.StartFileMonitor()
 
     @managed("cm")
     @coroutine
@@ -318,8 +367,11 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                     yield self.LoadSession()
                 except IOError:
                     pass
+                self.Show()
             except Exception, e:
                 self._ShowLoadProjectError(e, project_filename)
+            finally:
+                self.StartFileMonitor()
 
     @managed("cm")
     @coroutine
@@ -340,6 +392,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                 self.Show()
                 self.UpdateMenuBar()
                 self.SetTitle("Devo")
+                self.StartFileMonitor()
 
     def OnPageClose(self, evt):
         evt.Veto()
@@ -407,7 +460,10 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.NewEditor()
 
     def OnOpenFile(self, evt):
-        path = dialogs.get_file_to_open(self, context="open")
+        if self.project_root:
+            path = dialogs.get_file_to_open(self, path=self.project_root)
+        else:
+            path = dialogs.get_file_to_open(self, context="open")
         if path:
             self.OpenEditor(path)
 
@@ -430,6 +486,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                 return project, project_filename
         finally:
             dlg.Destroy()
+        return None, None
 
     def OnNewProject(self, evt):
         project, project_filename = self.GetNewProject()
@@ -484,6 +541,11 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                 PROJECT_ROOT = self.project_root,
             )
             self.RunCommand(cmdline)
+
+    def OnSelectProject(self, evt):
+        index = evt.GetId() - self.project_first_id
+        if 0 <= index < len(self.projects):
+            self.OpenProject(sorted(self.projects)[index])
 
     @managed("cm")
     @coroutine

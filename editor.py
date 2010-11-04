@@ -187,9 +187,8 @@ class Editor(wx.stc.StyledTextCtrl):
     def Save(self):
         if self.path:
             try:
-                self.env.RemoveMonitorPath(self.path)
-                yield self.SaveFile(self.path)
-                self.env.AddMonitorPath(self.path)
+                with self.env.UpdatingPath(self.path):
+                    yield self.SaveFile(self.path)
                 yield True
             except Exception, exn:
                 dialogs.error(self, "Error saving file '%s'\n\n%s" % (self.path, exn))
