@@ -17,14 +17,24 @@ Commands may use the following environment variables:
     $PROJECT_ROOT - Project root directory
 """
 
+def check_variables(s):
+    try:
+        string.Template(s).substitute(
+            CURRENT_FILE="", CURRENT_DIR="", CURRENT_BASENAME="", PROJECT_ROOT="")
+    except KeyError, e:
+        raise Exception("Unknown variable name: %s" % e.args)
+    except ValueError, e:
+        raise Exception("Variable name missing after $")
+
 class EditCommandDialog(wx.Dialog):
-    def __init__(self, parent, name="", accel="", cmdline="", title="Edit Command"):
+    def __init__(self, parent, name="", accel="", cmdline="", workdir="", title="Edit Command"):
         style = wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
         wx.Dialog.__init__(self, parent, title=title, style=style)
 
         self.text_name = wx.TextCtrl(self, value=name)
         self.text_accel = wx.TextCtrl(self, value=accel)
         self.text_cmdline = wx.TextCtrl(self, value=cmdline)
+        self.text_workdir = wx.TextCtrl(self, value=workdir)
 
         grid = wx.FlexGridSizer(2, 2, 5, 5)
         grid.AddGrowableCol(1, 1)
@@ -34,6 +44,8 @@ class EditCommandDialog(wx.Dialog):
         grid.Add(self.text_accel, 0, wx.EXPAND)
         grid.Add(wx.StaticText(self, label="Shell Command"), 0, wx.ALIGN_CENTER_VERTICAL)
         grid.Add(self.text_cmdline, 0, wx.EXPAND)
+        grid.Add(wx.StaticText(self, label="Working Directory"), 0, wx.ALIGN_CENTER_VERTICAL)
+        grid.Add(self.text_workdir, 0, wx.EXPAND)
 
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         main_sizer.Add(grid, 1, wx.EXPAND | wx.ALL, 5)
@@ -70,19 +82,19 @@ class EditCommandDialog(wx.Dialog):
 
     def _GetCmdline(self, ctrl):
         value = self._GetField(ctrl)
-        try:
-            string.Template(value).substitute(
-                CURRENT_FILE="", CURRENT_DIR="", CURRENT_BASENAME="", PROJECT_ROOT="")
-        except KeyError, e:
-            raise Exception("Unknown variable name: %s" % e.args)
-        except ValueError, e:
-            raise Exception("Variable name missing after $")
+        check_variables(value)
+        return value
+
+    def _GetWorkDir(self, ctrl):
+        value = ctrl.Value.strip()
+        check_variables(value)
         return value
 
     _fields = (
         ("name", _GetField),
         ("accel", _GetAccel),
         ("cmdline", _GetCmdline),
+        ("workdir", _GetWorkDir),
     )
 
     def OnOK(self, evt):

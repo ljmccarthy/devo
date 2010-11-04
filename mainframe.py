@@ -527,9 +527,13 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             pane.Show()
             self.manager.Update()
 
-    def RunCommand(self, cmdline):
-        self.terminal.run(cmdline, cwd = self.project_root or None)
-        self.ShowTerminal()
+    def RunCommand(self, cmdline, workdir=None):
+        try:
+            workdir = workdir or self.project_root or None
+            self.terminal.run(cmdline, cwd=workdir)
+            self.ShowTerminal()
+        except Exception, e:
+            dialogs.error(self, "Error executing command:\n\n%s" % e)
 
     def OnUserCommand(self, evt):
         index = evt.GetId() - self.user_first_id
@@ -538,13 +542,16 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             command = commands[index]
             editor = self.GetCurrentEditor()
             current_file = editor.path if editor else ""
-            cmdline = string.Template(command["cmdline"]).safe_substitute(
+            env = dict(
                 CURRENT_FILE = current_file,
                 CURRENT_DIR = os.path.dirname(current_file),
                 CURRENT_BASENAME = os.path.basename(current_file),
                 PROJECT_ROOT = self.project_root,
             )
-            self.RunCommand(cmdline)
+            cmdline = string.Template(command["cmdline"]).safe_substitute(env)
+            workdir = os.path.expanduser(command.get("workdir", ""))
+            workdir = string.Template(workdir).safe_substitute(env)
+            self.RunCommand(cmdline, workdir)
 
     def OnSelectProject(self, evt):
         index = evt.GetId() - self.project_first_id
