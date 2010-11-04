@@ -81,7 +81,13 @@ class TerminalCtrl(wx.Panel):
     def __thread(self, process):
         rc = None
         try:
-            for line in process.stdout:
+            while True:
+                rc = process.poll()
+                if rc is not None:
+                    break
+                line = process.stdout.readline()
+                if not line:
+                    break
                 self.queue.put(line)
             rc = process.wait()
         finally:
