@@ -37,6 +37,15 @@ class TerminalCtrl(wx.Panel):
         self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateStop, button_stop)
         self.Bind(wx.EVT_TIMER, self.OnTimer, self.timer)
 
+    def CanCopy(self):
+        return self.text.CanCopy()
+
+    def Copy(self):
+        self.text.Copy()
+
+    def SelectAll(self):
+        self.text.SetSelection(-1, -1)
+
     def OnClear(self, evt):
         self.text.SetValue("")
 
@@ -62,7 +71,7 @@ class TerminalCtrl(wx.Panel):
             return
 
         self.process = subprocess.Popen(args,
-            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=0,
             close_fds=(sys.platform != "win32"), shell=True, cwd=cwd, env=env)
         self.thread = threading.Thread(target=self.__thread, args=(self.process,))
         self.thread.start()

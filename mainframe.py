@@ -56,16 +56,10 @@ class AppEnv(object):
     def find_details(self, find_details):
         self._mainframe.find_details = find_details
 
-def with_current_editor(method):
-    @wraps(method)
-    def wrapper(self, *args, **kwargs):
-        editor = self.GetCurrentEditor()
-        if editor is not None:
-            return method(self, editor, *args, **kwargs)
-    return wrapper
-
 NB_STYLE = (aui.AUI_NB_CLOSE_ON_ALL_TABS  | aui.AUI_NB_TOP | aui.AUI_NB_TAB_SPLIT
            | aui.AUI_NB_TAB_MOVE | aui.AUI_NB_SCROLL_BUTTONS | wx.BORDER_NONE)
+
+editor_types = (Editor, TerminalCtrl)
 
 class MainFrame(wx.Frame, wx.FileDropTarget):
     def __init__(self):
@@ -161,19 +155,19 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                   id=self.project_first_id, id2=self.project_last_id)
 
         self.Bind(wx.EVT_UPDATE_UI, self.EditorUpdateUI("GetModify"), id=ID.SAVE)
-        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_HasEditor, id=ID.SAVEAS)
-        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_HasEditor, id=ID.CLOSE)
+        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasMethod("SaveAs"), id=ID.SAVEAS)
+        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_HasEditorTab, id=ID.CLOSE)
         self.Bind(wx.EVT_UPDATE_UI, self.EditorUpdateUI("CanUndo"), id=ID.UNDO)
         self.Bind(wx.EVT_UPDATE_UI, self.EditorUpdateUI("CanRedo"), id=ID.REDO)
-        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasSelection, id=ID.CUT)
-        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasSelection, id=ID.COPY)
+        self.Bind(wx.EVT_UPDATE_UI, self.EditorUpdateUI("CanCut"), id=ID.CUT)
+        self.Bind(wx.EVT_UPDATE_UI, self.EditorUpdateUI("CanCopy"), id=ID.COPY)
         self.Bind(wx.EVT_UPDATE_UI, self.EditorUpdateUI("CanPaste"), id=ID.PASTE)
-        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_HasEditor, id=ID.SELECTALL)
-        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_HasEditor, id=ID.FIND)
+        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasMethod("SelectAll"), id=ID.SELECTALL)
+        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasMethod("Find"), id=ID.FIND)
         self.Bind(wx.EVT_UPDATE_UI, self.EditorUpdateUI("CanFindNext"), id=ID.FIND_NEXT)
         self.Bind(wx.EVT_UPDATE_UI, self.EditorUpdateUI("CanFindPrev"), id=ID.FIND_PREV)
-        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_HasEditor, id=ID.GO_TO_LINE)
-        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_HasEditor, id=ID.UNINDENT)
+        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasMethod("GoToLine"), id=ID.GO_TO_LINE)
+        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasMethod("Unindent"), id=ID.UNINDENT)
 
         self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_ProjectIsOpen, id=ID.CLOSE_PROJECT)
         self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_ProjectIsOpen, id=ID.EDIT_PROJECT)
@@ -442,7 +436,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             if editor.path == path:
                 return editor
 
-    def GetCurrentEditor(self):
+    def GetCurrentEditorTab(self):
         sel = self.notebook.GetSelection()
         if sel != wx.NOT_FOUND:
             return self.notebook.GetPage(sel)
@@ -452,7 +446,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     def OpenEditor(self, path):
         realpath = os.path.realpath(path)
         editor = self.FindEditor(realpath)
-        if editor is not None:
+        if editor:
             i = self.notebook.GetPageIndex(editor)
             if i != wx.NOT_FOUND:
                 self.notebook.SetSelection(i)
@@ -475,9 +469,10 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         if path:
             self.OpenEditor(path)
 
-    @with_current_editor
-    def OnCloseFile(self, editor, evt):
-        self.ClosePage(editor)
+    def OnCloseFile(self, evt):
+        editor = self.GetCurrentEditorTab()
+        if editor:
+            self.ClosePage(editor)
 
     def OnDropFiles(self, x, y, filenames):
         for filename in filenames:
@@ -542,7 +537,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         commands = self.project.get("commands", [])
         if 0 <= index < len(commands):
             command = commands[index]
-            editor = self.GetCurrentEditor()
+            editor = self.GetCurrentEditorTab()
             current_file = editor.path if editor else ""
             env = dict(
                 CURRENT_FILE = current_file,
@@ -596,7 +591,12 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
 
     def OnChildFocus(self, evt):
         focus = wx.Window.FindFocus()
-        self.editor_focus = focus if isinstance(focus, Editor) else None
+        while focus:
+            if isinstance(focus, editor_types):
+                self.editor_focus = focus
+                return
+            focus = focus.Parent
+        self.editor_focus = None
 
     def OnFilesChanged(self, updated_paths, deleted_paths):
         for path in updated_paths:
@@ -612,31 +612,28 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
 
     def EditorAction(self, method):
         def handler(evt):
-            editor = self.GetCurrentEditor()
-            if editor is not None and self.IsEditorFocused(editor):
+            editor = self.editor_focus
+            if editor:
                 return getattr(editor, method)()
         return handler
 
     def EditorUpdateUI(self, method):
         def handler(evt):
-            editor = self.GetCurrentEditor()
-            if editor is not None and self.IsEditorFocused(editor):
+            editor = self.editor_focus
+            if editor and hasattr(editor, method):
                 evt.Enable(getattr(editor, method)())
             else:
                 evt.Enable(False)
         return handler
 
-    def UpdateUI_HasEditor(self, evt):
-        editor = self.GetCurrentEditor()
-        evt.Enable(editor is not None and self.IsEditorFocused(editor))
+    def UpdateUI_HasEditorTab(self, evt):
+        evt.Enable(self.GetCurrentEditorTab() is not None)
 
-    def UpdateUI_EditorHasSelection(self, evt):
-        editor = self.GetCurrentEditor()
-        if editor is not None and self.IsEditorFocused(editor):
-            start, end = editor.GetSelection()
-            evt.Enable(start != end)
-        else:
-            evt.Enable(False)
+    def UpdateUI_EditorHasMethod(self, method):
+        def handler(evt):
+            editor = self.editor_focus
+            evt.Enable(bool(editor and hasattr(editor, method)))
+        return handler
 
     def UpdateUI_ProjectIsOpen(self, evt):
         evt.Enable(bool(self.project_root))

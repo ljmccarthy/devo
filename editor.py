@@ -54,6 +54,13 @@ class Editor(wx.stc.StyledTextCtrl):
         else:
             return path
 
+    def CanCut(self):
+        return not self.GetReadOnly() and self.CanCopy()
+
+    def CanCopy(self):
+        start, end = self.GetSelection()
+        return start != end
+
     @coroutine
     def TryClose(self):
         if self.changed:
