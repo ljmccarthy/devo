@@ -192,6 +192,7 @@ class CommandsDialog(wx.Dialog):
         selection = self.cmdlist.GetSelection()
         if selection != wx.NOT_FOUND:
             command = self._GetCommand(selection)
+            command = dict((str(k), v) for k, v in command.iteritems())
             dlg = EditCommandDialog(self, **command)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
