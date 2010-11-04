@@ -27,25 +27,30 @@ def check_variables(s):
         raise Exception("Variable name missing after $")
 
 class EditCommandDialog(wx.Dialog):
-    def __init__(self, parent, name="", accel="", cmdline="", workdir="", title="Edit Command"):
+    def __init__(self, parent, command={}, title="Edit Command"):
         style = wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
         wx.Dialog.__init__(self, parent, title=title, style=style)
 
-        self.text_name = wx.TextCtrl(self, value=name)
-        self.text_accel = wx.TextCtrl(self, value=accel)
-        self.text_cmdline = wx.TextCtrl(self, value=cmdline)
-        self.text_workdir = wx.TextCtrl(self, value=workdir)
+        self.field_name = wx.TextCtrl(self, value=command.get("name", ""))
+        self.field_accel = wx.TextCtrl(self, value=command.get("accel", ""))
+        self.field_cmdline = wx.TextCtrl(self, value=command.get("cmdline", ""))
+        self.field_workdir = wx.TextCtrl(self, value=command.get("workdir", ""))
+        self.field_before = wx.Choice(self,
+            choices=["Do Nothing", "Save Current File", "Save All Files"])
+        self.field_before.SetStringSelection(command.get("before", ""))
 
         grid = wx.FlexGridSizer(2, 2, 5, 5)
         grid.AddGrowableCol(1, 1)
         grid.Add(wx.StaticText(self, label="Name in Menu"), 0, wx.ALIGN_CENTER_VERTICAL)
-        grid.Add(self.text_name, 0, wx.EXPAND)
+        grid.Add(self.field_name, 0, wx.EXPAND)
         grid.Add(wx.StaticText(self, label="Accelerator Key"), 0, wx.ALIGN_CENTER_VERTICAL)
-        grid.Add(self.text_accel, 0, wx.EXPAND)
+        grid.Add(self.field_accel, 0, wx.EXPAND)
         grid.Add(wx.StaticText(self, label="Shell Command"), 0, wx.ALIGN_CENTER_VERTICAL)
-        grid.Add(self.text_cmdline, 0, wx.EXPAND)
+        grid.Add(self.field_cmdline, 0, wx.EXPAND)
         grid.Add(wx.StaticText(self, label="Working Directory"), 0, wx.ALIGN_CENTER_VERTICAL)
-        grid.Add(self.text_workdir, 0, wx.EXPAND)
+        grid.Add(self.field_workdir, 0, wx.EXPAND)
+        grid.Add(wx.StaticText(self, label="Before Executing"), 0, wx.ALIGN_CENTER_VERTICAL)
+        grid.Add(self.field_before, 0, wx.EXPAND)
 
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         main_sizer.Add(grid, 1, wx.EXPAND | wx.ALL, 5)
@@ -66,7 +71,7 @@ class EditCommandDialog(wx.Dialog):
         self.Fit()
         self.SetMinSize(self.Size)
         self.SetMaxSize(wx.Size(-1, self.Size.height))
-        self.text_name.SetFocus()
+        self.field_name.SetFocus()
 
         self.Bind(wx.EVT_BUTTON, self.OnOK, id=wx.ID_OK)
 
@@ -90,17 +95,21 @@ class EditCommandDialog(wx.Dialog):
         check_variables(value)
         return value
 
+    def _GetStringSelection(self, ctrl):
+        return ctrl.GetStringSelection()
+
     _fields = (
         ("name", _GetField),
         ("accel", _GetAccel),
         ("cmdline", _GetCmdline),
         ("workdir", _GetWorkDir),
+        ("before", _GetStringSelection),
     )
 
     def OnOK(self, evt):
         command = {}
         for field_name, getter_method in self._fields:
-            ctrl = getattr(self, "text_" + field_name)
+            ctrl = getattr(self, "field_" + field_name)
             try:
                 value = getter_method(self, ctrl)
             except Exception, e:
@@ -192,8 +201,7 @@ class CommandsDialog(wx.Dialog):
         selection = self.cmdlist.GetSelection()
         if selection != wx.NOT_FOUND:
             command = self._GetCommand(selection)
-            command = dict((str(k), v) for k, v in command.iteritems())
-            dlg = EditCommandDialog(self, **command)
+            dlg = EditCommandDialog(self, command=command)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     self._SetCommand(selection, dlg.command)

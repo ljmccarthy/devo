@@ -113,7 +113,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.manager.AddPane(self.notebook,
             aui.AuiPaneInfo().CentrePane())
         self.manager.AddPane(self.terminal,
-            aui.AuiPaneInfo().Hide().Bottom().BestSize((-1, 200)).Caption("Terminal"))
+            aui.AuiPaneInfo().Hide().Bottom().BestSize((-1, 180)).Caption("Terminal"))
         self.manager.Update()
 
         self.Startup()
@@ -532,23 +532,38 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         except Exception, e:
             dialogs.error(self, "Error executing command:\n\n%s" % e)
 
+    @managed("cm")
+    @coroutine    
+    def DoUserCommand(self, command):
+        editor = self.GetCurrentEditorTab()
+        current_file = editor.path if editor else ""
+        env = dict(
+            CURRENT_FILE = current_file,
+            CURRENT_DIR = os.path.dirname(current_file),
+            CURRENT_BASENAME = os.path.basename(current_file),
+            PROJECT_ROOT = self.project_root,
+        )
+        cmdline = string.Template(command["cmdline"]).safe_substitute(env)
+        workdir = os.path.expanduser(command.get("workdir", ""))
+        workdir = string.Template(workdir).safe_substitute(env)
+        
+        before = command.get("before", "")
+        if before == "Save Current File":
+            if editor.changed and not (yield editor.Save()):
+                yield False
+        elif before == "Save All Files":
+            for editor in self.editors:
+                if editor.changed and not (yield editor.Save()):
+                    yield False
+
+        self.RunCommand(cmdline, workdir)
+        yield True
+
     def OnUserCommand(self, evt):
         index = evt.GetId() - self.user_first_id
         commands = self.project.get("commands", [])
         if 0 <= index < len(commands):
-            command = commands[index]
-            editor = self.GetCurrentEditorTab()
-            current_file = editor.path if editor else ""
-            env = dict(
-                CURRENT_FILE = current_file,
-                CURRENT_DIR = os.path.dirname(current_file),
-                CURRENT_BASENAME = os.path.basename(current_file),
-                PROJECT_ROOT = self.project_root,
-            )
-            cmdline = string.Template(command["cmdline"]).safe_substitute(env)
-            workdir = os.path.expanduser(command.get("workdir", ""))
-            workdir = string.Template(workdir).safe_substitute(env)
-            self.RunCommand(cmdline, workdir)
+            self.DoUserCommand(commands[index])
 
     def OnSelectProject(self, evt):
         index = evt.GetId() - self.project_first_id
