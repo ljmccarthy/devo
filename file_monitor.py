@@ -12,49 +12,49 @@ class FileMonitor(wx.EvtHandler):
         self.timer = wx.Timer(self)
         self.Bind(wx.EVT_TIMER, self.OnTimer, self.timer)
 
-    def _UpdatePath(self, path):
+    def _update_or_add_path(self, path):
         try:
             self.path_mtime[path] = os.stat(path).st_mtime
         except OSError:
             self.path_mtime[path] = None
             print "Warning:", e
 
-    def AddPath(self, path):
+    def add_path(self, path):
         path = os.path.realpath(path)
         if path not in self.path_mtime:
-            self._UpdatePath(path)
+            self._update_or_add_path(path)
 
-    def RemovePath(self, path):
+    def remove_path(self, path):
         path = os.path.realpath(path)
         if path in self.path_mtime:
             del self.path_mtime[path]
 
-    def UpdatePath(self, path):
+    def update_path(self, path):
         path = os.path.realpath(path)
         if path in self.path_mtime:
-            self._UpdatePath(path)
+            self._update_or_add_path(path)
 
     @contextmanager
-    def UpdatingPath(self, path):
+    def updating_path(self, path):
         path = os.path.realpath(path)
         was_running = self.timer.IsRunning()
         if was_running:
-            self.Stop()
+            self.stop()
         if path not in self.path_mtime:
             try:
                 yield
             finally:
-                self.UpdatePath(path)
+                self.update_path(path)
                 if was_running:
-                    self.Start()
+                    self.start()
         else:
             try:
-                self.RemovePath(path)
+                self.remove_path(path)
                 yield
             finally:
-                self._UpdatePath(path)
+                self._update_or_add_path(path)
                 if was_running:
-                    self.Start()
+                    self.start()
 
     def OnTimer(self, evt):
         updated_paths = []
@@ -75,11 +75,11 @@ class FileMonitor(wx.EvtHandler):
         if updated_paths or deleted_paths:
             self.callback(updated_paths, deleted_paths)
 
-    def Start(self):
+    def start(self):
         if not self.timer.IsRunning():
             for path in self.path_mtime:
-                self.UpdatePath(path)
+                self.update_path(path)
             self.timer.Start(200)
 
-    def Stop(self):
+    def stop(self):
         self.timer.Stop()

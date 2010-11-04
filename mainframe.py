@@ -40,13 +40,13 @@ class AppEnv(object):
         self._mainframe.NewEditor()
 
     def AddMonitorPath(self, path):
-        self._mainframe.fmon.AddPath(path)
+        self._mainframe.fmon.add_path(path)
 
     def RemoveMonitorPath(self, path):
-        self._mainframe.fmon.RemovePath(path)
+        self._mainframe.fmon.remove_path(path)
 
     def UpdatingPath(self, path):
-        return self._mainframe.fmon.UpdatingPath(path)
+        return self._mainframe.fmon.updating_path(path)
 
     @property
     def find_details(self):
@@ -208,7 +208,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
 
     def _DoShutdown(self):
         self.Hide()
-        self.fmon.Stop()
+        self.fmon.stop()
         async.shutdown_scheduler()
         self.Destroy()
 
@@ -262,7 +262,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     @managed("cm")
     @coroutine
     def SaveProject(self):
-        self.fmon.Stop()
+        self.fmon.stop()
         if self.session_filename:
             try:
                 if not (yield self.SaveSession()):
@@ -327,7 +327,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     def StartFileMonitor(self):
         self.updated_paths.clear()
         self.deleted_paths.clear()
-        self.fmon.Start()
+        self.fmon.start()
 
     def SetProject(self, project, project_root):
         name = os.path.basename(project_root)
