@@ -185,6 +185,7 @@ class Future(object):
             if self.__status == DONE:
                 return self.__result
             elif self.__status == FAILED:
+                self.__failure_handled = True
                 raise self.__result
             elif self.__status == CANCELLED:
                 raise FutureCancelled()
