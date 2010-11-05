@@ -67,6 +67,9 @@ class Scheduler(object):
     def shutdown(self):
         self.__async_pool.shutdown()
 
+    def log_error(self, traceback):
+        self.post_call(sys.stdout.write, traceback + "\n")
+
 _global_scheduler = None
 
 def set_scheduler(scheduler):
@@ -241,7 +244,7 @@ class Future(object):
             message = "Future failed: %s\n" % self.__traceback.rstrip("\n")
             if self.__context:
                 message += "Context of Future invocation:\n%s\n" % self.__context.rstrip("\n")
-            print message
+            _global_scheduler.log_error(message)
 
 class Coroutine(Future):
     def __init__(self, gen, context):
