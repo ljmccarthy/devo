@@ -125,8 +125,6 @@ class Future(object):
             else:
                 return
             finished_handlers = self.__on_finished
-            if finished_handlers:
-                self.__failure_handled = True
             self.__on_success = []
             self.__on_failure = []
             self.__on_cancelled = []
@@ -234,7 +232,6 @@ class Future(object):
                     self.__on_cancelled.append(cancelled)
             if finished is not None:
                 if self.__status != WAITING:
-                    self.__failure_handled = True
                     _global_scheduler.post_call(finished, self)
                 elif self.__status == WAITING:
                     self.__on_finished.append(finished)
