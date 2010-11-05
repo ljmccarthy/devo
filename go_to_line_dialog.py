@@ -43,7 +43,7 @@ class GoToLineDialog(wx.Dialog):
     def GetLineNumber(self):
         try:
             linenum = int(self.text.GetValue())
-            if linenum > 0:
-                return linenum - 1
+            if linenum >= 0:
+                return max(linenum - 1, 0)
         except ValueError:
             pass
