@@ -10,7 +10,7 @@ from signal_wx import Signal
 from syntax import filename_syntax_re, syntax_dict
 
 if wx.Platform == "__WXMSW__":
-    fontface = "Courier New"
+    fontface = "Consolas"
 else:
     fontface = "Monospace"
 
@@ -49,10 +49,7 @@ class Editor(wx.stc.StyledTextCtrl):
     @property
     def title(self):
         path = os.path.basename(self.path) or "Untitled"
-        if self.changed:
-            return path + " *"
-        else:
-            return path
+        return path + " *" if self.changed else path
 
     def CanCut(self):
         return not self.GetReadOnly() and self.CanCopy()
