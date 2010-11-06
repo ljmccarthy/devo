@@ -606,6 +606,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
 
     def OnChildFocus(self, evt):
         focus = wx.Window.FindFocus()
+        if focus is self:
+            return
         while focus:
             if isinstance(focus, editor_types):
                 self.editor_focus = focus
