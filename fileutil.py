@@ -54,6 +54,9 @@ def mkpath(path):
         dirpath = os.path.join(dirpath, part)
         os.mkdir(dirpath)
 
+def is_hidden_file(path):
+    return os.path.basename(path).startswith(".")
+
 if sys.platform == "win32":
     from fileutil_win32 import *
 elif sys.platform == "linux2":

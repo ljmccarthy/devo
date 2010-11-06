@@ -96,6 +96,7 @@ def listdir(dirpath):
         path = os.path.join(dirpath, filename)
         try:
             st = os.stat(path)
+            hidden = fileutil.is_hidden_file(path)
         except OSError:
             pass
         else:
@@ -106,7 +107,7 @@ def listdir(dirpath):
                     listable = False
             else:
                 listable = False
-            result.append((filename, st, listable))
+            result.append((filename, st, listable, hidden))
     result.sort(key=lambda x: x[0].lower())
     return result
 
@@ -126,10 +127,8 @@ class FSNode(object):
         self.watch = monitor.add_dir_watch(self.path, user=self)
         dirs = []
         files = []            
-        for filename, st, listable in (yield async_call(listdir, self.path)):
-            if not filter.filter_by_name(filename):
-                continue
-            if not filter.filter_by_stat(filename, st):
+        for filename, st, listable, hidden in (yield async_call(listdir, self.path)):
+            if not filter(filename, st, hidden):
                 continue
             path = os.path.join(self.path, filename)
             if stat.S_ISREG(st.st_mode):
@@ -161,11 +160,12 @@ class FSNode(object):
 
     @coroutine
     def add(self, name, tree, monitor, filter):
-        if self.state == NODE_POPULATED and filter.filter_by_name(name):
+        if self.state == NODE_POPULATED:
             path = os.path.join(self.path, name)
             try:
                 st = (yield async_call(os.stat, path))
-                if not filter.filter_by_stat(name, st):
+                hidden = (yield async_call(fileutil.is_hidden_file, path))
+                if not filter(name, st, hidden):
                     return
                 if stat.S_ISREG(st.st_mode):
                     type = 'f'
@@ -205,25 +205,19 @@ class DirTreeFilter(object):
         self.hidden_exts = [".pyc", ".pyo", ".o", ".a", ".obj", ".lib"]
         self.hidden_dirs = ["CVS"]
 
-    def filter_by_name(self, name):
-        if not self.show_hidden and name.startswith("."):
+    def __call__(self, filename, st, hidden):
+        if hidden and not self.show_hidden:
             return False
-        for ext in self.hidden_exts:
-            if name.endswith(ext):
-                return False
-        return True
-
-    def filter_by_stat(self, name, st):
-        if stat.S_ISREG(st.st_mode):
-            if not self.show_files:
-                return False
+        if stat.S_ISREG(st.st_mode) and not self.show_files:
+            return False
         elif stat.S_ISDIR(st.st_mode):
             if not self.show_dirs:
                 return False
-            if name in self.hidden_dirs:
+            if filename in self.hidden_dirs:
                 return False
-        else:
-            return False
+        for ext in self.hidden_exts:
+            if filename.endswith(ext):
+                return False
         return True
 
 def MakeTopLevel():
@@ -234,7 +228,8 @@ def MakeTopLevel():
                         [FSNode(drive, 'd') for drive in
                          win32api.GetLogicalDriveStrings().strip("\0").split("\0")])
         mydocs = shell.SHGetFolderPath(None, shellcon.CSIDL_PERSONAL, None, 0)
-        return [mycomputer, FSNode(mydocs, 'd')]
+        desktop = shell.SHGetFolderPath(None, shellcon.CSIDL_DESKTOP, None, 0)
+        return [mycomputer, FSNode(mydocs, 'd'), FSNode(desktop, 'd')]
     else:
         return [FSNode("/", 'd')]
 

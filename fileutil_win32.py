@@ -17,8 +17,12 @@ def get_user_config_dir(name=""):
         path = os.path.join(path, name)
     return path
 
+def is_hidden_file(path):
+    return (win32file.GetFileAttributes(path) & win32file.FILE_ATTRIBUTE_HIDDEN) != 0
+
 __all__ = (
     "rename",
     "shell_open",
     "get_user_config_dir",
+    "is_hidden_file",
 )
