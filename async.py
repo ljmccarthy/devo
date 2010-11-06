@@ -266,20 +266,26 @@ class Coroutine(Future):
         except StopIteration:
             self.set_done(None)
         except FutureCancelled:
-            self.cancel()
+            Future.cancel(self)
         except SystemExit:
-            self.cancel()
+            Future.cancel(self)
             raise
         except:
-            exn = sys.exc_info()[1]
-            tbstr = traceback.format_exc()
-            self.set_failed(exn, tbstr)
+            self.set_failed(sys.exc_info()[1], traceback.format_exc())
         else:
             if isinstance(ret, Future):
                 self.__cont = ret
                 ret.bind(self.__success_next, self.__failure_next, self.__cancelled_next)
             else:
-                self.set_done(ret)
+                try:
+                    self.__gen.close()
+                except SystemExit:
+                    Future.cancel(self)
+                    raise
+                except:
+                    self.set_failed(sys.exc_info()[1], traceback.format_exc())
+                else:
+                    self.set_done(ret)
 
     def __success_next(self, result):
         self.__next(self.__gen.send, result)
@@ -291,10 +297,11 @@ class Coroutine(Future):
         self.__next(self.__gen.throw, FutureCancelled())
 
     def cancel(self):
-        Future.cancel(self)
-        if self.__cont is not None:
+        if self.__cont:
             self.__cont.cancel()
             self.__cont = None
+        else:
+            Future.cancel(self)
 
 class CoroutineManager(object):
     def __init__(self):
