@@ -37,7 +37,8 @@ class EditCommandDialog(wx.Dialog):
         self.field_workdir = wx.TextCtrl(self, value=command.get("workdir", ""))
         self.field_before = wx.Choice(self,
             choices=["Do Nothing", "Save Current File", "Save All Files"])
-        self.field_before.SetStringSelection(command.get("before", ""))
+        if not self.field_before.SetStringSelection(command.get("before", "")):
+            self.field_before.SetSelection(0)
 
         grid = wx.FlexGridSizer(2, 2, 5, 5)
         grid.AddGrowableCol(1, 1)
@@ -64,8 +65,9 @@ class EditCommandDialog(wx.Dialog):
         sizer.Add(grid, 1, wx.EXPAND | wx.ALL, 5)
         sizer.Add(btn_sizer, 0, wx.EXPAND | wx.ALL, 5)
         self.SetSizer(sizer)
+        self.SetMinSize(wx.Size(400, -1))
         self.Fit()
-        self.SetMinSize((max(self.Size.width, 400), self.Size.height))
+        self.SetMinSize(self.Size)
         self.SetMaxSize(wx.Size(-1, self.Size.height))
         self.field_name.SetFocus()
 
