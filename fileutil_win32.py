@@ -8,8 +8,8 @@ def rename(old, new):
     except pywintypes.error, e:
         raise WindowsError(*e.args)
 
-def shell_open(path):
-    return win32api.ShellExecute(None, "open", path, None, None, win32con.SW_SHOW) > 32
+def shell_open(path, workdir=None):
+    return win32api.ShellExecute(None, "open", path, None, workdir, win32con.SW_SHOW) > 32
 
 def get_user_config_dir(name=""):
     path = os.environ["APPDATA"]

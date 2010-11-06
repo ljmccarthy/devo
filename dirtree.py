@@ -465,7 +465,7 @@ class DirTreeCtrl(wx.TreeCtrl):
     @managed("cm")
     def _shell_open(self, path):
         try:
-            return async_call(fileutil.shell_open, path)
+            return async_call(fileutil.shell_open, path, workdir=os.path.dirname(path))
         except OSError, e:
             dialogs.error(self, str(e))
 
