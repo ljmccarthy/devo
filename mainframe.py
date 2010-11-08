@@ -581,6 +581,12 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                 self.reloading = True
                 to_reload = []
                 to_unload = []
+                recreated_paths = set()
+                for path in self.deleted_paths:
+                    if os.path.exists(path):
+                        recreated_paths.add(path)
+                self.updated_paths.update(recreated_paths)
+                self.deleted_paths.intersection_update(recreated_paths)
                 for editor in self.editors:
                     if editor.path in self.updated_paths:
                         to_reload.append(editor)
