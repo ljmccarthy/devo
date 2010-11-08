@@ -581,12 +581,6 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                 self.reloading = True
                 to_reload = []
                 to_unload = []
-                recreated_paths = set()
-                for path in self.deleted_paths:
-                    if os.path.exists(path):
-                        recreated_paths.add(path)
-                self.updated_paths.update(recreated_paths)
-                self.deleted_paths.intersection_update(recreated_paths)
                 for editor in self.editors:
                     if editor.path in self.updated_paths:
                         to_reload.append(editor)
@@ -598,13 +592,17 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                     if dialogs.ask_reload(self, os.path.basename(editor.path)):
                         yield editor.Reload()
                 for editor in reversed(to_unload):
-                    if dialogs.ask_unload(self, os.path.basename(editor.path)):
-                        yield self.ClosePage(editor)
+                    if os.path.exists(editor.path):
+                        if dialogs.ask_reload(self, os.path.basename(editor.path)):
+                            yield editor.Reload()                        
                     else:
-                        # Mark as modified
-                        editor.AppendText(" ")
-                        editor.SetSavePoint()
-                        editor.Undo()
+                        if dialogs.ask_unload(self, os.path.basename(editor.path)):
+                            yield self.ClosePage(editor)
+                        else:
+                            # Mark as modified
+                            editor.AppendText(" ")
+                            editor.SetSavePoint()
+                            editor.Undo()
             finally:
                 self.reloading = False
             if self.updated_paths or self.deleted_paths:
