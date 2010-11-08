@@ -1,4 +1,5 @@
 import sys, os, errno, shutil
+from dialogs import dialogs
 
 def atomic_write_file(path, data, mode="wb"):
     temp = os.path.join(os.path.dirname(path), ".saving." + os.path.basename(path))
@@ -32,7 +33,6 @@ def read_file(path, mode="rb"):
 rename = os.rename
 
 def remove(path):
-    # TODO: move to recycle bin
     if os.path.isdir(path):
         shutil.rmtree(path)
     else:
@@ -56,6 +56,13 @@ def mkpath(path):
 
 def is_hidden_file(path):
     return os.path.basename(path).startswith(".")
+
+def shell_remove(parent, path):
+    if dialogs.ask_delete(parent, path):
+        try:
+            remove(path)
+        except Exception, e:
+            dialogs.error(parent, "Error deleting file:\n\n%s" % e)
 
 if sys.platform == "win32":
     from fileutil_win32 import *

@@ -371,8 +371,7 @@ class DirTreeCtrl(wx.TreeCtrl):
         node = self.GetSelectedNode()
         if node:
             next_item = self.GetNextSibling(node.item)
-            if dialogs.ask_delete(self, node.path):
-                self._remove(node.path)
+            fileutil.shell_remove(self, node.path)
 
     def OnNewFolder(self, evt):
         node = self.GetSelectedNode()
@@ -442,14 +441,6 @@ class DirTreeCtrl(wx.TreeCtrl):
                 self.SelectLater(self.GetItemParent(node.item), name)
             except OSError, e:
                 dialogs.error(self, str(e))
-
-    @managed("cm")
-    @coroutine
-    def _remove(self, path):
-        try:
-            yield async_call(fileutil.remove, path)
-        except OSError, e:
-            dialogs.error(self, str(e))
 
     @managed("cm")
     @coroutine
