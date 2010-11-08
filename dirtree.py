@@ -320,7 +320,7 @@ class DirTreeCtrl(wx.TreeCtrl):
     def OnItemActivated(self, evt):
         node = self.GetEventNode(evt)
         if node.type == 'f':
-            self.env.OpenFile(node.path)
+            self.env.open_file(node.path)
         elif node.type == 'd':
             self.Toggle(node.item)
 
@@ -355,7 +355,7 @@ class DirTreeCtrl(wx.TreeCtrl):
     def OnItemEdit(self, evt):
         node = self.GetSelectedNode()
         if node and node.type == 'f':
-            self.env.OpenFile(node.path)
+            self.env.open_file(node.path)
 
     def OnItemOpen(self, evt):
         path = self.GetSelectedPath()

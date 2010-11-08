@@ -66,7 +66,7 @@ class Editor(wx.stc.StyledTextCtrl):
                 try:
                     save_result = (yield self.Save())
                     if save_result:
-                        self.env.RemoveMonitorPath(self.path)
+                        self.env.remove_monitor_path(self.path)
                     yield save_result
                 except Exception:
                     yield False
@@ -74,7 +74,7 @@ class Editor(wx.stc.StyledTextCtrl):
                 yield result == wx.ID_NO
         else:
             if self.path:
-                self.env.RemoveMonitorPath(self.path)
+                self.env.remove_monitor_path(self.path)
             yield True
 
     def SetNullSyntax(self):
@@ -135,8 +135,8 @@ class Editor(wx.stc.StyledTextCtrl):
             self.SetScrollWidth(max(width, self.default_scroll_width))
 
             if old_path:
-                self.env.RemoveMonitorPath(old_path)
-            self.env.AddMonitorPath(path)
+                self.env.remove_monitor_path(old_path)
+            self.env.add_monitor_path(path)
         except:
             self.path = old_path
             self.sig_title_changed.signal(self)
@@ -182,7 +182,7 @@ class Editor(wx.stc.StyledTextCtrl):
             else:
                 self.SetSyntaxFromFilename(path)
                 self.path = path
-                self.env.AddMonitorPath(path)
+                self.env.add_monitor_path(path)
                 self.sig_title_changed.signal(self)
                 yield True
         yield False
@@ -191,7 +191,7 @@ class Editor(wx.stc.StyledTextCtrl):
     def Save(self):
         if self.path:
             try:
-                with self.env.UpdatingPath(self.path):
+                with self.env.updating_path(self.path):
                     yield self.SaveFile(self.path)
                 yield True
             except Exception, exn:

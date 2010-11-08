@@ -30,7 +30,7 @@ class AppEnv(object):
         self._mainframe = mainframe
 
     @coroutine
-    def OpenFile(self, path):
+    def open_file(self, path):
         if not (yield async_call(is_text_file, path)):
             dialogs.error(self._mainframe, "Selected file is not a text file:\n\n%s" % path)
         else:
@@ -42,16 +42,13 @@ class AppEnv(object):
         else:
             return dialogs.get_file_to_save(self._mainframe, context="open")
 
-    def NewEditor(self):
-        self._mainframe.NewEditor()
-
-    def AddMonitorPath(self, path):
+    def add_monitor_path(self, path):
         self._mainframe.fmon.add_path(path)
 
-    def RemoveMonitorPath(self, path):
+    def remove_monitor_path(self, path):
         self._mainframe.fmon.remove_path(path)
 
-    def UpdatingPath(self, path):
+    def updating_path(self, path):
         return self._mainframe.fmon.updating_path(path)
 
     @property
