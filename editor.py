@@ -171,7 +171,7 @@ class Editor(wx.stc.StyledTextCtrl):
 
     @coroutine
     def SaveAs(self):
-        path = dialogs.get_file_to_save(self, context="save")
+        path = self.env.get_file_to_save()
         if path:
             path = os.path.realpath(path)
             try:

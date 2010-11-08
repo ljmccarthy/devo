@@ -36,6 +36,12 @@ class AppEnv(object):
         else:
             yield self._mainframe.OpenEditor(path)
 
+    def get_file_to_save(self):
+        if self._mainframe.project_root:
+            return dialogs.get_file_to_save(self._mainframe, path=self._mainframe.project_root)
+        else:
+            return dialogs.get_file_to_save(self._mainframe, context="open")
+
     def NewEditor(self):
         self._mainframe.NewEditor()
 
