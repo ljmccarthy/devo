@@ -93,7 +93,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.session_filename = ""
 
         self.settings = {}
-        self.project = {"name": ""}
+        self.project = {}
         self.project_root = ""
         self.projects = {}
 
@@ -242,8 +242,10 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.settings["dialogs"] = dialogs.save_state()
         try:
             yield async_call(write_settings, self.settings_filename, self.settings)
+            yield True
         except Exception, e:
             dialogs.error(self, "Error saving settings:\n\n%s" % e)
+            yield False
 
     @managed("cm")
     @coroutine
@@ -382,7 +384,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     @coroutine
     def OpenDefaultProject(self):
         if (yield self.SaveProject()):
-            self.project = {"name": ""}
+            self.project = self.settings.get("default_project", {})
+            self.settings["default_project"] = self.project
             self.project_root = ""
             self.project_filename = ""
             self.session_filename = os.path.join(self.config_dir, "session")
