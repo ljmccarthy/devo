@@ -202,7 +202,7 @@ class DirTreeFilter(object):
         self.show_hidden = show_hidden
         self.show_files = show_files
         self.show_dirs = show_dirs
-        self.hidden_exts = [".pyc", ".pyo", ".o", ".a", ".obj", ".lib"]
+        self.hidden_exts = [".pyc", ".pyo", ".o", ".a", ".obj", ".lib", ".swp", "~"]
         self.hidden_dirs = ["CVS"]
 
     def __call__(self, filename, st, hidden):
@@ -218,6 +218,8 @@ class DirTreeFilter(object):
         for ext in self.hidden_exts:
             if filename.endswith(ext):
                 return False
+        if filename.startswith(".#"):
+            return False
         return True
 
 def MakeTopLevel():
