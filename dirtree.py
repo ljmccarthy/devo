@@ -487,50 +487,40 @@ class DirTreeCtrl(wx.TreeCtrl):
         self.toplevel = toplevel or MakeTopLevel()
         return self.InitializeTree()
 
-    def _FindExpandedNodes(self, item, nodes):
+    def _FindExpandedPaths(self, item, path, expanded):
         if self.IsExpanded(item):
             node = self.GetPyData(item)
             if node.type == 'd':
-                nodes.append(node)
+                subpath = (path and path + "/") + self.GetItemText(item)
+                len_expanded = len(expanded)
                 for child_item in iter_tree_children(self, item):
-                    self._FindExpandedNodes(child_item, nodes)
+                    self._FindExpandedPaths(child_item, subpath, expanded)
+                if len(expanded) == len_expanded:
+                    expanded.append(subpath)
+        return expanded
 
-    def FindExpandedNodes(self):
-        nodes = []
-        self._FindExpandedNodes(self.GetRootItem(), nodes)
-        return nodes
-
-    @managed("cm")
-    @coroutine
-    def _ExpandPathNodes(self, node, paths):
-        yield self.ExpandNode(node)
-        for item in iter_tree_children(self, node.item):
-            node = self.GetPyData(item)
-            if node.type == 'd' and (node.path in paths or not node.path):
-                paths.discard(node.path)
-                yield self._ExpandPathNodes(node, paths)
-                if not paths:
-                    break
+    def FindExpandedPaths(self):
+        expanded = []
+        for item in iter_tree_children(self, self.GetRootItem()):
+            self._FindExpandedPaths(item, "", expanded)
+        return expanded
 
     @managed("cm")
     @coroutine
-    def ExpandPathNodes(self, paths):
-        rootnode = self.GetPyData(self.GetRootItem())
-        paths = set(paths)
-        paths.discard(rootnode.path)
-        if paths:
-            yield self._ExpandPathNodes(rootnode, paths)
+    def _ExpandPaths(self, item, paths):
+        expanded = [path[0] for path in paths if path]
+        sub_paths = [path[1:] for path in paths if len(path) > 1]
+        yield self.ExpandNode(self.GetPyData(item))
+        for child_item in iter_tree_children(self, item):
+            if self.GetItemText(child_item) in expanded:
+                yield self._ExpandPaths(child_item, sub_paths)
+
+    def ExpandPaths(self, paths):
+        paths = [path.strip("/").split("/") for path in paths]
+        return self._ExpandPaths(self.GetRootItem(), paths)
 
     def ExpandPath(self, path):
-        parts = []
-        while True:
-            path, part = os.path.split(path)
-            if not part:
-                break
-            parts.append(path)
-        if parts:
-            parts.reverse()
-            return self.ExpandPathNodes(parts)
+        return self._ExpandPaths(self.GetRootItem(), [path])
 
     def _SelectPath(self, item, path):
         node = self.GetPyData(item)
@@ -548,9 +538,9 @@ class DirTreeCtrl(wx.TreeCtrl):
 
     def SavePerspective(self):
         p = {}
-        expanded = self.FindExpandedNodes()
+        expanded = self.FindExpandedPaths()
         if expanded:
-            p["expanded"] = [node.path for node in expanded if node.path]
+            p["expanded"] = expanded
         selected = self.GetSelectedPath()
         if selected:
             p["selected"] = selected
@@ -561,6 +551,6 @@ class DirTreeCtrl(wx.TreeCtrl):
     def LoadPerspective(self, p):
         expanded = p.get("expanded", ())
         if expanded:
-            yield self.ExpandPathNodes(expanded)
+            yield self.ExpandPaths(expanded)
         if "selected" in p:
             yield self.SelectPath(p["selected"])
