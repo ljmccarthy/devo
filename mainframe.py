@@ -555,7 +555,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         
         before = command.get("before", "")
         if before == "Save Current File":
-            if editor.path and editor.changed and not (yield editor.Save()):
+            if editor and editor.path and editor.changed and not (yield editor.Save()):
                 yield False
         elif before == "Save All Files":
             for editor in self.editors:
