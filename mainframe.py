@@ -11,6 +11,7 @@ from dirtree import DirTreeCtrl, DirNode
 from editor import Editor
 from file_monitor import FileMonitor
 from find_replace_dialog import FindReplaceDetails
+from lru import LruQueue
 from menu import MenuItem
 from menu_defs import menubar
 from settings import read_settings, write_settings
@@ -59,6 +60,8 @@ class AppEnv(object):
     def find_details(self, find_details):
         self._mainframe.find_details = find_details
 
+MAX_RECENT_FILES = 20
+
 NB_STYLE = (aui.AUI_NB_CLOSE_ON_ALL_TABS  | aui.AUI_NB_TOP | aui.AUI_NB_TAB_SPLIT
            | aui.AUI_NB_TAB_MOVE | aui.AUI_NB_SCROLL_BUTTONS | wx.BORDER_NONE)
 
@@ -80,6 +83,9 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.SetDropTarget(self)
         self.SetMenuBar(menubar.Create())
 
+        self.recent_file_first_id = wx.NewId()
+        self.recent_file_last_id = self.recent_file_first_id + MAX_RECENT_FILES
+        wx.RegisterId(self.recent_file_last_id)
         self.user_first_id = wx.NewId()
         self.user_last_id = self.user_first_id + 1000
         wx.RegisterId(self.user_last_id)
@@ -96,6 +102,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.project = {}
         self.project_root = ""
         self.projects = {}
+        self.recent_files = LruQueue(maxlen=MAX_RECENT_FILES)
 
         self.cm = CoroutineManager()
         self.env = AppEnv(self)
@@ -131,6 +138,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.Bind(wx.EVT_MENU, self.OnOpenFile, id=ID.OPEN)
         self.Bind(wx.EVT_MENU, self.OnCloseFile, id=ID.CLOSE)
         self.Bind(wx.EVT_MENU, self.OnClose, id=ID.EXIT)
+        self.Bind(wx.EVT_MENU_RANGE, self.OnRecentFile,
+                  id=self.recent_file_first_id, id2=self.recent_file_last_id)
 
         self.Bind(wx.EVT_MENU, self.EditorAction("Save"), id=ID.SAVE)
         self.Bind(wx.EVT_MENU, self.EditorAction("SaveAs"), id=ID.SAVEAS)
@@ -152,10 +161,11 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.Bind(wx.EVT_MENU, self.OnEditProject, id=ID.EDIT_PROJECT)
         self.Bind(wx.EVT_MENU, self.OnOrganiseProjects, id=ID.ORGANISE_PROJECTS)
         self.Bind(wx.EVT_MENU, self.OnConfigureCommands, id=ID.CONFIGURE_COMMANDS)
-        self.Bind(wx.EVT_MENU_RANGE, self.OnUserCommand,
-                  id=self.user_first_id, id2=self.user_last_id)
         self.Bind(wx.EVT_MENU_RANGE, self.OnSelectProject,
                   id=self.project_first_id, id2=self.project_last_id)
+
+        self.Bind(wx.EVT_MENU_RANGE, self.OnUserCommand,
+                  id=self.user_first_id, id2=self.user_last_id)
 
         self.Bind(wx.EVT_UPDATE_UI, self.EditorUpdateUI("GetModify"), id=ID.SAVE)
         self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasMethod("SaveAs"), id=ID.SAVEAS)
@@ -183,10 +193,18 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     def GetMenuHooks(self):
         commands = self.project.get("commands", [])
         return {
-            "commands" : [MenuItem(i + self.user_first_id, command["name"], command["accel"])
-                          for i, command in enumerate(commands)],
-            "projects" : [MenuItem(i + self.project_first_id, p["name"])
-                          for i, (_, p) in enumerate(sorted(self.projects.iteritems()))],
+            "commands" : [
+                MenuItem(i + self.user_first_id, command["name"], command["accel"])
+                for i, command in enumerate(commands)
+            ],
+            "projects" : [
+                MenuItem(i + self.project_first_id, p["name"])
+                for i, (_, p) in enumerate(sorted(self.projects.iteritems()))
+            ],
+            "recent_files" : [
+                MenuItem(i + self.recent_file_first_id, path)
+                for i, path in enumerate(self.recent_files)
+            ]
         }
 
     def UpdateMenuBar(self):
@@ -224,6 +242,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             yield self.OpenDefaultProject()
         else:
             self.projects = self.settings.get("projects", {})
+            self.recent_files = LruQueue(self.settings.get("recent_files", []), MAX_RECENT_FILES)
 
             if "dialogs" in self.settings:
                 dialogs.load_state(self.settings["dialogs"])
@@ -239,6 +258,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     def SaveSettings(self):
         self.settings["projects"] = self.projects
         self.settings["last_project"] = self.project_root
+        self.settings["recent_files"] = list(self.recent_files)
         self.settings["dialogs"] = dialogs.save_state()
         try:
             yield async_call(write_settings, self.settings_filename, self.settings)
@@ -463,6 +483,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             else:
                 with frozen_window(self.notebook):
                     self.AddPage(editor)
+                    self.recent_files.add(path)
+                    self.UpdateMenuBar()
 
     def OnNewFile(self, evt):
         self.NewEditor()
@@ -479,6 +501,13 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         editor = self.GetCurrentEditorTab()
         if editor:
             self.ClosePage(editor)
+
+    def OnRecentFile(self, evt):
+        index = evt.GetId() - self.recent_file_first_id
+        if 0 <= index < len(self.recent_files):
+            path = self.recent_files.access(index)
+            self.OpenEditor(path)
+            self.UpdateMenuBar()
 
     def OnDropFiles(self, x, y, filenames):
         for filename in filenames:
