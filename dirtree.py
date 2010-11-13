@@ -278,6 +278,7 @@ class DirTreeCtrl(wx.TreeCtrl):
         self.Bind(wx.EVT_TREE_ITEM_RIGHT_CLICK, self.OnItemRightClicked)
         self.Bind(wx.EVT_TREE_BEGIN_LABEL_EDIT, self.OnItemBeginLabelEdit)
         self.Bind(wx.EVT_TREE_END_LABEL_EDIT, self.OnItemEndLabelEdit)
+        self.Bind(wx.EVT_TREE_BEGIN_DRAG, self.OnBeginDrag)
         self.Bind(wx.EVT_MENU, self.OnItemEdit, id=ID_EDIT)
         self.Bind(wx.EVT_MENU, self.OnItemOpen, id=ID_OPEN)
         self.Bind(wx.EVT_MENU, self.OnItemRename, id=ID_RENAME)
@@ -364,6 +365,15 @@ class DirTreeCtrl(wx.TreeCtrl):
             evt.Veto()
             node = self.GetEventNode(evt)
             self.RenameNode(node, evt.GetLabel())
+
+    def OnBeginDrag(self, evt):
+        node = self.GetEventNode(evt)
+        if node:
+            data = wx.FileDataObject()
+            data.AddFile(node.path)
+            dropsrc = wx.DropSource(self)
+            dropsrc.SetData(data)
+            dropsrc.DoDragDrop()
 
     def OnItemEdit(self, evt):
         node = self.GetSelectedNode()
