@@ -20,6 +20,10 @@ from util import frozen_window, frozen_or_hidden_window, is_text_file
 
 from new_project_dialog import NewProjectDialog
 
+def shorten_path(path):
+    parts = path.split(os.path.sep)
+    return os.path.sep.join(parts[:3] + ["..."] + parts[-2:])
+
 def make_project_filename(project_root):
     return os.path.join(project_root, ".devo-project")
 
@@ -202,7 +206,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                 for i, (_, p) in enumerate(sorted(self.projects.iteritems()))
             ],
             "recent_files" : [
-                MenuItem(i + self.recent_file_first_id, path)
+                MenuItem(i + self.recent_file_first_id, shorten_path(path))
                 for i, path in enumerate(self.recent_files)
             ]
         }
@@ -222,13 +226,13 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     @coroutine
     def DoClose(self):
         if (yield self.SaveProject()):
-            yield self.SaveSettings()
-            wx.CallAfter(self._DoShutdown)
+            if (yield self.SaveSettings()):
+                self.Hide()
+                wx.CallAfter(self._DoShutdown)
         else:
             self.Show()
 
     def _DoShutdown(self):
-        self.Hide()
         self.fmon.stop()
         async.shutdown_scheduler()
         self.Destroy()
