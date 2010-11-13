@@ -162,6 +162,7 @@ class FindReplaceDialog(wx.Dialog):
         if details is not None:
             self.text_find.SetValue(details.find)
             self.text_replace.SetValue(details.replace)
+            self.check_case.SetValue(details.case)
             self.check_regexp.SetValue(details.regexp)
             self.check_reverse.SetValue(details.reverse)
 
