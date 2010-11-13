@@ -1,4 +1,4 @@
-import sys, os, stat, threading, time
+import sys, os, collections, stat, threading, time
 import wx
 from fsmonitor import FSMonitorThread, FSEvent
 
@@ -90,25 +90,38 @@ class SimpleNode(object):
     def collapse(self, tree, monitor):
         pass
 
+class FileInfo(collections.namedtuple("FileInfo", "filename dirpath stat_result listable hidden")):
+    @property
+    def path(self):
+        return os.path.join(self.dirpath, self.filename)
+    @property
+    def is_file(self):
+        return stat.S_ISREG(self.stat_result.st_mode)
+    @property
+    def is_dir(self):
+        return stat.S_ISDIR(self.stat_result.st_mode)
+
+def get_file_info(dirpath, filename):
+    path = os.path.join(dirpath, filename)
+    stat_result = os.stat(path)
+    hidden = fileutil.is_hidden_file(path)
+    if stat.S_ISDIR(stat_result.st_mode):
+        try:
+            listable = os.access(path, os.X_OK)
+        except OSError:
+            listable = False
+    else:
+        listable = False
+    return FileInfo(filename, dirpath, stat_result, listable, hidden)
+
 def listdir(dirpath):
     result = []
     for filename in os.listdir(dirpath):
-        path = os.path.join(dirpath, filename)
         try:
-            st = os.stat(path)
-            hidden = fileutil.is_hidden_file(path)
+            result.append(get_file_info(dirpath, filename))
         except OSError:
             pass
-        else:
-            if stat.S_ISDIR(st.st_mode):
-                try:
-                    listable = os.access(path, os.X_OK)
-                except OSError:
-                    listable = False
-            else:
-                listable = False
-            result.append((filename, st, listable, hidden))
-    result.sort(key=lambda x: x[0].lower())
+    result.sort(key=lambda info: info.filename.lower())
     return result
 
 class FSNode(object):
@@ -127,14 +140,14 @@ class FSNode(object):
         self.watch = monitor.add_dir_watch(self.path, user=self)
         dirs = []
         files = []            
-        for filename, st, listable, hidden in (yield async_call(listdir, self.path)):
-            if not filter(filename, st, hidden):
+        for info in (yield async_call(listdir, self.path)):
+            if not filter(info):
                 continue
-            path = os.path.join(self.path, filename)
-            if stat.S_ISREG(st.st_mode):
+            path = os.path.join(self.path, info.filename)
+            if info.is_file:
                 files.append(FSNode(path, 'f'))
-            elif stat.S_ISDIR(st.st_mode):
-                dirs.append((FSNode(path, 'd'), listable))
+            elif info.is_dir:
+                dirs.append((FSNode(path, 'd'), info.listable))
         for node, listable in dirs:
             image = IM_FOLDER if listable else IM_FOLDER_DENIED
             item = tree.AppendItem(self.item, node.label, image)
@@ -161,20 +174,18 @@ class FSNode(object):
     @coroutine
     def add(self, name, tree, monitor, filter):
         if self.state == NODE_POPULATED:
-            path = os.path.join(self.path, name)
             try:
-                st = (yield async_call(os.stat, path))
-                hidden = (yield async_call(fileutil.is_hidden_file, path))
-                if not filter(name, st, hidden):
+                info = (yield async_call(get_file_info, self.path, name))
+                if not filter(info):
                     return
-                if stat.S_ISREG(st.st_mode):
+                if info.is_file:
                     type = 'f'
                     image = IM_FILE
-                elif stat.S_ISDIR(st.st_mode):
+                elif info.is_dir:
                     type = 'd'
                     image = IM_FOLDER
                 item = dirtree_insert(tree, self.item, name, image)
-                node = FSNode(path, type)
+                node = FSNode(info.path, type)
                 tree.SetItemNode(item, node)
                 if type == 'd':
                     tree.SetItemHasChildren(item, True)
@@ -205,20 +216,20 @@ class DirTreeFilter(object):
         self.hidden_exts = [".pyc", ".pyo", ".o", ".a", ".obj", ".lib", ".swp", "~"]
         self.hidden_dirs = ["CVS"]
 
-    def __call__(self, filename, st, hidden):
-        if hidden and not self.show_hidden:
+    def __call__(self, info):
+        if info.hidden and not self.show_hidden:
             return False
-        if stat.S_ISREG(st.st_mode) and not self.show_files:
+        if info.is_file and not self.show_files:
             return False
-        elif stat.S_ISDIR(st.st_mode):
+        elif info.is_dir:
             if not self.show_dirs:
                 return False
-            if filename in self.hidden_dirs:
+            if info.filename in self.hidden_dirs:
                 return False
         for ext in self.hidden_exts:
-            if filename.endswith(ext):
+            if info.filename.endswith(ext):
                 return False
-        if filename.startswith(".#"):
+        if info.filename.startswith(".#"):
             return False
         return True
 
