@@ -235,6 +235,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     def _DoShutdown(self):
         self.fmon.stop()
         async.shutdown_scheduler()
+        self.tree.Destroy()
         self.Destroy()
 
     @managed("cm")

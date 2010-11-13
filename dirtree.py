@@ -176,23 +176,23 @@ class FSNode(object):
         if self.state == NODE_POPULATED:
             try:
                 info = (yield async_call(get_file_info, self.path, name))
-                if not filter(info):
-                    return
-                if info.is_file:
-                    type = 'f'
-                    image = IM_FILE
-                elif info.is_dir:
-                    type = 'd'
-                    image = IM_FOLDER
-                item = dirtree_insert(tree, self.item, name, image)
-                node = FSNode(info.path, type)
-                tree.SetItemNode(item, node)
-                if type == 'd':
-                    tree.SetItemHasChildren(item, True)
-                tree.SetItemHasChildren(self.item, True)
-                yield item
-            except OSError:
-                pass
+            except OSError, e:
+                return
+            if not filter(info):
+                return
+            if info.is_file:
+                type = 'f'
+                image = IM_FILE
+            elif info.is_dir:
+                type = 'd'
+                image = IM_FOLDER
+            item = dirtree_insert(tree, self.item, name, image)
+            node = FSNode(info.path, type)
+            tree.SetItemNode(item, node)
+            if type == 'd':
+                tree.SetItemHasChildren(item, True)
+            tree.SetItemHasChildren(self.item, True)
+            yield item
 
     def remove(self, name, tree, monitor):
         if self.state == NODE_POPULATED:
@@ -272,7 +272,6 @@ class DirTreeCtrl(wx.TreeCtrl):
         self.imglist.Add(load_bitmap("icons/file.png"))
         self.SetImageList(self.imglist)
 
-        self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
         self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.OnItemActivated)
         self.Bind(wx.EVT_TREE_ITEM_EXPANDING, self.OnItemExpanding)
         self.Bind(wx.EVT_TREE_ITEM_COLLAPSED, self.OnItemCollapsed)
@@ -287,10 +286,11 @@ class DirTreeCtrl(wx.TreeCtrl):
 
         self.monitor = FSMonitorThread(self._OnFileSystemChanged)
 
-    def OnDestroy(self, evt):
+    def Destroy(self):
         self.monitor.remove_all_watches()
         self.cm.cancel()
         self._GetFSEvents()
+        wx.TreeCtrl.Destroy(self)
 
     def _OnFileSystemChanged(self, evt):
         if isinstance(self, wx._core._wxPyDeadObject):
