@@ -255,7 +255,7 @@ class Coroutine(Future):
         self.__running = False
 
     def start(self):
-        if not self.__running:
+        if not self.__running and self.__gen:
             self.__running = True
             self.__next(self.__gen.next)
 
@@ -288,13 +288,16 @@ class Coroutine(Future):
                     self.set_done(ret)
 
     def __success_next(self, result):
-        self.__next(self.__gen.send, result)
+        if self.__gen:
+            self.__next(self.__gen.send, result)
 
     def __failure_next(self, exn, traceback):
-        self.__next(self.__gen.throw, exn)
+        if self.__gen:
+            self.__next(self.__gen.throw, exn)
 
     def __cancelled_next(self, future):
-        self.__next(self.__gen.throw, FutureCancelled())
+        if self.__gen:
+            self.__next(self.__gen.throw, FutureCancelled())
 
     def cancel(self):
         if self.__cont:
@@ -302,6 +305,16 @@ class Coroutine(Future):
             self.__cont = None
         else:
             Future.cancel(self)
+
+        if self.__gen:
+            try:
+                self.__gen.close()
+            except SystemExit:
+                raise
+            except:
+                pass
+            finally:
+                self.__gen = None
 
 class CoroutineManager(object):
     def __init__(self):
