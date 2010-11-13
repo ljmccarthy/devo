@@ -1,4 +1,5 @@
-import sys, os, string, traceback, errno, wx
+import sys, os, string, traceback, errno, subprocess
+import wx
 from functools import wraps
 from wx.lib.agw import aui
 from wx.lib.utils import AdjustRectToScreen
@@ -596,7 +597,11 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                 if editor.path and editor.changed and not (yield editor.Save()):
                     yield False
 
-        self.RunCommand(cmdline, workdir)
+        if command.get("detach", False):
+            workdir = workdir or self.project_root or None
+            subprocess.Popen(cmdline, close_fds=True, shell=True, cwd=workdir)
+        else:
+            self.RunCommand(cmdline, workdir)
         yield True
 
     def OnUserCommand(self, evt):

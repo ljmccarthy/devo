@@ -35,10 +35,14 @@ class EditCommandDialog(wx.Dialog):
         self.field_accel = wx.TextCtrl(self, value=command.get("accel", ""))
         self.field_cmdline = wx.TextCtrl(self, value=command.get("cmdline", ""))
         self.field_workdir = wx.TextCtrl(self, value=command.get("workdir", ""))
+
         self.field_before = wx.Choice(self,
             choices=["Do Nothing", "Save Current File", "Save All Files"])
         if not self.field_before.SetStringSelection(command.get("before", "")):
             self.field_before.SetSelection(0)
+
+        self.field_detach = wx.CheckBox(self, label="Detach Process")
+        self.field_detach.SetValue(command.get("detach", False))
 
         grid = wx.FlexGridSizer(2, 2, 5, 5)
         grid.AddGrowableCol(1, 1)
@@ -52,6 +56,10 @@ class EditCommandDialog(wx.Dialog):
         grid.Add(self.field_workdir, 0, wx.EXPAND)
         grid.Add(wx.StaticText(self, label="Before Executing"), 0, wx.ALIGN_CENTER_VERTICAL)
         grid.Add(self.field_before, 0, wx.EXPAND)
+        grid.AddSpacer(0)
+        flag_sizer = wx.BoxSizer(wx.VERTICAL)
+        flag_sizer.Add(self.field_detach, 1, wx.EXPAND)
+        grid.Add(flag_sizer, 0, wx.EXPAND)
 
         btn_sizer = wx.StdDialogButtonSizer()
         btn_ok = wx.Button(self, wx.ID_OK)
@@ -74,7 +82,10 @@ class EditCommandDialog(wx.Dialog):
         self.Bind(wx.EVT_BUTTON, self.OnOK, id=wx.ID_OK)
         self.Bind(wx.EVT_BUTTON, self.OnHelp, id=wx.ID_HELP)
 
-    def _GetField(self, ctrl):
+    def _GetValue(self, ctrl):
+        return ctrl.Value
+
+    def _GetNonEmptyString(self, ctrl):
         value = ctrl.Value.strip()
         if not value:
             raise Exception("Field is required")
@@ -85,7 +96,7 @@ class EditCommandDialog(wx.Dialog):
         return value and unparse_accelerator(*parse_accelerator(value))
 
     def _GetCmdline(self, ctrl):
-        value = self._GetField(ctrl)
+        value = self._GetNonEmptyString(ctrl)
         check_variables(value)
         return value
 
@@ -98,11 +109,12 @@ class EditCommandDialog(wx.Dialog):
         return ctrl.GetStringSelection()
 
     _fields = (
-        ("name", _GetField),
+        ("name", _GetNonEmptyString),
         ("accel", _GetAccel),
         ("cmdline", _GetCmdline),
         ("workdir", _GetWorkDir),
         ("before", _GetStringSelection),
+        ("detach", _GetValue),
     )
 
     def OnOK(self, evt):
