@@ -567,8 +567,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
 
     def RunCommand(self, cmdline, workdir=None):
         try:
-            workdir = workdir or self.project_root or None
-            self.terminal.run(cmdline, cwd=workdir)
+            self.terminal.run(cmdline, cwd=workdir or None)
             self.ShowTerminal()
         except Exception, e:
             dialogs.error(self, "Error executing command:\n\n%s" % e)
@@ -587,6 +586,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         cmdline = string.Template(command["cmdline"]).safe_substitute(env)
         workdir = os.path.expanduser(command.get("workdir", ""))
         workdir = string.Template(workdir).safe_substitute(env)
+        workdir = os.path.join(self.project_root, workdir)
         
         before = command.get("before", "")
         if before == "Save Current File":
@@ -598,8 +598,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                     yield False
 
         if command.get("detach", False):
-            workdir = workdir or self.project_root or None
-            subprocess.Popen(cmdline, close_fds=True, shell=True, cwd=workdir)
+            subprocess.Popen(cmdline, close_fds=True, shell=True, cwd=workdir or None)
         else:
             self.RunCommand(cmdline, workdir)
         yield True
