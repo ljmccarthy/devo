@@ -254,6 +254,7 @@ class DirTreeCtrl(wx.TreeCtrl):
 
         wx.TreeCtrl.__init__(self, parent, style=style)
         self.SetDoubleBuffered(True)
+        self.SetFont(wx.Font(8, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
 
         self.env = env
         self.toplevel = toplevel or MakeTopLevel()
