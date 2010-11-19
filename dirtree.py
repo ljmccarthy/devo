@@ -260,8 +260,6 @@ class DirTreeCtrl(wx.TreeCtrl):
         self.filter = filter or DirTreeFilter()
         self.cq = CoroutineQueue()
         self.cm = CoroutineManager()
-        self.fsevts = []
-        self.fsevts_lock = threading.Lock()
         self.select_later_parent = None
         self.select_later_name = None
         self.select_later_time = 0
@@ -285,39 +283,31 @@ class DirTreeCtrl(wx.TreeCtrl):
         self.Bind(wx.EVT_MENU, self.OnItemDelete, id=ID_DELETE)
         self.Bind(wx.EVT_MENU, self.OnNewFolder, id=ID_NEW_FOLDER)
 
-        self.monitor = FSMonitorThread(self._OnFileSystemChanged)
+        self.monitor = FSMonitorThread()
+        self.monitor_timer = wx.Timer(self)
+        self.Bind(wx.EVT_TIMER, self.OnMonitorTimer, self.monitor_timer)
 
     def Destroy(self):
+        self.monitor_timer.Stop()
         self.monitor.remove_all_watches()
+        self.monitor.read_events()
         self.cm.cancel()
-        self._GetFSEvents()
         wx.TreeCtrl.Destroy(self)
 
-    def _OnFileSystemChanged(self, evt):
-        if isinstance(self, wx._core._wxPyDeadObject):
-            return
-        with self.fsevts_lock:
-            called = len(self.fsevts) > 0
-            self.fsevts.append(evt)
-            if not called:
-                CallLater(100, self.OnFileSystemChanged)
+    def OnMonitorTimer(self, evt):
+        events = self.monitor.read_events()
+        if events:
+            self.OnFileSystemChanged(events)
 
     def SelectLater(self, parent, name, timeout=1):
         self.select_later_parent = parent
         self.select_later_name = name
         self.select_later_time = time.time() + timeout
 
-    def _GetFSEvents(self):
-        with self.fsevts_lock:
-            evts = self.fsevts
-            self.fsevts = []
-        return evts
-
     @managed("cm")
     @queued_coroutine("cq")
-    def OnFileSystemChanged(self):
-        evts = self._GetFSEvents()
-        for evt in evts:
+    def OnFileSystemChanged(self, events):
+        for evt in events:
             if evt.action in (FSEvent.Create, FSEvent.MoveTo):
                 item = (yield evt.user.add(evt.name, self, self.monitor, self.filter))
                 if item:
@@ -491,9 +481,10 @@ class DirTreeCtrl(wx.TreeCtrl):
             yield self.ExpandNode(self.toplevel[0])
 
     def InitializeTree(self):
+        self.monitor_timer.Stop()
         self.monitor.remove_all_watches()
+        self.monitor.read_events()
         self.cm.cancel()
-        self._GetFSEvents()
         self.DeleteAllItems()
         if len(self.toplevel) == 1:
             rootitem = self.AddRoot(self.toplevel[0].label)
@@ -502,6 +493,7 @@ class DirTreeCtrl(wx.TreeCtrl):
             rootitem = self.AddRoot("")
             rootnode = SimpleNode("", self.toplevel)
         self.SetItemNode(rootitem, rootnode)
+        self.monitor_timer.Start(100)
         return self._InitialExpand(rootnode)
 
     def SetTopLevel(self, toplevel=None):
