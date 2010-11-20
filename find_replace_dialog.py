@@ -3,14 +3,25 @@ import re
 from dialogs import dialogs
 from dialog_util import bind_escape_key
 
+def get_combo_history(combo, size=10):
+    value = combo.GetValue()
+    history = combo.GetStrings()
+    if value in history:
+        history.remove(value)
+    history.insert(0, value)
+    return history[:size]
+
 class FindReplaceDetails(object):
-    def __init__(self, find, replace, case=False, reverse=False, regexp=False):
+    def __init__(self, find, replace, case=False, reverse=False, regexp=False,
+                 find_history=(), replace_history=()):
         self.case = case
         self.reverse = reverse
         self.regexp = regexp
         self.__find = None
         self.find = find
         self.replace = replace
+        self.find_history = find_history
+        self.replace_history = replace_history
 
     @property
     def find(self):
@@ -121,14 +132,14 @@ class FindReplaceDialog(wx.Dialog):
         wx.Dialog.__init__(self, parent, title=title)
         self.editor = parent
 
-        self.text_find = wx.TextCtrl(self, size=(300, -1))
-        self.text_replace = wx.TextCtrl(self, size=(300, -1))
+        self.combo_find = wx.ComboBox(self, size=(300, -1))
+        self.combo_replace = wx.ComboBox(self, size=(300, -1))
         grid = wx.FlexGridSizer(cols=2, vgap=5, hgap=5)
         grid.AddGrowableCol(1, 1)
         grid.Add(wx.StaticText(self, label="Find"), 0, wx.ALIGN_CENTRE_VERTICAL)
-        grid.Add(self.text_find, 0, wx.EXPAND)
+        grid.Add(self.combo_find, 0, wx.EXPAND)
         grid.Add(wx.StaticText(self, label="Replace"), 0, wx.ALIGN_CENTRE_VERTICAL)
-        grid.Add(self.text_replace, 0, wx.EXPAND)
+        grid.Add(self.combo_replace, 0, wx.EXPAND)
         grid.AddSpacer(0)
         self.check_case = wx.CheckBox(self, wx.ID_ANY, "&Case sensitive")
         self.check_regexp = wx.CheckBox(self, wx.ID_ANY, "Regular &expression")
@@ -160,14 +171,18 @@ class FindReplaceDialog(wx.Dialog):
         self.Fit()
 
         if details is not None:
-            self.text_find.SetValue(details.find)
-            self.text_replace.SetValue(details.replace)
+            self.combo_find.SetValue(details.find)
+            self.combo_replace.SetValue(details.replace)
             self.check_case.SetValue(details.case)
             self.check_regexp.SetValue(details.regexp)
             self.check_reverse.SetValue(details.reverse)
+            for item in details.find_history:
+                self.combo_find.Append(item)
+            for item in details.replace_history:
+                self.combo_replace.Append(item)
 
-        self.text_find.SetFocus()
-        self.text_find.SetSelection(-1, -1)
+        self.combo_find.SetFocus()
+        self.combo_find.SetMark(0, len(self.combo_find.GetValue()))
 
         self.Bind(wx.EVT_BUTTON, self.OnGoToStart, id=ID_GO_TO_START)
         self.Bind(wx.EVT_BUTTON, self.OnFind, id=wx.ID_FIND)
@@ -176,7 +191,7 @@ class FindReplaceDialog(wx.Dialog):
         bind_escape_key(self)
 
     def OnGoToStart(self, evt):
-        self.editor.SetSelection(0, 0)
+        self.editor.SetMark(0, 0)
 
     def OnFind(self, evt):
         details = self.GetFindDetails(True)
@@ -205,8 +220,10 @@ class FindReplaceDialog(wx.Dialog):
     def GetFindDetails(self, show_error=False):
         try:
             return FindReplaceDetails(
-                find = self.text_find.GetValue(),
-                replace = self.text_replace.GetValue(),
+                find = self.combo_find.GetValue(),
+                find_history = get_combo_history(self.combo_find),
+                replace = self.combo_replace.GetValue(),
+                replace_history = get_combo_history(self.combo_replace),
                 case = self.check_case.GetValue(),
                 reverse = self.check_reverse.GetValue(),
                 regexp = self.check_regexp.GetValue())
