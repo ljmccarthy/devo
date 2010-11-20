@@ -6,7 +6,7 @@ import fileutil
 from async import async_call, coroutine, queued_coroutine, managed, CoroutineQueue, CoroutineManager
 from dialogs import dialogs
 from menu import Menu, MenuItem, MenuSeparator
-from util import iter_tree_children, frozen_window, CallLater
+from util import iter_tree_children, iter_tree_breadth_first, frozen_window, CallLater
 from resources import load_bitmap
 
 ID_EDIT = wx.NewId()
@@ -14,24 +14,30 @@ ID_OPEN = wx.NewId()
 ID_RENAME = wx.NewId()
 ID_DELETE = wx.NewId()
 ID_NEW_FOLDER = wx.NewId()
+ID_EXPAND_ALL = wx.NewId()
+ID_COLLAPSE_ALL = wx.NewId()
 
 file_context_menu = Menu("", [
+    MenuItem(ID_NEW_FOLDER, "&New Folder"),
+    MenuSeparator,
     MenuItem(ID_OPEN, "&Open"),
     MenuItem(ID_EDIT, "&Edit with Devo"),
-    MenuSeparator,
     MenuItem(ID_RENAME, "&Rename"),
     MenuItem(ID_DELETE, "&Delete"),
     MenuSeparator,
-    MenuItem(ID_NEW_FOLDER, "&New Folder"),
+    MenuItem(ID_EXPAND_ALL, "E&xpand All"),
+    MenuItem(ID_COLLAPSE_ALL, "&Collapse All"),
 ])
 
 dir_context_menu = Menu("", [
-    MenuItem(ID_OPEN, "&Open"),
+    MenuItem(ID_NEW_FOLDER, "&New Folder"),
     MenuSeparator,
+    MenuItem(ID_OPEN, "&Open"),
     MenuItem(ID_RENAME, "&Rename"),
     MenuItem(ID_DELETE, "&Delete"),
     MenuSeparator,
-    MenuItem(ID_NEW_FOLDER, "&New Folder"),
+    MenuItem(ID_EXPAND_ALL, "E&xpand All"),
+    MenuItem(ID_COLLAPSE_ALL, "&Collapse All"),    
 ])
 
 IM_FOLDER = 0
@@ -264,6 +270,7 @@ class DirTreeCtrl(wx.TreeCtrl):
         self.select_later_parent = None
         self.select_later_name = None
         self.select_later_time = 0
+        self.expanding_all = False
 
         self.imglist = wx.ImageList(16, 16)
         self.imglist.Add(load_bitmap("icons/folder.png"))
@@ -283,10 +290,13 @@ class DirTreeCtrl(wx.TreeCtrl):
         self.Bind(wx.EVT_MENU, self.OnItemRename, id=ID_RENAME)
         self.Bind(wx.EVT_MENU, self.OnItemDelete, id=ID_DELETE)
         self.Bind(wx.EVT_MENU, self.OnNewFolder, id=ID_NEW_FOLDER)
+        self.Bind(wx.EVT_MENU, self.OnExpandAll, id=ID_EXPAND_ALL)
+        self.Bind(wx.EVT_MENU, self.OnCollapseAll, id=ID_COLLAPSE_ALL)
 
         self.monitor = FSMonitorThread()
         self.monitor_timer = wx.Timer(self)
         self.Bind(wx.EVT_TIMER, self.OnMonitorTimer, self.monitor_timer)
+        self.monitor_timer.Start(100)
 
     def Destroy(self):
         self.monitor_timer.Stop()
@@ -398,6 +408,32 @@ class DirTreeCtrl(wx.TreeCtrl):
             if name:
                 self.NewFolder(node, name)
 
+    @coroutine
+    def OnExpandAll(self, evt):
+        del evt
+        if self.expanding_all:
+            return
+        self.expanding_all = True
+        try:
+            for item in iter_tree_breadth_first(self, self.GetRootItem()):
+                if not self.expanding_all:
+                    return
+                node = self.GetPyData(item)
+                if node.type == 'd':
+                    if node.state == NODE_UNPOPULATED:
+                        try:
+                            yield self.ExpandNode(node)
+                        except Exception:
+                            pass
+                    else:
+                        self.Expand(item)
+        finally:
+            self.expanding_all = False
+
+    def OnCollapseAll(self, evt):
+        self.expanding_all = False
+        self.CollapseAll()
+
     def SetItemNode(self, item, node):
         self.SetPyData(item, node)
         node.item = item
@@ -482,7 +518,6 @@ class DirTreeCtrl(wx.TreeCtrl):
             yield self.ExpandNode(self.toplevel[0])
 
     def InitializeTree(self):
-        self.monitor_timer.Stop()
         self.monitor.remove_all_watches()
         self.monitor.read_events()
         self.cm.cancel()
@@ -494,7 +529,6 @@ class DirTreeCtrl(wx.TreeCtrl):
             rootitem = self.AddRoot("")
             rootnode = SimpleNode("", self.toplevel)
         self.SetItemNode(rootitem, rootnode)
-        self.monitor_timer.Start(100)
         return self._InitialExpand(rootnode)
 
     def SetTopLevel(self, toplevel=None):

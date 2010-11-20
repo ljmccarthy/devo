@@ -45,6 +45,13 @@ def iter_tree_children(tree, item):
         yield item
         item = tree.GetNextSibling(item)
 
+def iter_tree_breadth_first(tree, item):
+    for subitem in iter_tree_children(tree, item):
+        yield subitem
+    for subitem in iter_tree_children(tree, item):
+        for subsubitem in iter_tree_breadth_first(tree, subitem):
+            yield subsubitem
+
 def is_focused(win):
     focus = wx.Window.FindFocus()
     while focus:
