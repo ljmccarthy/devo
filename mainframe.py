@@ -35,12 +35,8 @@ class AppEnv(object):
     def __init__(self, mainframe):
         self._mainframe = mainframe
 
-    @coroutine
     def open_file(self, path):
-        if not (yield async_call(is_text_file, path)):
-            dialogs.error(self._mainframe, "Selected file is not a text file:\n\n%s" % path)
-        else:
-            yield self._mainframe.OpenEditor(path)
+        return self._mainframe.OpenEditor(path)
 
     def get_file_to_save(self):
         if self._mainframe.project_root:
@@ -478,6 +474,9 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     @managed("cm")
     @coroutine
     def OpenEditor(self, path):
+        if not (yield async_call(is_text_file, path)):
+            dialogs.error(self, "File '%s' is not a text file." % path)
+            yield False
         realpath = os.path.realpath(path)
         editor = self.FindEditor(realpath)
         if editor:
