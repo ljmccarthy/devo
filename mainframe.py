@@ -171,6 +171,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
 
         self.Bind(wx.EVT_MENU_RANGE, self.OnUserCommand,
                   id=self.user_first_id, id2=self.user_last_id)
+        self.Bind(wx.EVT_UPDATE_UI_RANGE, self.OnUpdateUI_UserCommand,
+                  id=self.user_first_id, id2=self.user_last_id)
 
         self.Bind(wx.EVT_UPDATE_UI, self.EditorUpdateUI("GetModify"), id=ID.SAVE)
         self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasMethod("SaveAs"), id=ID.SAVEAS)
@@ -603,11 +605,20 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             self.RunCommand(cmdline, workdir)
         yield True
 
-    def OnUserCommand(self, evt):
-        index = evt.GetId() - self.user_first_id
+    def GetUserCommandById(self, id):
+        index = id - self.user_first_id
         commands = self.project.get("commands", [])
         if 0 <= index < len(commands):
-            self.DoUserCommand(commands[index])
+            return commands[index]
+
+    def OnUserCommand(self, evt):
+        command = self.GetUserCommandById(evt.GetId())
+        if command:
+            self.DoUserCommand(command)
+
+    def OnUpdateUI_UserCommand(self, evt):
+        command = self.GetUserCommandById(evt.GetId())
+        evt.Enable(bool(command and (not self.terminal.is_running or command.get("detach", False))))
 
     def OnSelectProject(self, evt):
         index = evt.GetId() - self.project_first_id

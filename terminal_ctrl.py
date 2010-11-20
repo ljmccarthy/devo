@@ -66,6 +66,10 @@ class TerminalCtrl(wx.Panel):
         if lines:
             self.text.AppendText(lines)
 
+    @property
+    def is_running(self):
+        return bool(self.process)
+
     def run(self, args, env=None, cwd=None):
         if self.process:
             return
