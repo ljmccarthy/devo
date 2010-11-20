@@ -60,6 +60,12 @@ def is_focused(win):
         focus = focus.Parent
     return False
 
+def new_id_range(n):
+    first = wx.NewId()
+    last = first + n
+    wx.RegisterId(last)
+    return first, last
+
 def _TryCallLater(timer, func, args, kwargs):
     try:
         wx.CallLater(timer, func, *args, **kwargs)

@@ -17,7 +17,7 @@ from menu import MenuItem
 from menu_defs import menubar
 from settings import read_settings, write_settings
 from terminal_ctrl import TerminalCtrl
-from util import frozen_window, frozen_or_hidden_window, is_text_file
+from util import frozen_window, frozen_or_hidden_window, is_text_file, new_id_range
 
 from new_project_dialog import NewProjectDialog
 
@@ -84,15 +84,9 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.SetDropTarget(self)
         self.SetMenuBar(menubar.Create())
 
-        self.recent_file_first_id = wx.NewId()
-        self.recent_file_last_id = self.recent_file_first_id + MAX_RECENT_FILES
-        wx.RegisterId(self.recent_file_last_id)
-        self.user_first_id = wx.NewId()
-        self.user_last_id = self.user_first_id + 1000
-        wx.RegisterId(self.user_last_id)
-        self.project_first_id = wx.NewId()
-        self.project_last_id = self.project_first_id + 1000
-        wx.RegisterId(self.project_last_id)
+        self.recent_file_first_id, self.recent_file_last_id = new_id_range(MAX_RECENT_FILES)
+        self.user_first_id, self.user_last_id = new_id_range(1000)
+        self.project_first_id, self.project_last_id = new_id_range(1000)
 
         self.config_dir = fileutil.get_user_config_dir("devo")
         self.settings_filename = os.path.join(self.config_dir, "devo.conf")
