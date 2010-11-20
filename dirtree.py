@@ -517,11 +517,12 @@ class DirTreeCtrl(wx.TreeCtrl):
         if isinstance(self.toplevel[0], SimpleNode):
             yield self.ExpandNode(self.toplevel[0])
 
-    def InitializeTree(self):
+    def SetTopLevel(self, toplevel=None):
         self.monitor.remove_all_watches()
         self.monitor.read_events()
         self.cm.cancel()
         self.DeleteAllItems()
+        self.toplevel = toplevel or MakeTopLevel()
         if len(self.toplevel) == 1:
             rootitem = self.AddRoot(self.toplevel[0].label)
             rootnode = self.toplevel[0]
@@ -530,10 +531,6 @@ class DirTreeCtrl(wx.TreeCtrl):
             rootnode = SimpleNode("", self.toplevel)
         self.SetItemNode(rootitem, rootnode)
         return self._InitialExpand(rootnode)
-
-    def SetTopLevel(self, toplevel=None):
-        self.toplevel = toplevel or MakeTopLevel()
-        return self.InitializeTree()
 
     def _FindExpandedPaths(self, item, path, expanded):
         if self.IsExpanded(item):
