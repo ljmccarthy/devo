@@ -1,0 +1,17 @@
+import wx
+
+ID_EDIT = wx.NewId()
+ID_OPEN = wx.NewId()
+ID_RENAME = wx.NewId()
+ID_DELETE = wx.NewId()
+ID_NEW_FOLDER = wx.NewId()
+ID_EXPAND_ALL = wx.NewId()
+ID_COLLAPSE_ALL = wx.NewId()
+
+IM_FOLDER = 0
+IM_FOLDER_DENIED = 1
+IM_FILE = 2
+
+NODE_UNPOPULATED = 0
+NODE_POPULATING = 1
+NODE_POPULATED = 2

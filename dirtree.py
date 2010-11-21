@@ -1,245 +1,19 @@
-import sys, os, collections, stat, threading, time
+import os, os.path
+import sys
+import time
 import wx
 from fsmonitor import FSMonitorThread, FSEvent
 
 import fileutil
 from async import async_call, coroutine, queued_coroutine, managed, CoroutineQueue, CoroutineManager
 from dialogs import dialogs
-from menu import Menu, MenuItem, MenuSeparator
-from util import iter_tree_children, iter_tree_breadth_first, frozen_window, CallLater
+from dirtree_constants import *
+from dirtree_filter import DirTreeFilter
+from dirtree_node import SimpleNode, FSNode, DirNode, NODE_UNPOPULATED, NODE_POPULATING
+from util import iter_tree_children, iter_tree_breadth_first, frozen_window
 from resources import load_bitmap
 
-ID_EDIT = wx.NewId()
-ID_OPEN = wx.NewId()
-ID_RENAME = wx.NewId()
-ID_DELETE = wx.NewId()
-ID_NEW_FOLDER = wx.NewId()
-ID_EXPAND_ALL = wx.NewId()
-ID_COLLAPSE_ALL = wx.NewId()
-
-file_context_menu = Menu("", [
-    MenuItem(ID_NEW_FOLDER, "&New Folder"),
-    MenuSeparator,
-    MenuItem(ID_OPEN, "&Open"),
-    MenuItem(ID_EDIT, "&Edit with Devo"),
-    MenuItem(ID_RENAME, "&Rename"),
-    MenuItem(ID_DELETE, "&Delete"),
-    MenuSeparator,
-    MenuItem(ID_EXPAND_ALL, "E&xpand All"),
-    MenuItem(ID_COLLAPSE_ALL, "&Collapse All"),
-])
-
-dir_context_menu = Menu("", [
-    MenuItem(ID_NEW_FOLDER, "&New Folder"),
-    MenuSeparator,
-    MenuItem(ID_OPEN, "&Open"),
-    MenuItem(ID_RENAME, "&Rename"),
-    MenuItem(ID_DELETE, "&Delete"),
-    MenuSeparator,
-    MenuItem(ID_EXPAND_ALL, "E&xpand All"),
-    MenuItem(ID_COLLAPSE_ALL, "&Collapse All"),    
-])
-
-IM_FOLDER = 0
-IM_FOLDER_DENIED = 1
-IM_FILE = 2
-
-def dirtree_insert(tree, parent_item, text, image):
-    i = 0
-    text_lower = text.lower()
-    for i, item in enumerate(iter_tree_children(tree, parent_item)):
-        item_text = tree.GetItemText(item)
-        if item_text == text:
-            return item
-        if image != IM_FILE and tree.GetItemImage(item) == IM_FILE:
-            return tree.InsertItemBefore(parent_item, i, text, image)
-        if item_text.lower() > text_lower:
-            if not (image == IM_FILE and tree.GetItemImage(item) != IM_FILE):
-                return tree.InsertItemBefore(parent_item, i, text, image)
-    return tree.AppendItem(parent_item, text, image)
-
-def dirtree_delete(tree, parent_item, text):
-    for item in iter_tree_children(tree, parent_item):
-        if text == tree.GetItemText(item):
-            sel_item = tree.GetNextSibling(item)
-            if not sel_item.IsOk():
-                sel_item = tree.GetPrevSibling(item)
-            if sel_item.IsOk():
-                tree.SelectItem(sel_item)
-            tree.Delete(item)
-            break
-
-NODE_UNPOPULATED = 0
-NODE_POPULATING = 1
-NODE_POPULATED = 2
-
-class SimpleNode(object):
-    type = 'd'
-    path = ""
-    context_menu = None
-
-    def __init__(self, label, children):
-        self.label = label
-        self.children = children
-        self.state = NODE_UNPOPULATED
-        self.item = None
-
-    def expand(self, tree, monitor, filter):
-        if self.state == NODE_UNPOPULATED:
-            tree.SetItemImage(self.item, IM_FOLDER)
-            for node in self.children:
-                item = tree.AppendItem(self.item, node.label, IM_FOLDER)
-                tree.SetItemNode(item, node)
-                tree.SetItemHasChildren(item, True)
-            self.state = NODE_POPULATED
-
-    def collapse(self, tree, monitor):
-        pass
-
-class FileInfo(collections.namedtuple("FileInfo", "filename dirpath stat_result listable hidden")):
-    @property
-    def path(self):
-        return os.path.join(self.dirpath, self.filename)
-    @property
-    def is_file(self):
-        return stat.S_ISREG(self.stat_result.st_mode)
-    @property
-    def is_dir(self):
-        return stat.S_ISDIR(self.stat_result.st_mode)
-
-def get_file_info(dirpath, filename):
-    path = os.path.join(dirpath, filename)
-    stat_result = os.stat(path)
-    hidden = fileutil.is_hidden_file(path)
-    if stat.S_ISDIR(stat_result.st_mode):
-        try:
-            listable = os.access(path, os.X_OK)
-        except OSError:
-            listable = False
-    else:
-        listable = False
-    return FileInfo(filename, dirpath, stat_result, listable, hidden)
-
-def listdir(dirpath):
-    result = []
-    for filename in os.listdir(dirpath):
-        try:
-            result.append(get_file_info(dirpath, filename))
-        except OSError:
-            pass
-    result.sort(key=lambda info: info.filename.lower())
-    return result
-
-class FSNode(object):
-    __slots__ = ("state", "path", "type", "item", "watch", "label")
-
-    def __init__(self, path, type, label=""):
-        self.state = NODE_UNPOPULATED
-        self.path = path
-        self.type = type
-        self.item = None
-        self.watch = None
-        self.label = label or os.path.basename(path) or path
-
-    @coroutine
-    def _do_expand(self, tree, monitor, filter):
-        self.watch = monitor.add_dir_watch(self.path, user=self)
-        dirs = []
-        files = []            
-        for info in (yield async_call(listdir, self.path)):
-            if not filter(info):
-                continue
-            path = os.path.join(self.path, info.filename)
-            if info.is_file:
-                files.append(FSNode(path, 'f'))
-            elif info.is_dir:
-                dirs.append((FSNode(path, 'd'), info.listable))
-        for node, listable in dirs:
-            image = IM_FOLDER if listable else IM_FOLDER_DENIED
-            item = tree.AppendItem(self.item, node.label, image)
-            tree.SetItemNode(item, node)
-            tree.SetItemHasChildren(item, listable)
-        for node in files:
-            item = tree.AppendItem(self.item, node.label, IM_FILE)
-            tree.SetItemNode(item, node)
-        tree.SetItemImage(self.item, IM_FOLDER)
-        tree.SetItemHasChildren(self.item, tree.GetFirstChild(self.item)[0].IsOk())
-
-    @coroutine
-    def expand(self, tree, monitor, filter):
-        if self.state == NODE_UNPOPULATED:
-            self.state = NODE_POPULATING
-            yield self._do_expand(tree, monitor, filter)
-            self.state = NODE_POPULATED
-
-    def collapse(self, tree, monitor):
-        pass
-        #monitor.remove_watch(self.watch)
-        #self.populated = False
-
-    @coroutine
-    def add(self, name, tree, monitor, filter):
-        if self.state == NODE_POPULATED:
-            try:
-                info = (yield async_call(get_file_info, self.path, name))
-            except OSError, e:
-                return
-            if not filter(info):
-                return
-            if info.is_file:
-                type = 'f'
-                image = IM_FILE
-            elif info.is_dir:
-                type = 'd'
-                image = IM_FOLDER
-            item = dirtree_insert(tree, self.item, name, image)
-            node = FSNode(info.path, type)
-            tree.SetItemNode(item, node)
-            if type == 'd':
-                tree.SetItemHasChildren(item, True)
-            tree.SetItemHasChildren(self.item, True)
-            yield item
-
-    def remove(self, name, tree, monitor):
-        if self.state == NODE_POPULATED:
-            dirtree_delete(tree, self.item, name)
-
-    @property
-    def context_menu(self):
-        if self.type == 'f':
-            return file_context_menu
-        elif self.type == 'd':
-            return dir_context_menu
-
-def DirNode(path):
-    return FSNode(path, 'd')
-
-class DirTreeFilter(object):
-    def __init__(self, show_hidden=False, show_files=True, show_dirs=True):
-        self.show_hidden = show_hidden
-        self.show_files = show_files
-        self.show_dirs = show_dirs
-        self.hidden_exts = [".pyc", ".pyo", ".o", ".a", ".obj", ".lib", ".swp", "~"]
-        self.hidden_dirs = ["CVS"]
-
-    def __call__(self, info):
-        if info.hidden and not self.show_hidden:
-            return False
-        if info.is_file and not self.show_files:
-            return False
-        elif info.is_dir:
-            if not self.show_dirs:
-                return False
-            if info.filename in self.hidden_dirs:
-                return False
-        for ext in self.hidden_exts:
-            if info.filename.endswith(ext):
-                return False
-        if info.filename.startswith(".#"):
-            return False
-        return True
-
-def MakeTopLevel():
+def make_top_level():
     if sys.platform == "win32":
         import win32api
         from win32com.shell import shell, shellcon
@@ -253,7 +27,7 @@ def MakeTopLevel():
         return [FSNode("/", 'd')]
 
 class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
-    def __init__(self, parent, env, toplevel=None, filter=None, show_root=False):
+    def __init__(self, parent, env, filter=None, show_root=False):
         style = wx.TR_DEFAULT_STYLE | wx.TR_EDIT_LABELS | wx.BORDER_NONE
         if not show_root:
             style |= wx.TR_HIDE_ROOT
@@ -266,7 +40,6 @@ class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
         self.SetFont(wx.Font(8, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
 
         self.env = env
-        self.toplevel = toplevel or MakeTopLevel()
         self.filter = filter or DirTreeFilter()
         self.cq = CoroutineQueue()
         self.cm = CoroutineManager()
@@ -542,25 +315,25 @@ class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
 
     @managed("cm")
     @coroutine
-    def _InitialExpand(self, rootnode):
+    def _InitialExpand(self, rootnode, toplevel):
         yield self.ExpandNode(rootnode)
-        if isinstance(self.toplevel[0], SimpleNode):
-            yield self.ExpandNode(self.toplevel[0])
+        if isinstance(toplevel[0], SimpleNode):
+            yield self.ExpandNode(toplevel[0])
 
     def SetTopLevel(self, toplevel=None):
         self.monitor.remove_all_watches()
         self.monitor.read_events()
         self.cm.cancel()
         self.DeleteAllItems()
-        self.toplevel = toplevel or MakeTopLevel()
-        if len(self.toplevel) == 1:
-            rootitem = self.AddRoot(self.toplevel[0].label)
-            rootnode = self.toplevel[0]
+        toplevel = toplevel or make_top_level()
+        if len(toplevel) == 1:
+            rootitem = self.AddRoot(toplevel[0].label)
+            rootnode = toplevel[0]
         else:
             rootitem = self.AddRoot("")
-            rootnode = SimpleNode("", self.toplevel)
+            rootnode = SimpleNode("", toplevel)
         self.SetItemNode(rootitem, rootnode)
-        return self._InitialExpand(rootnode)
+        return self._InitialExpand(rootnode, toplevel)
 
     def _FindExpandedPaths(self, item, path, expanded):
         if self.IsExpanded(item):
