@@ -97,6 +97,20 @@ class FutureCancelled(Exception):
     pass
 
 class Future(object):
+    __slots__ = (
+        "__weakref__",
+        "__context",
+        "__on_success",
+        "__on_failure",
+        "__on_cancelled",
+        "__on_finished",
+        "__failure_handled",
+        "__status",
+        "__result",
+        "__traceback",
+        "__cond",
+    )
+
     def __init__(self, context=""):
         self.__context = context
         self.__on_success = []
@@ -245,6 +259,12 @@ class Future(object):
             _global_scheduler.log_error(message)
 
 class Coroutine(Future):
+    __slots__ = (
+        "__gen",
+        "__cont",
+        "__running",
+    )
+
     def __init__(self, gen, context):
         Future.__init__(self, context)
         if not isinstance(gen, types.GeneratorType):
