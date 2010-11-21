@@ -554,6 +554,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             if dlg.ShowModal() == wx.ID_OK:
                 self.project["commands"] = dlg.GetCommands()
                 self.UpdateMenuBar()
+                self.SaveProject()
         finally:
             dlg.Destroy()
 
