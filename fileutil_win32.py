@@ -1,6 +1,7 @@
 import os
 import win32api, win32con, win32file, pywintypes
 from win32com.shell import shell, shellcon
+from fileutil_common import *
 
 # os.rename is broken on windows
 def rename(old, new):
@@ -21,13 +22,31 @@ def get_user_config_dir(name=""):
 def is_hidden_file(path):
     return (win32file.GetFileAttributes(path) & win32file.FILE_ATTRIBUTE_HIDDEN) != 0
 
-def shell_remove(parent, path):
+def shell_remove(path):
     shell.SHFileOperation(
         (0, shellcon.FO_DELETE, path, None, shellcon.FOF_ALLOWUNDO, None, None))
 
-def shell_copy(parent, srcpath, dstpath):
-    shell.SHFileOperation(
-        (0, shellcon.FO_COPY, srcpath, dstpath, shellcon.FOF_ALLOWUNDO, None, None))
+def shell_copy(srcpath, dstpath):
+    if destination_is_same(srcpath, dstpath):
+        return
+    if ask_copy_file(get_top_window(), srcpath, dstpath):
+        shell.SHFileOperation(
+            (0, shellcon.FO_COPY, srcpath, dstpath, shellcon.FOF_ALLOWUNDO, None, None))
+
+def shell_move(srcpath, dstpath):
+    if destination_is_same(srcpath, dstpath):
+        return
+    if ask_move_file(get_top_window(), srcpath, dstpath):
+        shell.SHFileOperation(
+            (0, shellcon.FO_MOVE, srcpath, dstpath, shellcon.FOF_ALLOWUNDO, None, None))
+
+def shell_move_or_copy(srcpath, dstpath):
+    srcdrive = os.path.splitdrive(os.path.realpath(srcpath))[0].upper()
+    dstdrive = os.path.splitdrive(os.path.realpath(dstpath))[0].upper()
+    if srcdrive == dstdrive:
+        shell_move(srcpath, dstpath)
+    else:
+        shell_copy(srcpath, dstpath)
 
 __all__ = (
     "rename",
@@ -36,4 +55,6 @@ __all__ = (
     "is_hidden_file",
     "shell_remove",
     "shell_copy",
+    "shell_move",
+    "shell_move_or_copy",
 )

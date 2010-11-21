@@ -252,13 +252,16 @@ def MakeTopLevel():
     else:
         return [FSNode("/", 'd')]
 
-class DirTreeCtrl(wx.TreeCtrl):
+class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
     def __init__(self, parent, env, toplevel=None, filter=None, show_root=False):
         style = wx.TR_DEFAULT_STYLE | wx.TR_EDIT_LABELS | wx.BORDER_NONE
         if not show_root:
             style |= wx.TR_HIDE_ROOT
 
         wx.TreeCtrl.__init__(self, parent, style=style)
+        wx.FileDropTarget.__init__(self)
+
+        self.SetDropTarget(self)
         self.SetDoubleBuffered(True)
         self.SetFont(wx.Font(8, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
 
@@ -271,6 +274,7 @@ class DirTreeCtrl(wx.TreeCtrl):
         self.select_later_name = None
         self.select_later_time = 0
         self.expanding_all = False
+        self.drop_item = None
 
         self.imglist = wx.ImageList(16, 16)
         self.imglist.Add(load_bitmap("icons/folder.png"))
@@ -376,6 +380,32 @@ class DirTreeCtrl(wx.TreeCtrl):
             dropsrc.SetData(data)
             dropsrc.DoDragDrop()
 
+    def OnDragOver(self, x, y, default):
+        self.OnLeave()
+        item, flags = self.HitTest((x, y))
+        if item and (flags & wx.TREE_HITTEST_ONITEMLABEL):
+            self.drop_item = item
+            self.SetItemDropHighlight(item, True)
+            return wx.DragCopy
+        return wx.DragNone
+
+    def OnLeave(self):
+        if self.drop_item:
+            self.SetItemDropHighlight(self.drop_item, False)
+            self.drop_item = None
+
+    def OnDropFiles(self, x, y, filenames):
+        self.OnLeave()
+        item, flags = self.HitTest((x, y))
+        if item and (flags & wx.TREE_HITTEST_ONITEMLABEL):            
+            while item:
+                node = self.GetPyData(item)
+                if node.type == 'd':
+                    for filename in filenames:
+                        fileutil.shell_move_or_copy(filename, node.path)
+                    break
+                item = self.GetItemParent(item)
+
     def OnItemEdit(self, evt):
         node = self.GetSelectedNode()
         if node and node.type == 'f':
@@ -395,7 +425,7 @@ class DirTreeCtrl(wx.TreeCtrl):
         node = self.GetSelectedNode()
         if node:
             next_item = self.GetNextSibling(node.item)
-            fileutil.shell_remove(self, node.path)
+            fileutil.shell_remove(node.path)
 
     def OnNewFolder(self, evt):
         node = self.GetSelectedNode()

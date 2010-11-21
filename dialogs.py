@@ -80,12 +80,6 @@ class Dialogs(object):
             "Confirm Overwrite",
             wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION) == wx.ID_YES
 
-    def ask_delete(self, parent, path):
-        return self.message_dialog(parent,
-            "Are you sure you want to delete '%s'?" % path,
-            "Confirm Delete",
-            wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION) == wx.ID_YES
-
     def ask_reload(self, parent, path):
         return self.message_dialog(parent,
             "The file '%s' has been modified by another program. Do you want to reload?" % path,
