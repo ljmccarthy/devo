@@ -81,7 +81,7 @@ def mount_point(path):
 
 @coroutine
 def shell_remove(path):
-    if ask_delete_file(get_top_window(), path):
+    if ask_delete_file(path):
         try:
             yield async_call(remove, path)
         except Exception, e:
