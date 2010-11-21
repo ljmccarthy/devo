@@ -49,4 +49,7 @@ menubar = MenuBar([
         MenuSeparator,
         MenuHook("commands"),
     ]),
+    Menu("&Help", [
+        MenuItem(ID.ABOUT_BOX, "&About Devo..."),
+    ]),
 ])

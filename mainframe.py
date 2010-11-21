@@ -5,6 +5,7 @@ from wx.lib.agw import aui
 from wx.lib.utils import AdjustRectToScreen
 
 import async, fileutil, ID
+from about_dialog import AboutDialog
 from async import async_call, coroutine, managed, CoroutineManager
 from dialogs import dialogs
 from commands_dialog import CommandsDialog
@@ -163,6 +164,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                   id=self.user_first_id, id2=self.user_last_id)
         self.Bind(wx.EVT_UPDATE_UI_RANGE, self.OnUpdateUI_UserCommand,
                   id=self.user_first_id, id2=self.user_last_id)
+
+        self.Bind(wx.EVT_MENU, self.OnAboutBox, id=ID.ABOUT_BOX)
 
         self.Bind(wx.EVT_UPDATE_UI, self.EditorUpdateUI("GetModify"), id=ID.SAVE)
         self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasMethod("SaveAs"), id=ID.SAVEAS)
@@ -617,6 +620,13 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         index = evt.GetId() - self.project_first_id
         if 0 <= index < len(self.projects):
             self.OpenProject(sorted(self.projects)[index])
+
+    def OnAboutBox(self, evt):
+        dlg = AboutDialog(self)
+        try:
+            dlg.ShowModal()
+        finally:
+            dlg.Destroy()
 
     @managed("cm")
     @coroutine
