@@ -29,14 +29,14 @@ def shell_remove(path):
 def shell_copy(srcpath, dstpath):
     if destination_is_same(srcpath, dstpath):
         return
-    if ask_copy_file(get_top_window(), srcpath, dstpath):
+    if ask_copy_file(srcpath, dstpath):
         shell.SHFileOperation(
             (0, shellcon.FO_COPY, srcpath, dstpath, shellcon.FOF_ALLOWUNDO, None, None))
 
 def shell_move(srcpath, dstpath):
     if destination_is_same(srcpath, dstpath):
         return
-    if ask_move_file(get_top_window(), srcpath, dstpath):
+    if ask_move_file(srcpath, dstpath):
         shell.SHFileOperation(
             (0, shellcon.FO_MOVE, srcpath, dstpath, shellcon.FOF_ALLOWUNDO, None, None))
 
