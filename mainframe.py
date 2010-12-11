@@ -398,6 +398,9 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                 self.Show()
             except Exception, e:
                 self._ShowLoadProjectError(e, project_root)
+                if project_root in self.projects:
+                    del self.projects[project_root]
+                    self.UpdateMenuBar()
             finally:
                 self.StartFileMonitor()
 
