@@ -65,7 +65,8 @@ class AppEnv(object):
 MAX_RECENT_FILES = 20
 
 NB_STYLE = (aui.AUI_NB_CLOSE_ON_ALL_TABS  | aui.AUI_NB_TOP | aui.AUI_NB_TAB_SPLIT
-           | aui.AUI_NB_TAB_MOVE | aui.AUI_NB_SCROLL_BUTTONS | wx.BORDER_NONE)
+           | aui.AUI_NB_TAB_MOVE | aui.AUI_NB_SCROLL_BUTTONS | aui.AUI_NB_WINDOWLIST_BUTTON
+           | wx.BORDER_NONE)
 
 editor_types = (Editor, TerminalCtrl)
 
@@ -95,6 +96,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.session_filename = ""
 
         self.settings = {}
+        self.saved_settings = {}
         self.project = {}
         self.project_root = ""
         self.projects = {}
@@ -110,7 +112,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.editor_focus = None
 
         self.manager = aui.AuiManager(self)
-        self.notebook = aui.AuiNotebook(self, style=NB_STYLE)
+        self.notebook = aui.AuiNotebook(self, agwStyle=NB_STYLE)
         self.tree = DirTreeCtrl(self, self.env)
         self.terminal = TerminalCtrl(self)
 
@@ -125,6 +127,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.Startup()
 
         self.Bind(wx.EVT_CLOSE, self.OnClose)
+        self.Bind(wx.EVT_END_SESSION, self.OnClose)
         self.Bind(wx.EVT_ACTIVATE, self.OnActivate)
         self.Bind(wx.EVT_CHILD_FOCUS, self.OnChildFocus)
         self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CLOSE, self.OnPageClose)
@@ -211,6 +214,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         with frozen_window(self):
             old_menubar = self.GetMenuBar()
             new_menubar = menubar.Create(self.GetMenuHooks())
+            self.SetMenuBar(None)
             self.SetMenuBar(new_menubar)
             if old_menubar:
                 old_menubar.Destroy()
@@ -239,6 +243,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     def Startup(self):
         try:
             self.settings = (yield async_call(read_settings, self.settings_filename))
+            self.saved_settings = self.settings.copy()
         except Exception:
             yield self.OpenDefaultProject()
         else:
@@ -261,8 +266,11 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.settings["last_project"] = self.project_root
         self.settings["recent_files"] = list(self.recent_files)
         self.settings["dialogs"] = dialogs.save_state()
+        if self.settings == self.saved_settings:
+            yield True
         try:
             yield async_call(write_settings, self.settings_filename, self.settings)
+            self.saved_settings = self.settings.copy()
             yield True
         except Exception, e:
             dialogs.error(self, "Error saving settings:\n\n%s" % e)
