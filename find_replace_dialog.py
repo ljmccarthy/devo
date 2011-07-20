@@ -31,7 +31,7 @@ class FindReplaceDetails(object):
     @find.setter
     def find(self, ptn):
         self.rx_find = re.compile(
-            ptn if self.regexp else re.escape(ptn),
+            ptn.encode("utf-8") if self.regexp else re.escape(ptn.encode("utf-8")),
             0 if self.case else re.IGNORECASE)
         self.__find = ptn
 
@@ -43,16 +43,16 @@ class FindReplaceDetails(object):
         line_start = editor.PositionFromLine(init_line)
         line_end = editor.GetLineEndPosition(init_line)
 
-        yield init_pos, editor.GetTextRange(init_pos, line_end)
+        yield init_pos, editor.GetTextRangeRaw(init_pos, line_end)
 
         for line in xrange(init_line + 1, last_line + 1):
-            yield editor.PositionFromLine(line), editor.GetLine(line)
+            yield editor.PositionFromLine(line), editor.GetLineRaw(line)
 
         if wrap:
             for line in xrange(0, init_line):
-                yield editor.PositionFromLine(line), editor.GetLine(line)
+                yield editor.PositionFromLine(line), editor.GetLineRaw(line)
 
-            yield line_start, editor.GetTextRange(line_start, init_pos)
+            yield line_start, editor.GetTextRangeRaw(line_start, init_pos)
 
     def _IterFindLinesReversed(self, editor, wrap=True):
         init_pos = editor.GetSelection()[0]
@@ -62,16 +62,16 @@ class FindReplaceDetails(object):
         line_start = editor.PositionFromLine(init_line)
         line_end = editor.GetLineEndPosition(init_line)
 
-        yield line_start, editor.GetTextRange(line_start, init_pos)
+        yield line_start, editor.GetTextRangeRaw(line_start, init_pos)
 
         for line in xrange(init_line - 1, -1, -1):
-            yield editor.PositionFromLine(line), editor.GetLine(line)
+            yield editor.PositionFromLine(line), editor.GetLineRaw(line)
 
         if wrap:
             for line in xrange(last_line, init_line, -1):
-                yield editor.PositionFromLine(line), editor.GetLine(line)
+                yield editor.PositionFromLine(line), editor.GetLineRaw(line)
 
-            yield init_pos, editor.GetTextRange(init_pos, line_end)
+            yield init_pos, editor.GetTextRangeRaw(init_pos, line_end)
 
     def _ReplaceSelected(self, editor):
         text = editor.GetSelectedText()
