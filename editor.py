@@ -14,6 +14,18 @@ if wx.Platform == "__WXMSW__":
 else:
     fontface = "Monospace"
 
+def decode_text(text):
+    try:
+        return text.decode("utf-8"), "utf-8"
+    except UnicodeDecodeError:
+        return text.decode("iso-8859-1"), "iso-8859-1"
+
+def encode_text(text, encoding):
+    try:
+        return text.encode(encoding), encoding
+    except UnicodeEncodeError:
+        return text.encode("utf-8"), "utf-8"
+
 class Editor(wx.stc.StyledTextCtrl):
     def __init__(self, parent, env, path=""):
         pre = wx.stc.PreStyledTextCtrl()
@@ -25,6 +37,7 @@ class Editor(wx.stc.StyledTextCtrl):
 
         self.env = env
         self.path = path
+        self.file_encoding = "utf-8"
         self.sig_title_changed = Signal(self)
 
         self.SetTabIndents(True)
@@ -120,10 +133,7 @@ class Editor(wx.stc.StyledTextCtrl):
 
         try:
             text = (yield async_call(read_file, path, "r"))
-            try:
-                text = text.decode("utf-8")
-            except UnicodeDecodeError:
-                text = text.decode("iso-8859-1")
+            text, self.file_encoding = decode_text(text)
 
             self.SetReadOnly(False)
             self.SetSyntaxFromFilename(path)
@@ -163,7 +173,7 @@ class Editor(wx.stc.StyledTextCtrl):
 
     @coroutine
     def SaveFile(self, path):
-        text = self.GetText().encode("utf-8")
+        text, self.file_encoding = encode_text(self.GetText(), self.file_encoding)
         if not text.endswith("\n"):
             text += "\n"
         yield async_call(atomic_write_file, path, text)
