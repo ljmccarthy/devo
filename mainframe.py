@@ -193,6 +193,10 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         for i in xrange(self.notebook.GetPageCount()):
             yield self.notebook.GetPage(i)
 
+    @property
+    def projects_sorted(self):
+        return sorted(self.projects.iteritems(), key=lambda x: x[1]["name"].lower())
+
     def GetMenuHooks(self):
         commands = self.project.get("commands", [])
         return {
@@ -202,7 +206,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             ],
             "projects" : [
                 MenuItem(i + self.project_first_id, p["name"])
-                for i, (_, p) in enumerate(sorted(self.projects.iteritems()))
+                for i, (_, p) in enumerate(self.projects_sorted)
             ],
             "recent_files" : [
                 MenuItem(i + self.recent_file_first_id, shorten_path(path))
@@ -631,7 +635,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     def OnSelectProject(self, evt):
         index = evt.GetId() - self.project_first_id
         if 0 <= index < len(self.projects):
-            self.OpenProject(sorted(self.projects)[index])
+            self.OpenProject(self.projects_sorted[index][0])
 
     def OnAboutBox(self, evt):
         dlg = AboutDialog(self)
