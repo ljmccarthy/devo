@@ -487,8 +487,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     @coroutine
     def OpenEditor(self, path):
         if not (yield async_call(is_text_file, path)):
-            dialogs.error(self, "File '%s' is not a text file." % path)
-            yield False
+            if not dialogs.ask_open_binary(self, path):
+                yield False
         realpath = os.path.realpath(path)
         editor = self.FindEditor(realpath)
         if editor:

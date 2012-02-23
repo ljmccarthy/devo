@@ -92,6 +92,12 @@ class Dialogs(object):
             "Deleted File",
             wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION) != wx.ID_YES
 
+    def ask_open_binary(self, parent, path):
+        return self.message_dialog(parent,
+            "The file '%s' is not a text file. Open anyway?" % path,
+            "Open Binary File",
+            wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION) == wx.ID_YES
+
     def get_text_input(self, *args, **kwargs):
         dlg = TextInputDialog(*args, **kwargs)
         try:
