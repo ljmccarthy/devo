@@ -39,6 +39,9 @@ class AppEnv(object):
     def open_file(self, path):
         return self._mainframe.OpenEditor(path)
 
+    def add_recent_file(self, path):
+        self._mainframe.AddRecentFile(path)
+
     def get_file_to_save(self):
         if self._mainframe.project_root:
             return dialogs.get_file_to_save(self._mainframe, path=self._mainframe.project_root)
@@ -483,6 +486,10 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         if sel != wx.NOT_FOUND:
             return self.notebook.GetPage(sel)
 
+    def AddRecentFile(self, path):
+        self.recent_files.add(path)
+        self.UpdateMenuBar()
+
     @managed("cm")
     @coroutine
     def OpenEditor(self, path):
@@ -502,8 +509,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             else:
                 with frozen_window(self.notebook):
                     self.AddPage(editor)
-                    self.recent_files.add(path)
-                    self.UpdateMenuBar()
+                    self.AddRecentFile(path)
 
     def OnNewFile(self, evt):
         self.NewEditor()

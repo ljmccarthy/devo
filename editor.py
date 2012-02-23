@@ -193,6 +193,7 @@ class Editor(wx.stc.StyledTextCtrl):
                 self.SetSyntaxFromFilename(path)
                 self.path = path
                 self.env.add_monitor_path(path)
+                self.env.add_recent_file(path)
                 self.sig_title_changed.signal(self)
                 yield True
         yield False
