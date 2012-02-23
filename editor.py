@@ -38,6 +38,7 @@ class Editor(wx.stc.StyledTextCtrl):
         self.env = env
         self.path = path
         self.file_encoding = "utf-8"
+        self.modified_externally = False
         self.sig_title_changed = Signal(self)
 
         self.SetTabIndents(True)
@@ -55,14 +56,18 @@ class Editor(wx.stc.StyledTextCtrl):
         self.Bind(wx.stc.EVT_STC_SAVEPOINTLEFT, self.OnSavePointLeft)
         self.Bind(wx.stc.EVT_STC_SAVEPOINTREACHED, self.OnSavePointReached)
 
+    def GetModify(self):
+        return (not self.GetReadOnly()) and (
+                self.modified_externally or super(Editor, self).GetModify())
+
     @property
-    def changed(self):
-        return (not self.GetReadOnly()) and self.GetModify()
+    def modified(self):
+        return self.GetModify()
 
     @property
     def title(self):
         path = os.path.basename(self.path) or "Untitled"
-        return path + " *" if self.changed else path
+        return path + " *" if self.modified else path
 
     def CanCut(self):
         return not self.GetReadOnly() and self.CanCopy()
@@ -72,13 +77,12 @@ class Editor(wx.stc.StyledTextCtrl):
         return start != end
 
     def SetModified(self):
-        self.AddText(" ")
-        self.SetSavePoint()
-        self.Undo()
+        self.modified_externally = True
+        self.sig_title_changed.signal(self)
 
     @coroutine
     def TryClose(self):
-        if self.changed:
+        if self.modified:
             result = dialogs.ask_save_changes(self, self.path)
             if result == wx.ID_YES:
                 try:
@@ -140,6 +144,7 @@ class Editor(wx.stc.StyledTextCtrl):
             text = (yield async_call(read_file, path, "r"))
             text, self.file_encoding = decode_text(text)
 
+            self.modified_externally = False
             self.SetReadOnly(False)
             self.SetSyntaxFromFilename(path)
             self.SetText(text)
@@ -182,6 +187,7 @@ class Editor(wx.stc.StyledTextCtrl):
         if not text.endswith("\n"):
             text += "\n"
         yield async_call(atomic_write_file, path, text)
+        self.modified_externally = False
         self.SetSavePoint()
 
     @coroutine
@@ -308,7 +314,7 @@ class Editor(wx.stc.StyledTextCtrl):
         }
         if self.path:
             p["path"] = self.path
-        elif self.changed:
+        elif self.modified:
             p["text"] = self.GetText()
         return p
 
@@ -316,6 +322,7 @@ class Editor(wx.stc.StyledTextCtrl):
     def LoadPerspective(self, p):
         future = None
         if "text" in p:
+            self.modified_externally = False
             self.SetSavePoint()
             self.SetText(p["text"])
         elif "path" in p:

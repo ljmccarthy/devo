@@ -293,7 +293,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             session["editors"] = editors = []
             session["selection"] = self.notebook.GetSelection()
         for editor in self.editors:
-            if editor.path and editor.changed:
+            if editor.path and editor.modified:
                 if not (yield editor.TryClose()):
                     yield False
             editors.append(editor.SavePerspective())
@@ -610,11 +610,11 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         
         before = command.get("before", "")
         if before == "Save Current File":
-            if editor and editor.path and editor.changed and not (yield editor.Save()):
+            if editor and editor.path and editor.modified and not (yield editor.Save()):
                 yield False
         elif before == "Save All Files":
             for editor in self.editors:
-                if editor.path and editor.changed and not (yield editor.Save()):
+                if editor.path and editor.modified and not (yield editor.Save()):
                     yield False
 
         if command.get("detach", False):
