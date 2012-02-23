@@ -71,6 +71,11 @@ class Editor(wx.stc.StyledTextCtrl):
         start, end = self.GetSelection()
         return start != end
 
+    def SetModified(self):
+        self.AddText(" ")
+        self.SetSavePoint()
+        self.Undo()
+
     @coroutine
     def TryClose(self):
         if self.changed:

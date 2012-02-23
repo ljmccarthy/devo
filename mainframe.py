@@ -668,18 +668,19 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                 for editor in to_reload:
                     if dialogs.ask_reload(self, os.path.basename(editor.path)):
                         yield editor.Reload()
+                    else:
+                        editor.SetModified()
                 for editor in reversed(to_unload):
                     if os.path.exists(editor.path):
                         if dialogs.ask_reload(self, os.path.basename(editor.path)):
                             yield editor.Reload()                        
+                        else:
+                            editor.SetModified()
                     else:
                         if dialogs.ask_unload(self, os.path.basename(editor.path)):
                             yield self.ClosePage(editor)
                         else:
-                            # Mark as modified
-                            editor.AppendText(" ")
-                            editor.SetSavePoint()
-                            editor.Undo()
+                            editor.SetModified()
             finally:
                 self.reloading = False
             if self.updated_paths or self.deleted_paths:
