@@ -679,8 +679,17 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             if self.updated_paths or self.deleted_paths:
                 self.NotifyUpdatedPaths()
 
+    def TryNotifyUpdatedPaths(self):
+        if (self.updated_paths or self.deleted_paths) and not self.reloading:
+            mouse = wx.GetMouseState()
+            if mouse.LeftDown() or mouse.MiddleDown() or mouse.RightDown():
+                wx.CallLater(500, self.TryNotifyUpdatedPaths)
+            else:
+                self.NotifyUpdatedPaths()
+
     def OnActivate(self, evt):
-        self.NotifyUpdatedPaths()
+        if evt.GetActive():
+            self.TryNotifyUpdatedPaths()
 
     def OnChildFocus(self, evt):
         focus = wx.Window.FindFocus()
@@ -700,7 +709,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             self.deleted_paths.add(path)
         self.updated_paths.difference_update(self.deleted_paths)
         if self.IsActive():
-            self.NotifyUpdatedPaths()
+            self.TryNotifyUpdatedPaths()
 
     def IsEditorFocused(self, editor):
         return editor is self.editor_focus
