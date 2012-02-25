@@ -39,7 +39,9 @@ class Editor(wx.stc.StyledTextCtrl):
         self.path = path
         self.file_encoding = "utf-8"
         self.modified_externally = False
+
         self.sig_title_changed = Signal(self)
+        self.sig_status_changed = Signal(self)
 
         self.SetTabIndents(True)
         self.SetBackSpaceUnIndents(True)
@@ -55,6 +57,7 @@ class Editor(wx.stc.StyledTextCtrl):
         self.Bind(wx.EVT_CONTEXT_MENU, self.OnContextMenu)
         self.Bind(wx.stc.EVT_STC_SAVEPOINTLEFT, self.OnSavePointLeft)
         self.Bind(wx.stc.EVT_STC_SAVEPOINTREACHED, self.OnSavePointReached)
+        self.Bind(wx.stc.EVT_STC_UPDATEUI, self.OnStcUpdateUI)
 
     def GetModify(self):
         return (not self.GetReadOnly()) and (
@@ -68,6 +71,11 @@ class Editor(wx.stc.StyledTextCtrl):
     def title(self):
         path = os.path.basename(self.path) or "Untitled"
         return path + " *" if self.modified else path
+
+    @property
+    def status_text(self):
+        return "Line %d, Column %d" % (
+            self.GetCurrentLine() + 1, self.GetColumn(self.GetCurrentPos()) + 1)
 
     def CanCut(self):
         return not self.GetReadOnly() and self.CanCopy()
@@ -151,7 +159,7 @@ class Editor(wx.stc.StyledTextCtrl):
             self.SetSavePoint()
 
             width = max(self.TextWidth(wx.stc.STC_STYLE_DEFAULT, line)
-                             for line in text.split("\n"))
+                        for line in text.split("\n"))
             self.SetScrollWidth(max(width, self.default_scroll_width))
 
             if old_path:
@@ -263,6 +271,9 @@ class Editor(wx.stc.StyledTextCtrl):
 
     def OnSavePointReached(self, evt):
         self.sig_title_changed.signal(self)
+
+    def OnStcUpdateUI(self, evt):
+        self.sig_status_changed.signal(self)
 
     def DoFind(self):
         dlg = FindReplaceDialog(self, os.path.basename(self.path), self.env.find_details)

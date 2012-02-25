@@ -88,6 +88,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
 
         self.SetDropTarget(self)
         self.SetMenuBar(menubar.Create())
+        self.CreateStatusBar(2)
+        self.SetStatusWidths([200, -1])
 
         self.recent_file_first_id, self.recent_file_last_id = new_id_range(MAX_RECENT_FILES)
         self.user_first_id, self.user_last_id = new_id_range(1000)
@@ -454,21 +456,31 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                 self.editor_focus = None
             with frozen_window(self.notebook):
                 self.notebook.DeletePage(self.notebook.GetPageIndex(editor))
+                if self.notebook.GetPageCount() == 0:
+                    self.SetStatusText("", 0)
+                    self.SetStatusText("", 1)
 
     def AddPage(self, win):
         i = self.notebook.GetSelection() + 1
         self.notebook.InsertPage(i, win, win.title, select=True)
         win.sig_title_changed.bind(self.OnPageTitleChanged)
+        win.sig_status_changed.bind(self.OnPageStatusChanged)
         win.SetFocus()
 
     def OnPageChanged(self, evt):
         editor = self.notebook.GetPage(evt.GetSelection())
         editor.SetFocus()
+        self.SetStatusText(editor.status_text, 0)
+        self.SetStatusText(editor.path or "Untitled", 1)
 
     def OnPageTitleChanged(self, win):
         i = self.notebook.GetPageIndex(win)
         if i != wx.NOT_FOUND:
             self.notebook.SetPageText(i, win.title)
+
+    def OnPageStatusChanged(self, win):
+        if win is self.notebook.GetCurrentPage():
+            self.SetStatusText(win.status_text, 0)
 
     def NewEditor(self):
         with frozen_window(self.notebook):
