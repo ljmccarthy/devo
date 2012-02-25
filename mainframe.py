@@ -343,7 +343,6 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                     except Exception, e:
                         if not (isinstance(e, IOError) and e.errno == errno.ENOENT):
                             errors.append(e)
-                        self.notebook.DeletePage(i)
                 errors.reverse()
 
                 if "notebook" in session:
