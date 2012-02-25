@@ -221,7 +221,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         with frozen_window(self):
             old_menubar = self.GetMenuBar()
             new_menubar = menubar.Create(self.GetMenuHooks())
-            self.SetMenuBar(None)
+            if wx.Platform == "__WXGTK__":
+                self.SetMenuBar(None)
             self.SetMenuBar(new_menubar)
             if old_menubar:
                 old_menubar.Destroy()
