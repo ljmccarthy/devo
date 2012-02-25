@@ -5,14 +5,12 @@ import traceback
 import inspect
 import weakref
 
-EVT_DESTROY = wx.PyEventBinder(wx.wxEVT_DESTROY, 0)
-
 class Signal(object):
     def __init__(self, owner=None):
         self.__lock = threading.Lock()
         self.__handlers = []
         if isinstance(owner, wx.Window):
-            owner.Bind(EVT_DESTROY, lambda evt: self.destroy())
+            owner.Bind(wx.EVT_WINDOW_DESTROY, lambda evt: self.destroy())
         elif owner is not None:
             self.__owner_ref = weakref.ref(owner, lambda ref: self.destroy())
 
