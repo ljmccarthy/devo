@@ -340,10 +340,12 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                 if "dirtree" in session:
                     self.tree.LoadPerspective(session["dirtree"])
 
+                to_remove = []
                 for i, (editor, future) in reversed(list(enumerate(editors))):
                     try:
                         yield future
                     except Exception, e:
+                        to_remove.append(i)
                         if not (isinstance(e, IOError) and e.errno == errno.ENOENT):
                             errors.append(e)
                 errors.reverse()
@@ -356,6 +358,10 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                     if 0 <= selection < self.notebook.GetPageCount():
                         self.notebook.SetSelection(selection)
                         self.notebook.GetPage(selection).SetFocus()
+
+                # to_remove is already in reverse order
+                for i in to_remove:
+                    self.notebook.DeletePage(i)
             finally:
                 if errors:
                     self.Show()
