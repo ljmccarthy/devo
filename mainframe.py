@@ -235,6 +235,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     @managed("cm")
     @coroutine
     def DoClose(self):
+        self.fmon.stop()
         if (yield self.SaveProject()):
             if (yield self.SaveSettings()):
                 self.Hide()
@@ -306,7 +307,6 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     @managed("cm")
     @coroutine
     def SaveProject(self):
-        self.fmon.stop()
         if self.session_filename:
             try:
                 if not (yield self.SaveSession()):
@@ -391,6 +391,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     @managed("cm")
     @coroutine
     def OpenNewProject(self, project, project_root):
+        self.fmon.stop()
         if (yield self.SaveProject()):
             self.SetProject(project, project_root)
 
@@ -404,6 +405,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     @managed("cm")
     @coroutine
     def OpenProject(self, project_root):
+        self.fmon.stop()
         if (yield self.SaveProject()):
             try:
                 project = (yield async_call(read_settings, make_project_filename(project_root)))
@@ -424,6 +426,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     @managed("cm")
     @coroutine
     def OpenDefaultProject(self):
+        self.fmon.stop()
         if (yield self.SaveProject()):
             self.project = self.settings.get("default_project", {})
             self.settings["default_project"] = self.project
