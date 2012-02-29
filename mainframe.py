@@ -235,13 +235,14 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     @managed("cm")
     @coroutine
     def DoClose(self):
-        self.fmon.stop()
         if (yield self.SaveProject()):
+            self.fmon.stop()
             if (yield self.SaveSettings()):
                 self.Hide()
                 wx.CallAfter(self._DoShutdown)
-        else:
-            self.Show()
+                return
+        self.Show()
+        self.fmon.Start()
 
     def _DoShutdown(self):
         self.fmon.stop()
@@ -307,20 +308,24 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     @managed("cm")
     @coroutine
     def SaveProject(self):
-        if self.session_filename:
-            try:
-                if not (yield self.SaveSession()):
+        self.fmon.stop()
+        try:
+            if self.session_filename:
+                try:
+                    if not (yield self.SaveSession()):
+                        yield False
+                except Exception, e:
+                    dialogs.error(self, "Error saving session:\n\n%s" % e)
                     yield False
-            except Exception, e:
-                dialogs.error(self, "Error saving session:\n\n%s" % e)
-                yield False
-        if self.project_filename:
-            try:
-                yield async_call(write_settings, self.project_filename, self.project)
-            except Exception, e:
-                dialogs.error(self, "Error saving project:\n\n%s" % e)
-                yield False
-        yield True
+            if self.project_filename:
+                try:
+                    yield async_call(write_settings, self.project_filename, self.project)
+                except Exception, e:
+                    dialogs.error(self, "Error saving project:\n\n%s" % e)
+                    yield False
+            yield True
+        finally:
+            self.fmon.start()
 
     @managed("cm")
     @coroutine
@@ -397,7 +402,6 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     @managed("cm")
     @coroutine
     def OpenNewProject(self, project, project_root):
-        self.fmon.stop()
         if (yield self.SaveProject()):
             self.SetProject(project, project_root)
 
@@ -411,7 +415,6 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     @managed("cm")
     @coroutine
     def OpenProject(self, project_root):
-        self.fmon.stop()
         if (yield self.SaveProject()):
             try:
                 project = (yield async_call(read_settings, make_project_filename(project_root)))
@@ -432,7 +435,6 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     @managed("cm")
     @coroutine
     def OpenDefaultProject(self):
-        self.fmon.stop()
         if (yield self.SaveProject()):
             self.project = self.settings.get("default_project", {})
             self.settings["default_project"] = self.project
