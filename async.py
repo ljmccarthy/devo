@@ -125,6 +125,10 @@ class Future(object):
         self.__traceback = ""
         self.__cond = threading.Condition()
 
+    def __repr__(self):
+        cls = self.__class__
+        return "<%s.%s of %r>" % (cls.__module__, cls.__name__, self.name)
+
     def __finish(self):
         with self.__cond:
             if self.__status == DONE:
