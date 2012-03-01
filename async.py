@@ -99,7 +99,8 @@ class FutureCancelled(Exception):
 class Future(object):
     __slots__ = (
         "__weakref__",
-        "__context",
+        "name",
+        "context",
         "__on_success",
         "__on_failure",
         "__on_cancelled",
@@ -111,8 +112,9 @@ class Future(object):
         "__cond",
     )
 
-    def __init__(self, context=""):
-        self.__context = context
+    def __init__(self, name="", context=""):
+        self.name = name
+        self.context = context
         self.__on_success = []
         self.__on_failure = []
         self.__on_cancelled = []
@@ -254,33 +256,33 @@ class Future(object):
     def __del__(self):
         if Future and self.__status == FAILED and not self.__failure_handled:
             message = "Future failed: %s\n" % self.__traceback.rstrip("\n")
-            if self.__context:
-                message += "Context of Future invocation:\n%s\n" % self.__context.rstrip("\n")
+            if self.context:
+                message += "Context of Future invocation:\n%s\n" % self.context.rstrip("\n")
             _global_scheduler.log_error(message)
 
 class Coroutine(Future):
     __slots__ = (
-        "__gen",
-        "__cont",
+        "__generator",
+        "__continuation",
         "__running",
     )
 
-    def __init__(self, gen, context):
-        Future.__init__(self, context)
-        if not isinstance(gen, types.GeneratorType):
+    def __init__(self, generator, name="", context=""):
+        Future.__init__(self, name, context)
+        if not isinstance(generator, types.GeneratorType):
             raise TypeError("Coroutine expected generator, got %s"
-                            % gen.__class__.__name__)
-        self.__gen = gen
-        self.__cont = None
+                            % generator.__class__.__name__)
+        self.__generator = generator
+        self.__continuation = None
         self.__running = False
 
     def start(self):
-        if not self.__running and self.__gen:
+        if not self.__running and self.__generator:
             self.__running = True
-            self.__next(self.__gen.next)
+            self.__next(self.__generator.next)
 
     def __next(self, func, *args):
-        self.__cont = None
+        self.__continuation = None
         try:
             ret = func(*args)
         except StopIteration:
@@ -294,11 +296,11 @@ class Coroutine(Future):
             self.set_failed(sys.exc_info()[1], traceback.format_exc())
         else:
             if isinstance(ret, Future):
-                self.__cont = ret
+                self.__continuation = ret
                 ret.bind(self.__success_next, self.__failure_next, self.__cancelled_next)
             else:
                 try:
-                    self.__gen.close()
+                    self.__generator.close()
                 except SystemExit:
                     Future.cancel(self)
                     raise
@@ -308,33 +310,33 @@ class Coroutine(Future):
                     self.set_done(ret)
 
     def __success_next(self, result):
-        if self.__gen:
-            self.__next(self.__gen.send, result)
+        if self.__generator:
+            self.__next(self.__generator.send, result)
 
     def __failure_next(self, exn, traceback):
-        if self.__gen:
-            self.__next(self.__gen.throw, exn)
+        if self.__generator:
+            self.__next(self.__generator.throw, exn)
 
     def __cancelled_next(self, future):
-        if self.__gen:
-            self.__next(self.__gen.throw, FutureCancelled())
+        if self.__generator:
+            self.__next(self.__generator.throw, FutureCancelled())
 
     def cancel(self):
         Future.cancel(self)
 
-        if self.__cont:
-            self.__cont.cancel()
-            self.__cont = None
+        if self.__continuation:
+            self.__continuation.cancel()
+            self.__continuation = None
 
-        if self.__gen:
+        if self.__generator:
             try:
-                self.__gen.close()
+                self.__generator.close()
             except SystemExit:
                 raise
             except:
                 pass
             finally:
-                self.__gen = None
+                self.__generator = None
 
 class CoroutineManager(object):
     def __init__(self):
@@ -354,7 +356,7 @@ class CoroutineQueue(object):
         self.__queue = []
 
     def run(self, func, args, kwargs):
-        co = Coroutine(func(*args, **kwargs), "".join(traceback.format_stack()))
+        co = Coroutine(func(*args, **kwargs), func.__name__, "".join(traceback.format_stack()))
         if self.__running is not None:
             self.__queue.append(co)
         else:
@@ -388,7 +390,7 @@ def coroutine(func):
         raise TypeError("@coroutine requires a generator function")
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        co = Coroutine(func(*args, **kwargs), "".join(traceback.format_stack()))
+        co = Coroutine(func(*args, **kwargs), func.__name__, "".join(traceback.format_stack()))
         co.start()
         return co
     return wrapper
