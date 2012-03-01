@@ -5,7 +5,7 @@ import wx
 from fsmonitor import FSMonitorThread, FSEvent
 
 import fileutil
-from async import async_call, coroutine, queued_coroutine, managed, CoroutineQueue, CoroutineManager
+from async import async_call, coroutine, queued_coroutine, managed, Future, CoroutineQueue, CoroutineManager
 from dialogs import dialogs
 from dirtree_constants import *
 from dirtree_filter import DirTreeFilter
@@ -268,7 +268,9 @@ class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
     @queued_coroutine("cq")
     def PopulateNode(self, node):
         if node.state == NODE_UNPOPULATED:
-            yield node.expand(self, self.monitor, self.filter)
+            f = node.expand(self, self.monitor, self.filter)
+            if isinstance(f, Future):
+                yield f
 
     @managed("cm")
     @coroutine
