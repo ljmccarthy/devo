@@ -258,11 +258,13 @@ class Future(object):
                     self.__on_finished.append(finished)
 
     def __del__(self):
-        if Future and self.__status == FAILED and not self.__failure_handled:
-            message = "Future failed: %s\n" % self.__traceback.rstrip("\n")
-            if self.context:
-                message += "Context of Future invocation:\n%s\n" % self.context.rstrip("\n")
-            _global_scheduler.log_error(message)
+        if Future:
+            if self.__status == FAILED and not self.__failure_handled:
+                message = "Future failed: %s\n" % self.__traceback.rstrip("\n")
+                if self.context:
+                    message += "Context of Future invocation:\n%s\n" % self.context.rstrip("\n")
+                _global_scheduler.log_error(message)
+            self.cancel()
 
 class Coroutine(Future):
     __slots__ = (
