@@ -37,7 +37,10 @@ class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
 
         self.SetDropTarget(self)
         self.SetDoubleBuffered(True)
-        self.SetFont(wx.Font(8, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
+
+        old_font = self.GetFont()
+        font = wx.Font(8, old_font.Family, old_font.Style, old_font.Weight, faceName=old_font.FaceName)
+        self.SetFont(font)
 
         self.env = env
         self.filter = filter or DirTreeFilter()
