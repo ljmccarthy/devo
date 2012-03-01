@@ -320,11 +320,11 @@ class Coroutine(Future):
             self.__next(self.__gen.throw, FutureCancelled())
 
     def cancel(self):
+        Future.cancel(self)
+
         if self.__cont:
             self.__cont.cancel()
             self.__cont = None
-        else:
-            Future.cancel(self)
 
         if self.__gen:
             try:
