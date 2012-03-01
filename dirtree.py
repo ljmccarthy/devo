@@ -326,6 +326,7 @@ class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
         self.monitor.remove_all_watches()
         self.monitor.read_events()
         self.cm.cancel()
+        self.cq.cancel()
         self.DeleteAllItems()
         toplevel = toplevel or make_top_level()
         if len(toplevel) == 1:
