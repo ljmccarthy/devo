@@ -1,4 +1,4 @@
-import sys, os, string, traceback, errno, subprocess
+import os, string, traceback, errno
 import wx
 from functools import wraps
 from wx.lib.agw import aui
@@ -17,6 +17,7 @@ from lru import LruQueue
 from menu import MenuItem
 from menu_defs import menubar
 from settings import read_settings, write_settings
+from shell import run_shell_command
 from terminal_ctrl import TerminalCtrl
 from util import frozen_window, frozen_or_hidden_window, is_text_file, new_id_range
 
@@ -608,12 +609,16 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             pane.Show()
             self.manager.Update()
 
-    def RunCommand(self, cmdline, workdir=None):
-        try:
-            self.terminal.run(cmdline, cwd=workdir or None)
-            self.ShowTerminal()
-        except Exception, e:
-            dialogs.error(self, "Error executing command:\n\n%s" % e)
+    def RunCommand(self, cmdline, workdir=None, detach=False):
+        workdir = workdir or None
+        if detach:
+            run_shell_command(cmdline, pipe_output=False, cwd=workdir)
+        else:
+            try:
+                self.terminal.run(cmdline, cwd=workdir)
+                self.ShowTerminal()
+            except Exception, e:
+                dialogs.error(self, "Error executing command:\n\n%s" % e)
 
     @managed("cm")
     @coroutine    
@@ -627,6 +632,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             PROJECT_ROOT = self.project_root,
         )
         cmdline = string.Template(command["cmdline"]).safe_substitute(env)
+        cmdline = cmdline.encode("utf-8")
         workdir = os.path.expanduser(command.get("workdir", ""))
         workdir = string.Template(workdir).safe_substitute(env)
         workdir = os.path.join(self.project_root, workdir)
@@ -640,10 +646,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                 if editor.path and editor.modified and not (yield editor.Save()):
                     yield False
 
-        if command.get("detach", False):
-            subprocess.Popen(cmdline, close_fds=True, shell=True, cwd=workdir or None)
-        else:
-            self.RunCommand(cmdline, workdir)
+        detach = command.get("detach", False)
+        self.RunCommand(cmdline, workdir, detach)
         yield True
 
     def GetUserCommandById(self, id):
