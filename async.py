@@ -338,16 +338,14 @@ class Coroutine(Future):
 
 class CoroutineManager(object):
     def __init__(self):
-        self.__futures = set()
+        self.__futures = weakref.WeakSet()
 
     def add(self, future):
-        self.__futures.add(weakref.ref(future, self.__futures.discard))
+        self.__futures.add(future)
 
     def cancel(self):
-        for ref in self.__futures:
-            future = ref()
-            if future is not None:
-                future.cancel()
+        for future in self.__futures:
+            future.cancel()
         self.__futures.clear()
 
 class CoroutineQueue(object):
