@@ -64,6 +64,7 @@ class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
         self.Bind(wx.EVT_TREE_BEGIN_DRAG, self.OnBeginDrag)
         self.Bind(wx.EVT_MENU, self.OnItemEdit, id=ID_EDIT)
         self.Bind(wx.EVT_MENU, self.OnItemOpen, id=ID_OPEN)
+        self.Bind(wx.EVT_MENU, self.OnItemOpenFolder, id=ID_OPEN_FOLDER)
         self.Bind(wx.EVT_MENU, self.OnItemRename, id=ID_RENAME)
         self.Bind(wx.EVT_MENU, self.OnItemDelete, id=ID_DELETE)
         self.Bind(wx.EVT_MENU, self.OnNewFolder, id=ID_NEW_FOLDER)
@@ -188,6 +189,11 @@ class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
         path = self.GetSelectedPath()
         if path:
             self._shell_open(path)
+
+    def OnItemOpenFolder(self, evt):
+        path = self.GetSelectedPath()
+        if path:
+            self._shell_open(os.path.dirname(path))
 
     def OnItemRename(self, evt):
         node = self.GetSelectedNode()

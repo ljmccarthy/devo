@@ -2,6 +2,7 @@ import wx
 
 ID_EDIT = wx.NewId()
 ID_OPEN = wx.NewId()
+ID_OPEN_FOLDER = wx.NewId()
 ID_RENAME = wx.NewId()
 ID_DELETE = wx.NewId()
 ID_NEW_FOLDER = wx.NewId()

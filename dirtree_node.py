@@ -11,6 +11,7 @@ from util import iter_tree_children
 
 file_context_menu = Menu("", [
     MenuItem(ID_NEW_FOLDER, "&New Folder"),
+    MenuItem(ID_OPEN_FOLDER, "&Open Containing Folder"),
     MenuSeparator,
     MenuItem(ID_OPEN, "&Open"),
     MenuItem(ID_EDIT, "&Edit with Devo"),
