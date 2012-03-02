@@ -76,13 +76,10 @@ editor_types = (Editor, TerminalCtrl)
 
 class MainFrame(wx.Frame, wx.FileDropTarget):
     def __init__(self):
+        display_rect = wx.Display(wx.Display.GetFromPoint((0, 0))).GetClientArea()
         rect = AdjustRectToScreen(wx.Rect(0, 0, 1050, 1500))
-        if wx.Platform == "__WXGTK__":
-            size = rect.Size
-            pos = (0, 0)
-        else:
-            size = (rect.width, rect.height - 50)
-            pos = (25, 25)
+        size = rect.Size
+        pos = (display_rect.Width - rect.Width, 0)
 
         wx.Frame.__init__(self, None, title="Devo", pos=pos, size=size)
         wx.FileDropTarget.__init__(self)
