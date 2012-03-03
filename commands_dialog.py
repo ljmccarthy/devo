@@ -180,6 +180,7 @@ class CommandsDialog(wx.Dialog):
         self.SetMinSize(self.Size)
         self.cmdlist.SetFocus()
 
+        self.Bind(wx.EVT_LISTBOX_DCLICK, self.OnEdit)
         self.Bind(wx.EVT_BUTTON, self.OnAdd, btn_add)
         self.Bind(wx.EVT_BUTTON, self.OnEdit, btn_edit)
         self.Bind(wx.EVT_BUTTON, self.OnRemove, btn_remove)
