@@ -1,6 +1,3 @@
-import sys
-import wx
-
 __all__ = """\
 FIND_NEXT
 FIND_PREV
@@ -16,6 +13,7 @@ ABOUT_BOX
 """.strip().split()
 
 def init():
+    import sys, wx
     module = sys.modules[__name__]
     wxids = []
     for id_name in dir(wx):
