@@ -1,4 +1,4 @@
-import os, string, traceback, errno
+import os, string, traceback, errno, shutil
 import wx
 from functools import wraps
 from wx.lib.utils import AdjustRectToScreen
@@ -278,6 +278,12 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         except Exception:
             self.settings = {}
             self.saved_settings = {}
+            try:
+                backup_filename = self.settings_filename + ".bak"
+                if not os.path.exists(backup_filename):
+                    shutil.copy2(self.settings_filename, backup_filename)
+            except OSError:
+                pass
 
         self.saved_settings = self.settings.copy()
         self.projects = self.settings.get("projects", {})
@@ -443,6 +449,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     @managed("cm")
     @coroutine
     def OpenProject(self, project_root):
+        project_root = os.path.realpath(project_root)
         if (yield self.SaveProject()):
             try:
                 project = (yield async_call(read_settings, make_project_filename(project_root)))
