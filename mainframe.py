@@ -1,9 +1,9 @@
 import os, string, traceback, errno
 import wx
 from functools import wraps
-from wx.lib.agw import aui
 from wx.lib.utils import AdjustRectToScreen
 
+import aui
 import async, fileutil, ID
 from about_dialog import AboutDialog
 from async import async_call, coroutine, managed, CoroutineManager
