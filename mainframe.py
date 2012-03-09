@@ -24,7 +24,10 @@ from util import frozen_window, frozen_or_hidden_window, is_text_file, new_id_ra
 
 def shorten_path(path):
     parts = path.split(os.path.sep)
-    return os.path.sep.join(parts[:3] + ["..."] + parts[-2:])
+    if len(parts) > 6:
+        return os.path.sep.join(parts[:3] + ["..."] + parts[-2:])
+    else:
+        return path
 
 def make_project_filename(project_root):
     return os.path.join(project_root, ".devo-project")
@@ -80,7 +83,7 @@ NB_STYLE = (aui.AUI_NB_CLOSE_ON_ALL_TABS  | aui.AUI_NB_TOP | aui.AUI_NB_TAB_SPLI
 editor_types = (Editor, TerminalCtrl)
 
 class MainFrame(wx.Frame, wx.FileDropTarget):
-    def __init__(self):
+    def __init__(self, project_root=None):
         display_rect = wx.Display(wx.Display.GetFromPoint((0, 0))).GetClientArea()
         width = min(display_rect.width, 1050)
         rect = wx.Rect(display_rect.width - width, display_rect.y, width, display_rect.height)
@@ -133,7 +136,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             aui.AuiPaneInfo().Hide().Bottom().BestSize((-1, 180)).Caption("Terminal"))
         self.manager.Update()
 
-        self.Startup()
+        self.Startup(project_root)
 
         self.Bind(wx.EVT_CLOSE, self.OnClose)
         self.Bind(wx.EVT_END_SESSION, self.OnClose)
@@ -268,24 +271,33 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
 
     @managed("cm")
     @queued_coroutine("cq")
-    def Startup(self):
+    def Startup(self, project_root=None):
         try:
             self.settings = (yield async_call(read_settings, self.settings_filename))
             self.saved_settings = self.settings.copy()
         except Exception:
-            yield self.OpenDefaultProject()
+            self.settings = {}
+            self.saved_settings = {}
+
+        self.saved_settings = self.settings.copy()
+        self.projects = self.settings.get("projects", {})
+        self.recent_files = LruQueue(self.settings.get("recent_files", []), MAX_RECENT_FILES)
+
+        if "dialogs" in self.settings:
+            dialogs.load_state(self.settings["dialogs"])
+
+        success = True
+        if project_root:
+            success = (yield self.OpenProject(project_root))
         else:
-            self.projects = self.settings.get("projects", {})
-            self.recent_files = LruQueue(self.settings.get("recent_files", []), MAX_RECENT_FILES)
-
-            if "dialogs" in self.settings:
-                dialogs.load_state(self.settings["dialogs"])
-
             last_project = self.settings.get("last_project")
             if last_project:
-                yield self.OpenProject(last_project)
+                success = (yield self.OpenProject(last_project))
             else:
                 yield self.OpenDefaultProject()
+
+        if not success:
+            yield self.OpenDefaultProject()
 
     @managed("cm")
     @coroutine
@@ -440,11 +452,13 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                 except IOError:
                     pass
                 self.Show()
+                yield True
             except Exception, e:
                 self._ShowLoadProjectError(e, project_root)
                 if project_root in self.projects:
                     del self.projects[project_root]
                     self.UpdateMenuBar()
+                yield False
             finally:
                 self.StartFileMonitor()
 
@@ -525,24 +539,24 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             return self.notebook.GetPage(sel)
 
     def AddRecentFile(self, path):
-        self.recent_files.add(path)
+        self.recent_files.add(os.path.realpath(path))
         self.UpdateMenuBar()
 
     @managed("cm")
     @queued_coroutine("cq")
     def OpenEditor(self, path):
+        path = os.path.realpath(path)
         if not (yield async_call(is_text_file, path)):
             if not dialogs.ask_open_binary(self, path):
                 yield False
-        realpath = os.path.realpath(path)
-        editor = self.FindEditor(realpath)
+        editor = self.FindEditor(path)
         if editor:
             i = self.notebook.GetPageIndex(editor)
             if i != wx.NOT_FOUND:
                 self.notebook.SetSelection(i)
         else:
-            editor = Editor(self.notebook, self.env, realpath)
-            if not (yield editor.TryLoadFile(realpath)):
+            editor = Editor(self.notebook, self.env, path)
+            if not (yield editor.TryLoadFile(path)):
                 editor.Destroy()
             else:
                 with frozen_window(self.notebook):
