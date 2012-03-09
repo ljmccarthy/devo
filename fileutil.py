@@ -118,4 +118,4 @@ def shell_move_or_copy(srcpath, dstpath):
 if sys.platform == "win32":
     from fileutil_win32 import *
 else:
-    from fileutil_linux import *
+    from fileutil_posix import *
