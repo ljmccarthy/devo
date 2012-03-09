@@ -88,8 +88,9 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.SetStatusWidths([200, -1])
 
         self.recent_file_first_id, self.recent_file_last_id = new_id_range(MAX_RECENT_FILES)
-        self.user_first_id, self.user_last_id = new_id_range(1000)
-        self.project_first_id, self.project_last_id = new_id_range(1000)
+        self.shared_command_first_id, self.shared_command_last_id = new_id_range(100)
+        self.project_command_first_id, self.project_command_last_id = new_id_range(100)
+        self.project_first_id, self.project_last_id = new_id_range(100)
 
         self.config_dir = fileutil.get_user_config_dir("devo")
         self.settings_filename = os.path.join(self.config_dir, "devo.conf")
@@ -161,14 +162,21 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.Bind(wx.EVT_MENU, self.OnCloseProject, id=ID.CLOSE_PROJECT)
         self.Bind(wx.EVT_MENU, self.OnEditProject, id=ID.EDIT_PROJECT)
         self.Bind(wx.EVT_MENU, self.OnOrganiseProjects, id=ID.ORGANISE_PROJECTS)
-        self.Bind(wx.EVT_MENU, self.OnConfigureCommands, id=ID.CONFIGURE_COMMANDS)
+        self.Bind(wx.EVT_MENU, self.OnConfigureSharedCommands, id=ID.CONFIGURE_SHARED_COMMANDS)
+        self.Bind(wx.EVT_MENU, self.OnConfigureProjectCommands, id=ID.CONFIGURE_PROJECT_COMMANDS)
+        self.Bind(wx.EVT_UPDATE_UI, self.OnUpdate_ConfigureProjectCommands, id=ID.CONFIGURE_PROJECT_COMMANDS)
+
         self.Bind(wx.EVT_MENU_RANGE, self.OnSelectProject,
                   id=self.project_first_id, id2=self.project_last_id)
 
-        self.Bind(wx.EVT_MENU_RANGE, self.OnUserCommand,
-                  id=self.user_first_id, id2=self.user_last_id)
-        self.Bind(wx.EVT_UPDATE_UI_RANGE, self.OnUpdateUI_UserCommand,
-                  id=self.user_first_id, id2=self.user_last_id)
+        self.Bind(wx.EVT_MENU_RANGE, self.OnSharedCommand,
+                  id=self.shared_command_first_id, id2=self.shared_command_last_id)
+        self.Bind(wx.EVT_MENU_RANGE, self.OnProjectCommand,
+                  id=self.project_command_first_id, id2=self.project_command_last_id)
+        self.Bind(wx.EVT_UPDATE_UI_RANGE, self.OnUpdateUI_SharedCommand,
+                  id=self.shared_command_first_id, id2=self.shared_command_last_id)
+        self.Bind(wx.EVT_UPDATE_UI_RANGE, self.OnUpdateUI_ProjectCommand,
+                  id=self.project_command_first_id, id2=self.project_command_last_id)
 
         self.Bind(wx.EVT_MENU, self.OnAboutBox, id=ID.ABOUT_BOX)
 
@@ -200,11 +208,16 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         return sorted(self.projects.iteritems(), key=lambda x: x[1]["name"].lower())
 
     def GetMenuHooks(self):
-        commands = self.project.get("commands", [])
+        shared_commands = self.settings.get("commands", [])
+        project_commands = self.project.get("commands", [])
         return {
-            "commands" : [
-                MenuItem(i + self.user_first_id, command["name"], command["accel"])
-                for i, command in enumerate(commands)
+            "shared_commands" : [
+                MenuItem(i + self.shared_command_first_id, command["name"], command["accel"])
+                for i, command in enumerate(shared_commands)
+            ],
+            "project_commands" : [
+                MenuItem(i + self.project_command_first_id, command["name"], command["accel"])
+                for i, command in enumerate(project_commands)
             ],
             "projects" : [
                 MenuItem(i + self.project_first_id, p["name"])
@@ -314,12 +327,14 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                 except Exception, e:
                     dialogs.error(self, "Error saving session:\n\n%s" % e)
                     yield False
-            if self.project_filename:
-                try:
+            try:
+                if self.project_filename:
                     yield async_call(write_settings, self.project_filename, self.project)
-                except Exception, e:
-                    dialogs.error(self, "Error saving project:\n\n%s" % e)
-                    yield False
+                else:
+                    yield self.SaveSettings()
+            except Exception, e:
+                dialogs.error(self, "Error saving project:\n\n%s" % e)
+                yield False
             yield True
         finally:
             self.fmon.start()
@@ -590,7 +605,19 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     def OnOrganiseProjects(self, evt):
         pass
 
-    def OnConfigureCommands(self, evt):
+    def OnConfigureSharedCommands(self, evt):
+        dlg = CommandsDialog(self, self.settings.get("commands", []))
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                self.settings["commands"] = dlg.GetCommands()
+                self.UpdateMenuBar()
+                self.SaveSettings()
+        finally:
+            dlg.Destroy()
+
+    def OnConfigureProjectCommands(self, evt):
+        if not self.project_filename:
+            return
         dlg = CommandsDialog(self, self.project.get("commands", []))
         try:
             if dlg.ShowModal() == wx.ID_OK:
@@ -599,6 +626,9 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                 self.SaveProject()
         finally:
             dlg.Destroy()
+
+    def OnUpdate_ConfigureProjectCommands(self, evt):
+        evt.Enable(bool(self.project_filename))
 
     def ShowTerminal(self):
         pane = self.manager.GetPane(self.terminal)
@@ -647,20 +677,38 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.RunCommand(cmdline, workdir, detach)
         yield True
 
-    def GetUserCommandById(self, id):
-        index = id - self.user_first_id
+    def GetSharedCommandById(self, id):
+        index = id - self.shared_command_first_id
+        commands = self.settings.get("commands", [])
+        if 0 <= index < len(commands):
+            return commands[index]
+
+    def GetProjectCommandById(self, id):
+        index = id - self.project_command_first_id
         commands = self.project.get("commands", [])
         if 0 <= index < len(commands):
             return commands[index]
 
-    def OnUserCommand(self, evt):
-        command = self.GetUserCommandById(evt.GetId())
+    def OnSharedCommand(self, evt):
+        command = self.GetSharedCommandById(evt.GetId())
         if command:
             self.DoUserCommand(command)
 
-    def OnUpdateUI_UserCommand(self, evt):
-        command = self.GetUserCommandById(evt.GetId())
-        evt.Enable(bool(command and (not self.terminal.is_running or command.get("detach", False))))
+    def OnProjectCommand(self, evt):
+        command = self.GetProjectCommandById(evt.GetId())
+        if command:
+            self.DoUserCommand(command)
+
+    def ShouldEnabledCommand(self, command):
+        return bool(command and (not self.terminal.is_running or command.get("detach", False)))
+
+    def OnUpdateUI_SharedCommand(self, evt):
+        command = self.GetSharedCommandById(evt.GetId())
+        evt.Enable(self.ShouldEnabledCommand(command))
+
+    def OnUpdateUI_ProjectCommand(self, evt):
+        command = self.GetProjectCommandById(evt.GetId())
+        evt.Enable(self.ShouldEnabledCommand(command))
 
     def OnSelectProject(self, evt):
         index = evt.GetId() - self.project_first_id

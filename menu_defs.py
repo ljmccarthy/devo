@@ -45,9 +45,12 @@ menubar = MenuBar([
         MenuHook("projects"),
     ]),
     Menu("&Commands", [
-        MenuItem(ID.CONFIGURE_COMMANDS, "&Configure...", "Ctrl+F12"),
+        MenuItem(ID.CONFIGURE_SHARED_COMMANDS, "&Configure Shared...", "Ctrl+Alt+F12"),
+        MenuItem(ID.CONFIGURE_PROJECT_COMMANDS, "&Configure Project...", "Ctrl+F12"),
         MenuSeparator,
-        MenuHook("commands"),
+        MenuHook("shared_commands"),
+        MenuSeparator,
+        MenuHook("project_commands"),
     ]),
     Menu("&Help", [
         MenuItem(ID.ABOUT_BOX, "&About Devo..."),
