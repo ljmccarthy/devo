@@ -653,10 +653,10 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         editor = self.GetCurrentEditorTab()
         current_file = editor.path if editor else ""
         env = dict(
-            CURRENT_FILE = current_file,
-            CURRENT_DIR = os.path.dirname(current_file),
-            CURRENT_BASENAME = os.path.basename(current_file),
-            PROJECT_ROOT = self.project_root,
+            FILE = current_file,
+            DIR = os.path.dirname(current_file),
+            BASENAME = os.path.basename(current_file),
+            PROJECT_DIR = self.project_root,
         )
         cmdline = string.Template(command["cmdline"]).safe_substitute(env)
         cmdline = cmdline.encode("utf-8")

@@ -2,25 +2,29 @@ import string
 import wx
 from accelerator import parse_accelerator, unparse_accelerator
 from dialogs import dialogs
+from html_frame import HtmlFrame
 
 command_help = """\
-Accelerator keys may use modifers, for example:
-
-    Alt+Shift+X
-    Ctrl+F10
-
-Commands may use the following environment variables:
-
-    $CURRENT_FILE - Current file
-    $CURRENT_DIR - Directory of current file
-    $CURRENT_BASENAME - Base filename of current file
-    $PROJECT_ROOT - Project root directory\
+<p>Accelerator keys may use modifers, for example:</p>
+<ul>
+    <li>Alt+Shift+X</li>
+    <li>Ctrl+F10</li>
+</ul>
+<p>
+Commands may use the following special variables:
+</p>
+<table>
+    <tr><td>$FILE</td><td>Current file</td></tr>
+    <tr><td>$DIR</td><td>Directory of current file</td></tr>
+    <tr><td>$BASENAME</td><td>Base filename of current file</td></tr>
+    <tr><td>$PROJECT_DIR</td><td>Project directory</td></tr>
+</table>
 """
 
 def check_variables(s):
     try:
         string.Template(s).substitute(
-            CURRENT_FILE="", CURRENT_DIR="", CURRENT_BASENAME="", PROJECT_ROOT="")
+            FILE="", DIR="", BASENAME="", PROJECT_DIR="")
     except KeyError, e:
         raise Exception("Unknown variable name: %s" % e.args)
     except ValueError, e:
@@ -30,6 +34,8 @@ class EditCommandDialog(wx.Dialog):
     def __init__(self, parent, command={}, title="Edit Command"):
         style = wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
         wx.Dialog.__init__(self, parent, title=title, style=style)
+
+        self.help_frame = None
 
         self.field_name = wx.TextCtrl(self, value=command.get("name", ""))
         self.field_accel = wx.TextCtrl(self, value=command.get("accel", ""))
@@ -136,7 +142,19 @@ class EditCommandDialog(wx.Dialog):
         evt.Skip()
 
     def OnHelp(self, evt):
-        dialogs.info(self, command_help, "Edit Command Help")
+        if not self.help_frame:
+            pos = (self.Position.x - 420, self.Position.y)
+            self.help_frame = HtmlFrame(
+                self, command_help, title="Edit Command Help",
+                pos=pos, size=(400, 225))
+            self.help_frame.Bind(wx.EVT_CLOSE, self.OnHelpFrameClose)
+        self.help_frame.Show()
+        self.help_frame.Raise()
+
+    def OnHelpFrameClose(self, evt):
+        if self.help_frame:
+            frame, self.help_frame = self.help_frame, None
+            frame.Destroy()
 
 class CommandsDialog(wx.Dialog):
     def __init__(self, parent, commands=[]):
