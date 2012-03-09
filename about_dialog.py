@@ -1,45 +1,59 @@
 # coding=UTF8
 
+import sys
 import wx
 
-programmer = "Programmed by Luke McCarthy <luke@iogopro.co.uk>"
+developer = "Developed by Luke McCarthy <luke@iogopro.co.uk>"
 url = "https://github.com/shaurz/devo"
 
 license = u"""\
 Copyright © 2010-2012 Luke McCarthy
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and \
+associated documentation files (the "Software"), to deal in the Software without restriction, \
+including without limitation the rights to use, copy, modify, merge, publish, distribute, \
+sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is \
+furnished to do so, subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+The above copyright notice and this permission notice shall be included in all copies or \
+substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT \
+NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND \
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, \
+DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT \
+OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\
 """
 
 class AboutDialog(wx.Dialog):
     def __init__(self, parent):
         wx.Dialog.__init__(self, parent, title="About Devo")
 
+        logo_font_size = 25 if sys.platform == "__WXMAC__" else 20 
+        subtitle_font_size = 24 if sys.platform == "__WXMAC__" else 10
+
+        fontsize = self.GetFont().PointSize
         label_devo = wx.StaticText(self, label="Devo")
         label_devo.SetForegroundColour(wx.RED)
-        label_devo.SetFont(wx.Font(20, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
+        label_devo.SetFont(wx.Font(fontsize * 2, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
         label_devolved = wx.StaticText(self, label="      Text Editing Devolved")
-        label_devolved.SetFont(wx.Font(10, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_ITALIC, wx.FONTWEIGHT_NORMAL))
+        label_devolved.SetFont(wx.Font(fontsize, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_ITALIC, wx.FONTWEIGHT_BOLD))
 
-        label_programmer = wx.StaticText(self, label=programmer)
+        label_developer = wx.StaticText(self, label=developer)
         link_website = wx.HyperlinkCtrl(self, wx.ID_ANY, label=url, url=url)
         text_license = wx.TextCtrl(self, value=license, size=(600, 200), style=wx.TE_READONLY | wx.TE_MULTILINE)
 
-        btn_sizer = wx.StdDialogButtonSizer()
+        btn_sizer = wx.BoxSizer(wx.HORIZONTAL)
         btn_ok = wx.Button(self, wx.ID_OK)
         btn_ok.SetDefault()
-        btn_sizer.AddButton(btn_ok)
-        btn_sizer.Realize()
+        btn_sizer.AddStretchSpacer()
+        btn_sizer.Add(btn_ok, 0, wx.ALL, 5)
 
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(label_devo, 0, wx.LEFT | wx.RIGHT | wx.TOP, 5)
         sizer.Add(label_devolved, 0, wx.LEFT | wx.RIGHT, 5)
         sizer.AddSpacer(15)
-        sizer.Add(label_programmer, 0, wx.LEFT | wx.RIGHT, 5)
+        sizer.Add(label_developer, 0, wx.LEFT | wx.RIGHT, 5)
         sizer.Add(link_website, 0, wx.LEFT | wx.RIGHT, 5)
         sizer.AddSpacer(5)
         sizer.Add(text_license, 0, wx.ALL | wx.FIXED_MINSIZE, 5)
@@ -47,6 +61,7 @@ class AboutDialog(wx.Dialog):
 
         self.SetSizer(sizer)
         self.Fit()
+        self.CentreOnScreen()
 
 if __name__ == "__main__":
     app = wx.PySimpleApp()

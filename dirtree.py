@@ -39,8 +39,9 @@ class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
         self.SetDoubleBuffered(True)
 
         old_font = self.GetFont()
-        font = wx.Font(8, old_font.Family, old_font.Style, old_font.Weight, faceName=old_font.FaceName)
-        self.SetFont(font)
+        fontsize = 10 if wx.Platform == "__WXMAC__" else 8
+        self.font = wx.Font(fontsize, old_font.Family, old_font.Style, old_font.Weight, faceName=old_font.FaceName)
+        self.SetFont(self.font)
 
         self.env = env
         self.filter = filter or DirTreeFilter()
@@ -265,13 +266,12 @@ class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
         node = self.GetSelectedNode()
         return node.path if node else ""
 
-    # Workaround for Windows sillyness
-    if wx.Platform == "__WXMSW__":
-        def IsExpanded(self, item):
-            return self.GetRootItem() == item or wx.TreeCtrl.IsExpanded(self, item)
-        def Expand(self, item):
-            if self.GetRootItem() != item:
-                wx.TreeCtrl.Expand(self, item)
+    def IsExpanded(self, item):
+        return self.GetRootItem() == item or wx.TreeCtrl.IsExpanded(self, item)
+
+    def Expand(self, item):
+        if self.GetRootItem() != item:
+            wx.TreeCtrl.Expand(self, item)
 
     @managed("cm")
     @queued_coroutine("cq")

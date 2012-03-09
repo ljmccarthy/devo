@@ -5,15 +5,15 @@ from dialogs import dialogs
 ID_BROWSE = wx.NewId()
 
 class FilePicker(wx.Panel):
-    def __init__(self, parent, browse_func, size=(100, -1), value=""):
+    def __init__(self, parent, browse_func, size=wx.Size(100, -1), value=""):
         wx.Panel.__init__(self, parent)
+        size = wx.Size(*size)
         self.browse_func = browse_func
-        self.text = wx.TextCtrl(self, ID_BROWSE, size=size, value=value)
-        btn_browse = wx.Button(self, ID_BROWSE, size=(25, self.text.Size.height), label="...")
+        self.text = wx.TextCtrl(self, ID_BROWSE, size=(size.width - 30, size.height), value=value)
+        btn_browse = wx.Button(self, ID_BROWSE, size=(30, -1), label="...")
         sizer = wx.BoxSizer(wx.HORIZONTAL)
-        sizer.Add(self.text, 1, wx.FIXED_MINSIZE)
-        sizer.AddSpacer(2)
-        sizer.Add(btn_browse, 0, wx.FIXED_MINSIZE)
+        sizer.Add(self.text, 1, wx.ALIGN_CENTRE_VERTICAL|wx.FIXED_MINSIZE|wx.ALL, 2)
+        sizer.Add(btn_browse, 0, wx.ALIGN_CENTRE_VERTICAL|wx.ALL, 2)
         self.SetSizer(sizer)
         self.Bind(wx.EVT_BUTTON, self.__OnBrowse, id=ID_BROWSE)
 

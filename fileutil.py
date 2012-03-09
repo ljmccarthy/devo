@@ -117,7 +117,5 @@ def shell_move_or_copy(srcpath, dstpath):
 
 if sys.platform == "win32":
     from fileutil_win32 import *
-elif sys.platform == "linux2":
-    from fileutil_linux import *
 else:
-    raise ImportError("Unsupported platform: %s" % sys.platform)
+    from fileutil_linux import *

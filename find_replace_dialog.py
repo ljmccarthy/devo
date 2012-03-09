@@ -99,6 +99,8 @@ class FindReplaceDetails(object):
                         break
                     m = m2
             if m and m.start() != m.end():
+                if hasattr(editor, "ShowPosition"):
+                    editor.ShowPosition(pos + m.start())
                 editor.SetSelection(pos + m.start(), pos + m.end())
                 return True
         return False
@@ -116,6 +118,8 @@ class FindReplaceDetails(object):
             for pos, line in self._IterFindLines(editor, wrap=False):
                 m = self.rx_find.search(line)
                 if m and m.start() != m.end():
+                    if hasattr(editor, "ShowPosition"):
+                        editor.ShowPosition(pos + m.start())
                     editor.SetSelection(pos + m.start(), pos + m.end())
                     self._ReplaceSelected(editor)
                     count += 1
@@ -125,13 +129,13 @@ class FindReplaceDetails(object):
 ID_GO_TO_START = wx.NewId()
 
 class FindReplaceDialog(wx.Dialog):
-    def __init__(self, parent, filename="", details=None):
+    def __init__(self, parent, editor, filename="", details=None):
         title = "Find and Replace"
         if filename:
             title += " [%s]" % filename
 
         wx.Dialog.__init__(self, parent, title=title)
-        self.editor = parent
+        self.editor = editor
 
         self.combo_find = wx.ComboBox(self, size=(300, -1))
         self.combo_replace = wx.ComboBox(self, size=(300, -1))
@@ -146,30 +150,26 @@ class FindReplaceDialog(wx.Dialog):
         self.check_regexp = wx.CheckBox(self, wx.ID_ANY, "Regular &expression")
         self.check_reverse = wx.CheckBox(self, wx.ID_ANY, "Re&verse")
         chksizer = wx.BoxSizer(wx.VERTICAL)
-        chksizer.Add(self.check_case)
-        chksizer.AddSpacer(5)
-        chksizer.Add(self.check_regexp)
-        chksizer.AddSpacer(5)
-        chksizer.Add(self.check_reverse)
+        chksizer.Add(self.check_case, 0, wx.ALL, 2)
+        chksizer.Add(self.check_regexp, 0, wx.ALL, 2)
+        chksizer.Add(self.check_reverse, 0, wx.ALL, 2)
         grid.Add(chksizer)
 
         btnsizer = wx.BoxSizer(wx.HORIZONTAL)
         btnsizer.AddStretchSpacer()
-        btnsizer.Add(wx.Button(self, ID_GO_TO_START, "&Go to Start"))
-        btnsizer.AddSpacer(5)
+        btnsizer.Add(wx.Button(self, ID_GO_TO_START, "&Go to Start"), 0, wx.ALL, 5)
         btn_find = wx.Button(self, wx.ID_FIND, "&Find")
         btn_find.SetDefault()
-        btnsizer.Add(btn_find)
-        btnsizer.AddSpacer(5)
-        btnsizer.Add(wx.Button(self, wx.ID_REPLACE, "&Replace"))
-        btnsizer.AddSpacer(5)
-        btnsizer.Add(wx.Button(self, wx.ID_REPLACE_ALL, "Replace &All"))
+        btnsizer.Add(btn_find, 0, wx.ALL, 5)
+        btnsizer.Add(wx.Button(self, wx.ID_REPLACE, "&Replace"), 0, wx.ALL, 5)
+        btnsizer.Add(wx.Button(self, wx.ID_REPLACE_ALL, "Replace &All"), 0, wx.ALL, 5)
 
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(grid, 0, wx.EXPAND | wx.ALL, 5)
         sizer.Add(btnsizer, 0, wx.EXPAND | wx.ALL, 5)
         self.SetSizer(sizer)
         self.Fit()
+        self.Centre()
 
         if details is not None:
             for item in details.find_history:

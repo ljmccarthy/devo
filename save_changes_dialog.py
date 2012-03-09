@@ -20,6 +20,7 @@ class SaveChangesDialog(wx.Dialog):
         sizer.Add(btnsizer, 0, wx.EXPAND | wx.ALL, 10)
         self.SetSizer(sizer)
         self.Fit()
+        self.Centre()
         size = self.GetSize()
         self.SetMinSize(size)
         self.SetMaxSize(size)

@@ -6,7 +6,7 @@ from wx.lib.utils import AdjustRectToScreen
 import aui
 import async, fileutil, ID
 from about_dialog import AboutDialog
-from async import async_call, coroutine, managed, CoroutineManager
+from async import async_call, coroutine, queued_coroutine, managed, CoroutineManager, CoroutineQueue
 from dialogs import dialogs
 from commands_dialog import CommandsDialog
 from dirtree import DirTreeCtrl, DirNode
@@ -16,12 +16,11 @@ from find_replace_dialog import FindReplaceDetails
 from lru import LruQueue
 from menu import MenuItem
 from menu_defs import menubar
+from new_project_dialog import NewProjectDialog
 from settings import read_settings, write_settings
 from shell import run_shell_command
 from terminal_ctrl import TerminalCtrl
 from util import frozen_window, frozen_or_hidden_window, is_text_file, new_id_range
-
-from new_project_dialog import NewProjectDialog
 
 def shorten_path(path):
     parts = path.split(os.path.sep)
@@ -77,11 +76,10 @@ editor_types = (Editor, TerminalCtrl)
 class MainFrame(wx.Frame, wx.FileDropTarget):
     def __init__(self):
         display_rect = wx.Display(wx.Display.GetFromPoint((0, 0))).GetClientArea()
-        rect = AdjustRectToScreen(wx.Rect(0, 0, 1050, 1500))
-        size = rect.Size
-        pos = (display_rect.Width - rect.Width, 0)
+        width = min(display_rect.width, 1050)
+        rect = wx.Rect(display_rect.width - width, display_rect.y, width, display_rect.height)
 
-        wx.Frame.__init__(self, None, title="Devo", pos=pos, size=size)
+        wx.Frame.__init__(self, None, title="Devo", pos=rect.Position, size=rect.Size)
         wx.FileDropTarget.__init__(self)
 
         self.SetDropTarget(self)
@@ -106,6 +104,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.recent_files = LruQueue(maxlen=MAX_RECENT_FILES)
 
         self.cm = CoroutineManager()
+        self.cq = CoroutineQueue()
         self.env = AppEnv(self)
         self.fmon = FileMonitor(self.OnFilesChanged)
         self.updated_paths = set()
@@ -249,7 +248,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.Destroy()
 
     @managed("cm")
-    @coroutine
+    @queued_coroutine("cq")
     def Startup(self):
         try:
             self.settings = (yield async_call(read_settings, self.settings_filename))
@@ -512,7 +511,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.UpdateMenuBar()
 
     @managed("cm")
-    @coroutine
+    @queued_coroutine("cq")
     def OpenEditor(self, path):
         if not (yield async_call(is_text_file, path)):
             if not dialogs.ask_open_binary(self, path):
@@ -558,6 +557,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     def OnDropFiles(self, x, y, filenames):
         for filename in filenames:
             self.OpenEditor(filename)
+        return True
 
     def GetNewProject(self):
         dlg = NewProjectDialog(self)

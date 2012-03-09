@@ -1,11 +1,16 @@
-import os, subprocess
+import sys, os, subprocess
 
 def run(args, workdir=None):
     p = subprocess.Popen(args, close_fds=True, cwd=workdir)
     return p.wait()
 
+if sys.platform == "darwin":
+    shell_open_command = "open"
+else:
+    shell_open_command = "xdg-open"
+
 def shell_open(path, workdir=None):
-    return run(["xdg-open", path], workdir=workdir) == 0
+    return run([shell_open_command, path], workdir=workdir) == 0
 
 def get_user_config_dir(name=""):
     path = os.environ["HOME"]

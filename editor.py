@@ -11,8 +11,13 @@ from syntax import filename_syntax_re, syntax_dict
 
 if wx.Platform == "__WXMSW__":
     fontface = "Consolas"
+    fontsize = 10
+elif wx.Platform == "__WXMAC__":
+    fontface = "Menlo Regular"
+    fontsize = 12
 else:
     fontface = "Monospace"
+    fontsize = 10
 
 def decode_text(text):
     try:
@@ -26,12 +31,14 @@ def encode_text(text, encoding):
     except UnicodeEncodeError:
         return text.encode("utf-8"), "utf-8"
 
-class Editor(wx.stc.StyledTextCtrl):
+class Editor(wx.stc.StyledTextCtrl, wx.FileDropTarget):
     def __init__(self, parent, env, path=""):
         pre = wx.stc.PreStyledTextCtrl()
         pre.Hide()
         pre.Create(parent, size=wx.Size(1, 1), style=wx.BORDER_NONE)
         self.PostCreate(pre)
+        wx.FileDropTarget.__init__(self)
+
         self.UsePopUp(False)
         self.SetDropTarget(None)
 
@@ -91,7 +98,7 @@ class Editor(wx.stc.StyledTextCtrl):
     @coroutine
     def TryClose(self):
         if self.modified:
-            result = dialogs.ask_save_changes(self, self.path)
+            result = dialogs.ask_save_changes(wx.GetApp().GetTopWindow(), self.path)
             if result == wx.ID_YES:
                 try:
                     save_result = (yield self.Save())
@@ -112,7 +119,7 @@ class Editor(wx.stc.StyledTextCtrl):
         self.SetLexer(wx.stc.STC_LEX_NULL)
         self.SetKeyWords(0, "")
         self.StyleResetDefault()
-        self.StyleSetFontAttr(wx.stc.STC_STYLE_DEFAULT, 10, fontface, False, False, False)
+        self.StyleSetFontAttr(wx.stc.STC_STYLE_DEFAULT, fontsize, fontface, False, False, False)
         self.StyleSetSpec(wx.stc.STC_STYLE_DEFAULT, "")
         self.StyleClearAll()
         self.SetIndent(4)
@@ -127,7 +134,7 @@ class Editor(wx.stc.StyledTextCtrl):
             self.SetLexer(syntax.lexer)
             self.SetKeyWords(0, syntax.keywords)
             self.StyleResetDefault()
-            self.StyleSetFontAttr(wx.stc.STC_STYLE_DEFAULT, 10, fontface, False, False, False)
+            self.StyleSetFontAttr(wx.stc.STC_STYLE_DEFAULT, fontsize, fontface, False, False, False)
             self.StyleSetSpec(wx.stc.STC_STYLE_DEFAULT, "")
             self.StyleClearAll()
             for style_num, spec in syntax.stylespecs:
@@ -275,8 +282,13 @@ class Editor(wx.stc.StyledTextCtrl):
     def OnStcUpdateUI(self, evt):
         self.sig_status_changed.signal(self)
 
+    def OnDropFiles(self, x, y, filenames):
+        for filename in filenames:
+            self.env.open_file(filename)
+        return True
+
     def DoFind(self):
-        dlg = FindReplaceDialog(self, os.path.basename(self.path), self.env.find_details)
+        dlg = FindReplaceDialog(wx.GetApp().GetTopWindow(), self, os.path.basename(self.path), self.env.find_details)
         try:
             dlg.ShowModal()
             self.env.find_details = dlg.GetFindDetails()
@@ -303,7 +315,7 @@ class Editor(wx.stc.StyledTextCtrl):
     CanFindPrev = CanFindNext
 
     def GoToLine(self):
-        dlg = GoToLineDialog(self, os.path.basename(self.path))
+        dlg = GoToLineDialog(wx.GetApp().GetTopWindow(), os.path.basename(self.path))
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 self.GotoLine(dlg.GetLineNumber())

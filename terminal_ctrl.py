@@ -14,7 +14,8 @@ class TerminalCtrl(wx.Panel):
 
         style = wx.TE_MULTILINE | wx.TE_READONLY | wx.HSCROLL
         self.text = wx.TextCtrl(self, style=style)
-        font = wx.Font(10, wx.FONTFAMILY_TELETYPE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
+        fontsize = 12 if wx.Platform == "__WXMAC__" else 10
+        font = wx.Font(fontsize, wx.FONTFAMILY_MODERN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
         self.text.SetFont(font)
 
         self.status_label = wx.StaticText(self)

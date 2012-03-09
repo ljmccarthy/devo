@@ -25,6 +25,7 @@ class DirDialog(wx.Dialog):
         sizer.Add(btnsizer, 0, wx.EXPAND | wx.ALL, 5)
         self.SetSizer(sizer)
         self.dirtree.SetFocus()
+        self.Centre()
 
     def OpenFile(self, path):
         pass

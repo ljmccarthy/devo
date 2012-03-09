@@ -10,25 +10,25 @@ from menu import Menu, MenuItem, MenuSeparator
 from util import iter_tree_children
 
 file_context_menu = Menu("", [
-    MenuItem(ID_NEW_FOLDER, "&New Folder"),
-    MenuItem(ID_OPEN_FOLDER, "&Open Containing Folder"),
-    MenuSeparator,
     MenuItem(ID_OPEN, "&Open"),
     MenuItem(ID_EDIT, "&Edit with Devo"),
     MenuItem(ID_RENAME, "&Rename"),
     MenuItem(ID_DELETE, "&Delete"),
+    MenuSeparator,
+    MenuItem(ID_NEW_FOLDER, "&New Folder"),
+    MenuItem(ID_OPEN_FOLDER, "&Open Containing Folder"),
     MenuSeparator,
     MenuItem(ID_EXPAND_ALL, "E&xpand All"),
     MenuItem(ID_COLLAPSE_ALL, "&Collapse All"),
 ])
 
 dir_context_menu = Menu("", [
-    MenuItem(ID_NEW_FOLDER, "&New Folder"),
-    MenuItem(ID_OPEN_FOLDER, "&Open Containing Folder"),
-    MenuSeparator,
     MenuItem(ID_OPEN, "&Open"),
     MenuItem(ID_RENAME, "&Rename"),
     MenuItem(ID_DELETE, "&Delete"),
+    MenuSeparator,
+    MenuItem(ID_NEW_FOLDER, "&New Folder"),
+    MenuItem(ID_OPEN_FOLDER, "&Open Containing Folder"),
     MenuSeparator,
     MenuItem(ID_EXPAND_ALL, "E&xpand All"),
     MenuItem(ID_COLLAPSE_ALL, "&Collapse All"),    

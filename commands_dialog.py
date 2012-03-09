@@ -44,7 +44,7 @@ class EditCommandDialog(wx.Dialog):
         self.field_detach = wx.CheckBox(self, label="Detach Process")
         self.field_detach.SetValue(command.get("detach", False))
 
-        grid = wx.FlexGridSizer(2, 2, 5, 5)
+        grid = wx.FlexGridSizer(6, 2, 5, 5)
         grid.AddGrowableCol(1, 1)
         grid.Add(wx.StaticText(self, label="Name in Menu"), 0, wx.ALIGN_CENTER_VERTICAL)
         grid.Add(self.field_name, 0, wx.EXPAND)
@@ -73,10 +73,14 @@ class EditCommandDialog(wx.Dialog):
         sizer.Add(grid, 1, wx.EXPAND | wx.ALL, 5)
         sizer.Add(btn_sizer, 0, wx.EXPAND | wx.ALL, 5)
         self.SetSizer(sizer)
-        self.SetMinSize(wx.Size(400, -1))
         self.Fit()
-        self.SetMinSize(self.Size)
+
+        size = (max(400, self.Size.width), self.Size.height)
+        self.SetSize(size)
+        self.SetMinSize(size)
         self.SetMaxSize(wx.Size(-1, self.Size.height))
+        self.Centre()
+
         self.field_name.SetFocus()
 
         self.Bind(wx.EVT_BUTTON, self.OnOK, id=wx.ID_OK)
@@ -177,6 +181,7 @@ class CommandsDialog(wx.Dialog):
         sizer.Add(btn_sizer, 0, wx.EXPAND | wx.ALL, 5)
         self.SetSizer(sizer)
         self.Fit()
+        self.Centre()
         self.SetMinSize(self.Size)
         self.cmdlist.SetFocus()
 
