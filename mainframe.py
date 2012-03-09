@@ -39,6 +39,9 @@ class AppEnv(object):
     def open_file(self, path):
         return self._mainframe.OpenEditor(path)
 
+    def open_static_text(self, title, text):
+        return self._mainframe.OpenStaticEditor(title, text)
+
     def add_recent_file(self, path):
         self._mainframe.AddRecentFile(path)
 
@@ -546,6 +549,10 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                     self.AddPage(editor)
                     self.AddRecentFile(path)
 
+    def OpenStaticEditor(self, title, text):
+        editor = self.NewEditor()
+        editor.SetStatic(title, text)
+
     def OnNewFile(self, evt):
         self.NewEditor()
 
@@ -716,7 +723,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             self.OpenProject(self.projects_sorted[index][0])
 
     def OnAboutBox(self, evt):
-        dlg = AboutDialog(self)
+        dlg = AboutDialog(self, self.env)
         try:
             dlg.ShowModal()
         finally:

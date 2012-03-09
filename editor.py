@@ -46,6 +46,7 @@ class Editor(wx.stc.StyledTextCtrl, wx.FileDropTarget):
         self.path = path
         self.file_encoding = "utf-8"
         self.modified_externally = False
+        self.static_title = None
 
         self.sig_title_changed = Signal(self)
         self.sig_status_changed = Signal(self)
@@ -76,6 +77,8 @@ class Editor(wx.stc.StyledTextCtrl, wx.FileDropTarget):
 
     @property
     def title(self):
+        if self.static_title is not None:
+            return self.static_title
         path = os.path.basename(self.path) or "Untitled"
         return path + " *" if self.modified else path
 
@@ -145,6 +148,14 @@ class Editor(wx.stc.StyledTextCtrl, wx.FileDropTarget):
             self.Colourise(0, -1)
         else:
             self.SetNullSyntax()
+
+    def SetStatic(self, title, text):
+        self.static_title = title
+        self.path = ""
+        self.SetText(text)
+        self.SetSavePoint()
+        self.EmptyUndoBuffer()
+        self.SetReadOnly(True)
 
     @coroutine
     def LoadFile(self, path):
@@ -218,6 +229,7 @@ class Editor(wx.stc.StyledTextCtrl, wx.FileDropTarget):
             else:
                 self.SetSyntaxFromFilename(path)
                 self.path = path
+                self.static_title = None
                 self.env.add_monitor_path(path)
                 self.env.add_recent_file(path)
                 self.sig_title_changed.signal(self)
@@ -337,19 +349,26 @@ class Editor(wx.stc.StyledTextCtrl, wx.FileDropTarget):
         }
         if self.path:
             p["path"] = self.path
-        elif self.modified:
+        else:
             p["text"] = self.GetText()
+            if self.static_title is not None:
+                p["static_title"] = self.static_title
         return p
 
     @coroutine
     def LoadPerspective(self, p):
-        future = None
         if "text" in p:
             self.modified_externally = False
-            self.SetSavePoint()
-            self.SetText(p["text"])
+            static_title = p.get("static_title")
+            if static_title is None:
+                self.SetSavePoint()
+                self.SetText(p["text"])
+            else:
+                self.SetStatic(static_title, p["text"])
+
         elif "path" in p:
             yield self.LoadFile(p["path"])
             self.EmptyUndoBuffer()
+
         self.ScrollToLine(p.get("line", 0))
         self.SetSelection(*p.get("selection", (0, 0)))
