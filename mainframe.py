@@ -39,6 +39,9 @@ class AppEnv(object):
     def open_file(self, path):
         return self._mainframe.OpenEditor(path)
 
+    def open_text(self, text):
+        return self._mainframe.OpenEditorWithText(text)
+
     def open_static_text(self, title, text):
         return self._mainframe.OpenStaticEditor(title, text)
 
@@ -120,7 +123,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.manager = aui.AuiManager(self)
         self.notebook = aui.AuiNotebook(self, agwStyle=NB_STYLE)
         self.tree = DirTreeCtrl(self, self.env)
-        self.terminal = TerminalCtrl(self)
+        self.terminal = TerminalCtrl(self, self.env)
 
         self.manager.AddPane(self.tree,
             aui.AuiPaneInfo().Left().BestSize((220, -1)).CaptionVisible(False))
@@ -333,8 +336,6 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             try:
                 if self.project_filename:
                     yield async_call(write_settings, self.project_filename, self.project)
-                else:
-                    yield self.SaveSettings()
             except Exception, e:
                 dialogs.error(self, "Error saving project:\n\n%s" % e)
                 yield False
@@ -451,8 +452,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     @coroutine
     def OpenDefaultProject(self):
         if (yield self.SaveProject()):
-            self.project = self.settings.get("default_project", {})
-            self.settings["default_project"] = self.project
+            self.project = {}
             self.project_root = ""
             self.project_filename = ""
             self.session_filename = os.path.join(self.config_dir, "session")
@@ -548,6 +548,10 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                 with frozen_window(self.notebook):
                     self.AddPage(editor)
                     self.AddRecentFile(path)
+
+    def OpenEditorWithText(self, text):
+        editor = self.NewEditor()
+        editor.SetText(text)
 
     def OpenStaticEditor(self, title, text):
         editor = self.NewEditor()

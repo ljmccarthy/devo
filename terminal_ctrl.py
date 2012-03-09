@@ -4,8 +4,9 @@ from dialogs import dialogs
 from shell import run_shell_command, kill_shell_process
 
 class TerminalCtrl(wx.Panel):
-    def __init__(self, parent):
+    def __init__(self, parent, env):
         wx.Panel.__init__(self, parent)
+        self.env = env
 
         self.queue = Queue.Queue(1024)
         self.thread = None
@@ -21,6 +22,7 @@ class TerminalCtrl(wx.Panel):
         self.status_label = wx.StaticText(self)
         button_kill = wx.Button(self, label="Kill")
         button_stop = wx.Button(self, label="Stop")
+        button_copy = wx.Button(self, label="Copy to Editor")
         button_clear = wx.Button(self, label="Clear")
 
         top_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -30,6 +32,8 @@ class TerminalCtrl(wx.Panel):
         top_sizer.AddSpacer(5)
         top_sizer.Add(button_stop, 0, wx.ALIGN_CENTER)
         top_sizer.AddSpacer(5)
+        top_sizer.Add(button_copy, 0, wx.ALIGN_CENTER)
+        top_sizer.AddSpacer(5)
         top_sizer.Add(button_clear, 0, wx.ALIGN_CENTER)
 
         sizer = wx.BoxSizer(wx.VERTICAL)
@@ -37,12 +41,14 @@ class TerminalCtrl(wx.Panel):
         sizer.Add(self.text, 1, wx.EXPAND)
         self.SetSizer(sizer)
 
-        self.Bind(wx.EVT_BUTTON, self.OnClear, button_clear)
-        self.Bind(wx.EVT_BUTTON, self.OnStop, button_stop)
         self.Bind(wx.EVT_BUTTON, self.OnKill, button_kill)
-        self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateClear, button_clear)
-        self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateStop, button_stop)
+        self.Bind(wx.EVT_BUTTON, self.OnStop, button_stop)
+        self.Bind(wx.EVT_BUTTON, self.OnCopyToEditor, button_copy)
+        self.Bind(wx.EVT_BUTTON, self.OnClear, button_clear)
         self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateStop, button_kill)
+        self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateStop, button_stop)
+        self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateClear, button_copy)
+        self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateClear, button_clear)
         self.Bind(wx.EVT_TIMER, self.OnTimer, self.timer)
 
     def CanCopy(self):
@@ -53,6 +59,9 @@ class TerminalCtrl(wx.Panel):
 
     def SelectAll(self):
         self.text.SetSelection(-1, -1)
+
+    def OnCopyToEditor(self, evt):
+        self.env.open_text(self.text.GetValue())
 
     def OnClear(self, evt):
         self.text.SetValue("")
