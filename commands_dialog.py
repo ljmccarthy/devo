@@ -75,7 +75,7 @@ class EditCommandDialog(wx.Dialog):
         self.SetSizer(sizer)
         self.Fit()
 
-        size = (max(400, self.Size.width), self.Size.height)
+        size = (max(500, self.Size.width), self.Size.height)
         self.SetSize(size)
         self.SetMinSize(size)
         self.SetMaxSize(wx.Size(-1, self.Size.height))
