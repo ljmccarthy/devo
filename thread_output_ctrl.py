@@ -2,8 +2,8 @@ import Queue
 import wx
 
 class ThreadOutputCtrl(wx.TextCtrl):
-    def __init__(self, parent):
-        style = wx.TE_MULTILINE | wx.TE_READONLY | wx.HSCROLL
+    def __init__(self, parent, style=wx.TE_READONLY):
+        style = style | wx.TE_MULTILINE | wx.HSCROLL
         wx.TextCtrl.__init__(self, parent, style=style)
 
         fontsize = 12 if wx.Platform == "__WXMAC__" else 10
@@ -27,6 +27,7 @@ class ThreadOutputCtrl(wx.TextCtrl):
 
     def stop(self):
         self.timer.Stop()
+        wx.CallAfter(self.flush)
 
     def write(self, s):
         self.queue.put(s)

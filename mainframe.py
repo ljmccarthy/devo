@@ -12,6 +12,8 @@ from commands_dialog import CommandsDialog
 from dirtree import DirTreeCtrl, DirNode
 from editor import Editor
 from file_monitor import FileMonitor
+from find_in_files_ctrl import FindInFilesCtrl
+from find_in_files_dialog import FindInFilesDialog
 from find_replace_dialog import FindReplaceDetails
 from lru import LruQueue
 from menu import MenuItem
@@ -127,13 +129,16 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.notebook = aui.AuiNotebook(self, agwStyle=NB_STYLE)
         self.tree = DirTreeCtrl(self, self.env)
         self.terminal = TerminalCtrl(self, self.env)
+        self.find_in_files = FindInFilesCtrl(self, self.env)
 
         self.manager.AddPane(self.tree,
             aui.AuiPaneInfo().Left().BestSize((220, -1)).CaptionVisible(False))
         self.manager.AddPane(self.notebook,
             aui.AuiPaneInfo().CentrePane())
         self.manager.AddPane(self.terminal,
-            aui.AuiPaneInfo().Hide().Bottom().BestSize((-1, 180)).Caption("Terminal"))
+            aui.AuiPaneInfo().Hide().Bottom().BestSize((width, 180)).Caption("Terminal"))
+        self.manager.AddPane(self.find_in_files,
+            aui.AuiPaneInfo().Hide().Top().BestSize((width, 250)).Caption("Find in Files"))
         self.manager.Update()
 
         self.Startup(project_root)
@@ -149,6 +154,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.Bind(wx.EVT_MENU, self.OnOpenFile, id=ID.OPEN)
         self.Bind(wx.EVT_MENU, self.OnCloseFile, id=ID.CLOSE)
         self.Bind(wx.EVT_MENU, self.OnClose, id=ID.EXIT)
+        self.Bind(wx.EVT_MENU, self.OnFindInFiles, id=ID.FIND_IN_FILES)
         self.Bind(wx.EVT_MENU_RANGE, self.OnRecentFile,
                   id=self.recent_file_first_id, id2=self.recent_file_last_id)
 
@@ -637,6 +643,23 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     def OnOrganiseProjects(self, evt):
         pass
 
+    def ShowPane(self, window):
+        pane = self.manager.GetPane(window)
+        if not pane.IsShown():
+            pane.Show()
+            self.manager.Update()
+
+    def OnFindInFiles(self, evt):
+        dlg = FindInFilesDialog(self)
+        try:
+            dlg.path = self.project_root
+            if dlg.ShowModal() == wx.ID_OK:
+                details = dlg.GetDetails()
+                self.find_in_files.find(details)
+                self.ShowPane(self.find_in_files)
+        finally:
+            dlg.Destroy()
+
     def OnConfigureSharedCommands(self, evt):
         dlg = CommandsDialog(self, self.settings.get("commands", []))
         try:
@@ -662,12 +685,6 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     def OnUpdate_ConfigureProjectCommands(self, evt):
         evt.Enable(bool(self.project_filename))
 
-    def ShowTerminal(self):
-        pane = self.manager.GetPane(self.terminal)
-        if not pane.IsShown():
-            pane.Show()
-            self.manager.Update()
-
     def RunCommand(self, cmdline, workdir=None, detach=False):
         workdir = workdir or None
         if detach:
@@ -675,7 +692,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         else:
             try:
                 self.terminal.run(cmdline, cwd=workdir)
-                self.ShowTerminal()
+                self.ShowPane(self.terminal)
             except Exception, e:
                 dialogs.error(self, "Error executing command:\n\n%s" % e)
 
