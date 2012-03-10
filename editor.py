@@ -310,7 +310,12 @@ class Editor(wx.stc.StyledTextCtrl, wx.FileDropTarget):
     def Find(self):
         selected = self.GetSelectedText().strip().split("\n")[0]
         if selected:
-            self.env.find_details.find = selected
+            find_details = self.env.find_details
+            find_details.find = selected
+            find_details.replace = ""
+            find_details.case = False
+            find_details.regexp = False
+            find_details.reverse = False
         self.DoFind()
 
     def FindNext(self):
