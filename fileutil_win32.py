@@ -1,6 +1,8 @@
 import os
 import win32api, win32con, win32file, pywintypes
 from win32com.shell import shell, shellcon
+
+from async import async_function
 from fileutil_common import *
 
 # os.rename is broken on windows
@@ -22,10 +24,12 @@ def get_user_config_dir(name=""):
 def is_hidden_file(path):
     return (win32file.GetFileAttributes(path) & win32file.FILE_ATTRIBUTE_HIDDEN) != 0
 
+@async_function
 def shell_remove(path):
     shell.SHFileOperation(
         (0, shellcon.FO_DELETE, path, None, shellcon.FOF_ALLOWUNDO, None, None))
 
+@async_function
 def shell_copy(srcpath, dstpath):
     if destination_is_same(srcpath, dstpath):
         return
@@ -33,6 +37,7 @@ def shell_copy(srcpath, dstpath):
         shell.SHFileOperation(
             (0, shellcon.FO_COPY, srcpath, dstpath, shellcon.FOF_ALLOWUNDO, None, None))
 
+@async_function
 def shell_move(srcpath, dstpath):
     if destination_is_same(srcpath, dstpath):
         return
@@ -44,9 +49,9 @@ def shell_move_or_copy(srcpath, dstpath):
     srcdrive = os.path.splitdrive(os.path.realpath(srcpath))[0].upper()
     dstdrive = os.path.splitdrive(os.path.realpath(dstpath))[0].upper()
     if srcdrive == dstdrive:
-        shell_move(srcpath, dstpath)
+        return shell_move(srcpath, dstpath)
     else:
-        shell_copy(srcpath, dstpath)
+        return shell_copy(srcpath, dstpath)
 
 __all__ = (
     "rename",
