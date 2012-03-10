@@ -9,8 +9,11 @@ class FilePicker(wx.Panel):
         wx.Panel.__init__(self, parent)
         size = wx.Size(*size)
         self.browse_func = browse_func
-        self.text = wx.TextCtrl(self, ID_BROWSE, size=(size.width - 30, size.height), value=value)
-        btn_browse = wx.Button(self, ID_BROWSE, size=(30, -1), label="...")
+        self.text = wx.TextCtrl(self, ID_BROWSE,
+            size=(size.width - 30, size.height), value=value)
+        btn_browse = wx.Button(self, ID_BROWSE,
+            size=(30, -1 if wx.Platform == "__WXMAC__" else self.text.Size.height),
+            label="...")
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         sizer.Add(self.text, 1, wx.ALIGN_CENTRE_VERTICAL|wx.FIXED_MINSIZE|wx.ALL, 2)
         sizer.Add(btn_browse, 0, wx.ALIGN_CENTRE_VERTICAL|wx.ALL, 2)
