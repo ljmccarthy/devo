@@ -28,7 +28,7 @@ def process_args(args):
     try:
         opts, args = getopt.gnu_getopt(args, "", ["project="])
     except getopt.GetoptError, e:
-        sys.stderr.write("devo: %s\n" % e)
+        sys.stderr.write("devo: error: %s\n" % e)
         sys.exit(1)
 
     project = None
