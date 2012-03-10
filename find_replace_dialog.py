@@ -126,8 +126,6 @@ class FindReplaceDetails(object):
                     break
         return count
 
-ID_GO_TO_START = wx.NewId()
-
 class FindReplaceDialog(wx.Dialog):
     def __init__(self, parent, editor, filename="", details=None):
         title = "Find and Replace"
@@ -157,7 +155,8 @@ class FindReplaceDialog(wx.Dialog):
 
         btnsizer = wx.BoxSizer(wx.HORIZONTAL)
         btnsizer.AddStretchSpacer()
-        btnsizer.Add(wx.Button(self, ID_GO_TO_START, "&Go to Start"), 0, wx.ALL, 5)
+        btn_goto_start = wx.Button(self, label="&Go to Start")
+        btnsizer.Add(btn_goto_start, 0, wx.ALL, 5)
         btn_find = wx.Button(self, wx.ID_FIND, "&Find")
         btn_find.SetDefault()
         btnsizer.Add(btn_find, 0, wx.ALL, 5)
@@ -185,7 +184,7 @@ class FindReplaceDialog(wx.Dialog):
         self.combo_find.SetFocus()
         self.combo_find.SetMark(0, len(self.combo_find.GetValue()))
 
-        self.Bind(wx.EVT_BUTTON, self.OnGoToStart, id=ID_GO_TO_START)
+        self.Bind(wx.EVT_BUTTON, self.OnGoToStart, btn_goto_start)
         self.Bind(wx.EVT_BUTTON, self.OnFind, id=wx.ID_FIND)
         self.Bind(wx.EVT_BUTTON, self.OnReplace, id=wx.ID_REPLACE)
         self.Bind(wx.EVT_BUTTON, self.OnReplaceAll, id=wx.ID_REPLACE_ALL)
