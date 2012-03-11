@@ -2,22 +2,13 @@ import os
 import wx, wx.stc
 from async import async_call, coroutine
 from dialogs import dialogs
+from editor_fonts import init_stc_style
 from fileutil import atomic_write_file, read_file
 from find_replace_dialog import FindReplaceDialog
 from go_to_line_dialog import GoToLineDialog
 from menu_defs import edit_menu
 from signal_wx import Signal
 from syntax import filename_syntax_re, syntax_dict
-
-if wx.Platform == "__WXMSW__":
-    fontface = "Consolas"
-    fontsize = 10
-elif wx.Platform == "__WXMAC__":
-    fontface = "Menlo Regular"
-    fontsize = 12
-else:
-    fontface = "Monospace"
-    fontsize = 10
 
 def decode_text(text):
     try:
@@ -98,6 +89,10 @@ class Editor(wx.stc.StyledTextCtrl, wx.FileDropTarget):
         self.modified_externally = True
         self.sig_title_changed.signal(self)
 
+    def SetCurrentLine(self, line):
+        pos = self.PositionFromLine(line)
+        self.SetSelection(pos, pos)
+
     @coroutine
     def TryClose(self):
         if self.modified:
@@ -118,13 +113,7 @@ class Editor(wx.stc.StyledTextCtrl, wx.FileDropTarget):
             yield True
 
     def SetNullSyntax(self):
-        self.ClearDocumentStyle()
-        self.SetLexer(wx.stc.STC_LEX_NULL)
-        self.SetKeyWords(0, "")
-        self.StyleResetDefault()
-        self.StyleSetFontAttr(wx.stc.STC_STYLE_DEFAULT, fontsize, fontface, False, False, False)
-        self.StyleSetSpec(wx.stc.STC_STYLE_DEFAULT, "")
-        self.StyleClearAll()
+        init_stc_style(self)
         self.SetIndent(4)
         self.SetTabWidth(8)
         self.SetUseTabs(False)
@@ -133,13 +122,7 @@ class Editor(wx.stc.StyledTextCtrl, wx.FileDropTarget):
         m = filename_syntax_re.match(os.path.basename(path))
         if m:
             syntax = syntax_dict[m.lastgroup]
-            self.ClearDocumentStyle()
-            self.SetLexer(syntax.lexer)
-            self.SetKeyWords(0, syntax.keywords)
-            self.StyleResetDefault()
-            self.StyleSetFontAttr(wx.stc.STC_STYLE_DEFAULT, fontsize, fontface, False, False, False)
-            self.StyleSetSpec(wx.stc.STC_STYLE_DEFAULT, "")
-            self.StyleClearAll()
+            init_stc_style(self, lexer=syntax.lexer, keywords=syntax.keywords)
             for style_num, spec in syntax.stylespecs:
                 self.StyleSetSpec(style_num, spec)
             self.SetIndent(syntax.indent)

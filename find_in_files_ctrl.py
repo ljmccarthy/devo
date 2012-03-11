@@ -1,8 +1,13 @@
-import re, time
+import sys, re, time
 import wx
 from async import async_call
 from find_in_files import FindInFiles, make_matcher
 from thread_output_ctrl import ThreadOutputCtrl
+
+if sys.platform == "win32":
+    r_path_start = re.compile(r"^[A-Za-z]:\\")
+else:
+    r_path_start = re.compile(r"^/")
 
 class FindInFilesCtrl(wx.Panel):
     def __init__(self, parent, env):
@@ -32,6 +37,7 @@ class FindInFilesCtrl(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self.OnClear, button_clear)
         self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateStop, button_stop)
         self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateClear, button_clear)
+        self.output.Bind(wx.EVT_LEFT_DCLICK, self.OnLineDoubleClicked)
 
     def OnStop(self, evt):
         if self.finder:
@@ -41,10 +47,29 @@ class FindInFilesCtrl(wx.Panel):
         evt.Enable(bool(self.finder))
 
     def OnClear(self, evt):
-        self.output.SetValue("")
+        self.output.ClearAll()
 
     def OnUpdateClear(self, evt):
         evt.Enable(not self.output.IsEmpty())
+
+    def OnLineDoubleClicked(self, evt):
+        cur_line = self.output.GetCurrentLine()
+        s = self.output.GetLine(cur_line).strip()
+
+        try:
+            line_num = int(s.split(":", 1)[0])
+            cur_line -= 1
+        except ValueError:
+            line_num = 1
+
+        for cur_line in xrange(cur_line, 0, -1):
+            path = self.output.GetLine(cur_line).rstrip()
+            if r_path_start.match(path):
+                try:
+                    self.env.open_file(path, line_num)
+                except IOError:
+                    pass
+                break
 
     def find(self, details):
         if self.finder:
@@ -59,7 +84,7 @@ class FindInFilesCtrl(wx.Panel):
         self.details = details
         self.finder = FindInFiles(details.path, matcher, self)
         async_call(self.finder.search)
-        self.output.SetValue("")
+        self.output.ClearAll()
         self.output.start()
 
     def add_file(self, filepath):

@@ -1,20 +1,21 @@
 import Queue
-import wx
+import wx, wx.stc
+from editor_fonts import init_stc_style
 
-class ThreadOutputCtrl(wx.TextCtrl):
+class ThreadOutputCtrl(wx.stc.StyledTextCtrl):
     def __init__(self, parent, style=wx.TE_READONLY):
-        style = style | wx.TE_MULTILINE | wx.HSCROLL
-        wx.TextCtrl.__init__(self, parent, style=style)
-
-        fontsize = 12 if wx.Platform == "__WXMAC__" else 10
-        font = wx.Font(fontsize, wx.FONTFAMILY_MODERN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
-        self.SetFont(font)
+        wx.stc.StyledTextCtrl.__init__(self, parent)
+        init_stc_style(self)
+        self.SetIndent(4)
+        self.SetTabWidth(8)
+        self.SetUseTabs(False)
 
         self.queue = Queue.Queue(1024)
         self.timer = wx.Timer(self)
-        self.Bind(wx.EVT_TIMER, self.OnTimer, self.timer)
 
-    def OnTimer(self, evt):
+        self.Bind(wx.EVT_TIMER, self.__OnTimer, self.timer)
+
+    def __OnTimer(self, evt):
         self.flush()
 
     def flush(self):
@@ -31,3 +32,6 @@ class ThreadOutputCtrl(wx.TextCtrl):
 
     def write(self, s):
         self.queue.put(s)
+
+    def IsEmpty(self):
+        return self.GetTextLength() == 0

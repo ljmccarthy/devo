@@ -41,8 +41,8 @@ class AppEnv(object):
     def __init__(self, mainframe):
         self._mainframe = mainframe
 
-    def open_file(self, path):
-        return self._mainframe.OpenEditor(path)
+    def open_file(self, path, line=None):
+        return self._mainframe.OpenEditor(path, line)
 
     def open_text(self, text):
         return self._mainframe.OpenEditorWithText(text)
@@ -125,7 +125,10 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.find_details = FindReplaceDetails("", "")
         self.editor_focus = None
 
-        self.manager = aui.AuiManager(self)
+        agwFlags = aui.AUI_MGR_TRANSPARENT_HINT \
+                 | aui.AUI_MGR_HINT_FADE \
+                 | aui.AUI_MGR_NO_VENETIAN_BLINDS_FADE
+        self.manager = aui.AuiManager(self, agwFlags=agwFlags)
         self.notebook = aui.AuiNotebook(self, agwStyle=NB_STYLE)
         self.tree = DirTreeCtrl(self, self.env)
         self.terminal = TerminalCtrl(self, self.env)
@@ -557,7 +560,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
 
     @managed("cm")
     @queued_coroutine("cq")
-    def OpenEditor(self, path):
+    def OpenEditor(self, path, line=None):
         path = os.path.realpath(path)
         if not (yield async_call(is_text_file, path)):
             if not dialogs.ask_open_binary(self, path):
@@ -567,6 +570,9 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             i = self.notebook.GetPageIndex(editor)
             if i != wx.NOT_FOUND:
                 self.notebook.SetSelection(i)
+            if line is not None:
+                editor.SetCurrentLine(line - 1)
+            editor.SetFocus()
         else:
             editor = Editor(self.notebook, self.env, path)
             if not (yield editor.TryLoadFile(path)):
@@ -575,6 +581,9 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                 with frozen_window(self.notebook):
                     self.AddPage(editor)
                     self.AddRecentFile(path)
+                    if line is not None:
+                        editor.SetCurrentLine(line - 1)
+                    editor.SetFocus()
 
     def OpenEditorWithText(self, text):
         editor = self.NewEditor()

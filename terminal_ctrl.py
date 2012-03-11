@@ -57,7 +57,7 @@ class TerminalCtrl(wx.Panel):
         self.env.open_text(self.text.GetValue())
 
     def OnClear(self, evt):
-        self.text.SetValue("")
+        self.text.ClearAll()
 
     def OnUpdateClear(self, evt):
         evt.Enable(not self.text.IsEmpty())
@@ -86,7 +86,7 @@ class TerminalCtrl(wx.Panel):
 
         self.cmdline = cmdline
         self.status_label.SetLabel(cmdline + "\nRunning")
-        self.text.SetValue("")
+        self.text.ClearAll()
         self.text.start()
 
     def stop(self):
