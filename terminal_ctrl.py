@@ -45,7 +45,8 @@ class TerminalCtrl(wx.Panel):
         self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateClear, button_clear)
 
     def CanCopy(self):
-        return self.text.CanCopy()
+        start, end = self.text.GetSelection()
+        return start != end
 
     def Copy(self):
         self.text.Copy()
