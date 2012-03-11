@@ -58,7 +58,7 @@ class TerminalCtrl(wx.Panel):
         return start != end
 
     def CanPaste(self):
-        return self.output.GetReadOnly()
+        return self.output.CanPaste()
 
     def Undo(self):
         self.output.Undo()
