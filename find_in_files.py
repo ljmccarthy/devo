@@ -92,9 +92,13 @@ class FindInFilesFileOutput(object):
 def find_in_files(path, matcher, output):
     return FindInFiles(path, matcher, output).search()
 
-def make_matcher(s, case_sensitive=True):
-    flags = 0 if case_sensitive else re.IGNORECASE
-    return re.compile("^.*" + re.escape(s) + ".*$", flags).match
+def make_matcher(pattern, case_sensitive=True, is_regexp=False):
+    if not is_regexp:
+        pattern = "^.*" + re.escape(pattern)
+    flags = re.UNICODE
+    if not case_sensitive:
+        flags |= re.IGNORECASE
+    return re.compile(pattern, flags).match
 
 if __name__ == "__main__":
     import sys

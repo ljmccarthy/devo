@@ -111,10 +111,8 @@ class FindInFilesCtrl(wx.Panel):
         if self.finder:
             self.finder.stop()
 
-        if details.regexp:
-            matcher = re.compile(details.find)
-        else:
-            matcher = make_matcher(details.find, case_sensitive=details.case)
+        matcher = make_matcher(details.find,
+            case_sensitive=details.case, is_regexp=details.regexp)
 
         self.start_time = time.time()
         self.details = details
