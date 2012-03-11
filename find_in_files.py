@@ -61,11 +61,11 @@ class FindInFiles(object):
         try:
             self._search_dir(self.path)
         except FindInFilesAborted:
-            self.output.abort_find()
+            self.output.abort_find(self)
         except Exception:
-            self.output.end_find()
+            self.output.end_find(self)
         else:
-            self.output.end_find()
+            self.output.end_find(self)
 
     def stop(self):
         self.quit = True
@@ -86,7 +86,7 @@ class FindInFilesFileOutput(object):
     def end_file(self):
         self.file.write("\n")
 
-    def end_find(self):
+    def end_find(self, finder):
         pass
 
 def find_in_files(path, matcher, output):

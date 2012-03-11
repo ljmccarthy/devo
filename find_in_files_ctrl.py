@@ -95,15 +95,19 @@ class FindInFilesCtrl(wx.Panel):
     def end_file(self):
         self.output.write("\n")
 
-    def finish(self, message):
+    def __do_finish(self, finder):
+        if finder is self.finder:
+            self.details = None
+            self.finder = None
+            self.output.stop()
+
+    def finish(self, finder, message):
         completed_time = time.time() - self.start_time
         self.output.write(message % (self.details.find, self.details.path, completed_time))
-        self.output.stop()
-        self.details = None
-        self.finder = None
+        wx.CallAfter(self.__do_finish, finder)
 
-    def end_find(self):
-        self.finish("Search for '%s' in %s completed in %.2f seconds")
+    def end_find(self, finder):
+        self.finish(finder, "Search for '%s' in %s completed in %.2f seconds")
 
-    def abort_find(self):
-        self.finish("Search for '%s' in %s aborted after %.2f seconds")
+    def abort_find(self, finder):
+        self.finish(finder, "Search for '%s' in %s aborted after %.2f seconds")
