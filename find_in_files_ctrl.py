@@ -19,8 +19,8 @@ class FindInFilesCtrl(wx.Panel):
         self.output = ThreadOutputCtrl(self)
 
         self.status_label = wx.StaticText(self)
-        button_stop = wx.Button(self, label="&Stop")
-        button_clear = wx.Button(self, label="&Clear")
+        button_stop = wx.Button(self, label="&Stop", size=(120, 25))
+        button_clear = wx.Button(self, label="&Clear", size=(120, 25))
         top_sizer = wx.BoxSizer(wx.HORIZONTAL)
         top_sizer.Add(self.status_label, 0, wx.ALIGN_CENTER)
         top_sizer.Add(button_stop, 0, wx.ALIGN_CENTER)

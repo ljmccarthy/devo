@@ -14,10 +14,10 @@ class TerminalCtrl(wx.Panel):
         self.output = ThreadOutputCtrl(self)
 
         self.status_label = wx.StaticText(self)
-        button_kill = wx.Button(self, label="Kill")
-        button_stop = wx.Button(self, label="Stop")
-        button_copy = wx.Button(self, label="Copy to Editor")
-        button_clear = wx.Button(self, label="Clear")
+        button_kill = wx.Button(self, label="Kill", size=(120, 25))
+        button_stop = wx.Button(self, label="Stop", size=(120, 25))
+        button_copy = wx.Button(self, label="Copy to Editor", size=(120, 25))
+        button_clear = wx.Button(self, label="Clear", size=(120, 25))
 
         top_sizer = wx.BoxSizer(wx.HORIZONTAL)
         top_sizer.Add(self.status_label, 0, wx.ALIGN_CENTER)
@@ -79,7 +79,7 @@ class TerminalCtrl(wx.Panel):
         self.output.SelectAll()
 
     def OnCopyToEditor(self, evt):
-        self.env.open_output(self.output.Getoutput())
+        self.env.open_text(self.output.GetText())
 
     def OnClear(self, evt):
         self.output.ClearAll()
