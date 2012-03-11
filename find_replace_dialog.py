@@ -105,17 +105,21 @@ class FindReplaceDetails(object):
 
     def ReplaceAll(self, editor):
         count = 0
-        editor.SetSelection(0, 0)
-        m = True
-        while m:
-            for pos, line in self._IterFindLines(editor, wrap=False):
-                m = self.rx_find.search(line)
-                if m and m.start() != m.end():
-                    editor.SetSelection(pos + m.start(), pos + m.end())
-                    self._ReplaceSelected(editor)
-                    count += 1
-                    break
-        return count
+        editor.BeginUndoAction()
+        try:
+            editor.SetSelection(0, 0)
+            m = True
+            while m:
+                for pos, line in self._IterFindLines(editor, wrap=False):
+                    m = self.rx_find.search(line)
+                    if m and m.start() != m.end():
+                        editor.SetSelection(pos + m.start(), pos + m.end())
+                        self._ReplaceSelected(editor)
+                        count += 1
+                        break
+            return count
+        finally:
+            editor.EndUndoAction()
 
 class FindReplaceDialog(wx.Dialog):
     def __init__(self, parent, editor, filename="", details=None):
