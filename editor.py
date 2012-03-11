@@ -92,6 +92,7 @@ class Editor(wx.stc.StyledTextCtrl, wx.FileDropTarget):
     def SetCurrentLine(self, line):
         pos = self.PositionFromLine(line)
         self.SetSelection(pos, pos)
+        self.ScrollToLine(line - (self.LinesOnScreen() // 2))
 
     @coroutine
     def TryClose(self):
