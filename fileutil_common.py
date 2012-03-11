@@ -16,13 +16,13 @@ def ask_delete_file(path):
 
 def ask_move_file(srcpath, dstpath):
     return dialogs.message_dialog(get_top_window(),
-        "Are you sure you want to move:\n\t%s\nTo:\t%s" % (srcpath, dstpath),
+        "Are you sure you want to move:\n\t%s\n\nTo:\n\t%s" % (srcpath, dstpath),
         "Confirm Move",
         wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION) == wx.ID_YES
 
 def ask_copy_file(srcpath, dstpath):
     return dialogs.message_dialog(get_top_window(),
-        "Are you sure you want to copy:\n\t%s\nTo:\t%s" % (srcpath, dstpath),
+        "Are you sure you want to copy:\n\t%s\n\nTo:\n\t%s" % (srcpath, dstpath),
         "Confirm Copy",
         wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION) == wx.ID_YES
 
