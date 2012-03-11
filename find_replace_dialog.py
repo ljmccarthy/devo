@@ -111,9 +111,6 @@ class FindReplaceDetails(object):
             for pos, line in self._IterFindLines(editor, wrap=False):
                 m = self.rx_find.search(line)
                 if m and m.start() != m.end():
-                    if hasattr(editor, "ShowPosition"):
-                        editor.ShowPosition(pos + m.start())
-                    editor.CentreLine(editor.LineFromPosition(pos))
                     editor.SetSelection(pos + m.start(), pos + m.end())
                     self._ReplaceSelected(editor)
                     count += 1
