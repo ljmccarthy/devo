@@ -14,7 +14,6 @@ from editor import Editor
 from file_monitor import FileMonitor
 from find_in_files_ctrl import FindInFilesCtrl
 from find_in_files_dialog import FindInFilesDialog
-from find_replace_dialog import FindReplaceDetails
 from lru import LruQueue
 from menu import MenuItem
 from menu_defs import menubar
@@ -122,7 +121,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.updated_paths = set()
         self.deleted_paths = set()
         self.reloading = False
-        self.find_details = FindReplaceDetails("", "")
+        self.find_details = None
         self.find_in_files_details = None
         self.editor_focus = None
 
