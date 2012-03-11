@@ -165,11 +165,9 @@ class FindReplaceDialog(wx.Dialog):
         self.Centre()
 
         if details is not None:
-            for item in details.find_history:
-                self.combo_find.Append(item)
-            for item in details.replace_history:
-                self.combo_replace.Append(item)
+            self.combo_find.SetItems(details.find_history)
             self.combo_find.SetValue(details.find)
+            self.combo_replace.SetItems(details.replace_history)
             self.combo_replace.SetValue(details.replace)
             self.check_case.SetValue(details.case)
             self.check_regexp.SetValue(details.regexp)
