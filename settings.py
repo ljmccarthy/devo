@@ -3,8 +3,7 @@ import json
 import fileutil
 
 def read_settings(filename):
-    with open(filename, "rb") as f:
-        return json.loads(f.read())
+    return json.loads(fileutil.read_file(filename))
 
 def write_settings(filename, settings):
     fileutil.mkpath(os.path.dirname(filename))
