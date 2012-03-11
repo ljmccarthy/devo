@@ -54,7 +54,7 @@ class TerminalCtrl(wx.Panel):
         self.text.SetSelection(-1, -1)
 
     def OnCopyToEditor(self, evt):
-        self.env.open_text(self.text.GetValue())
+        self.env.open_text(self.text.GetText())
 
     def OnClear(self, evt):
         self.text.ClearAll()
