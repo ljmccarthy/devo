@@ -82,7 +82,7 @@ NB_STYLE = (aui.AUI_NB_CLOSE_ON_ALL_TABS  | aui.AUI_NB_TOP | aui.AUI_NB_TAB_SPLI
            | aui.AUI_NB_TAB_MOVE | aui.AUI_NB_SCROLL_BUTTONS | aui.AUI_NB_WINDOWLIST_BUTTON
            | wx.BORDER_NONE)
 
-editor_types = (Editor, TerminalCtrl)
+editor_types = (Editor, TerminalCtrl, FindInFilesCtrl)
 
 class MainFrame(wx.Frame, wx.FileDropTarget):
     def __init__(self, project_root=None):

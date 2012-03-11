@@ -44,6 +44,40 @@ class FindInFilesCtrl(wx.Panel):
             self.finder.stop()
         wx.Panel.Destroy(self)
 
+    def CanUndo(self):
+        return self.output.CanUndo()
+
+    def CanRedo(self):
+        return self.output.CanRedo()
+
+    def CanCut(self):
+        return not self.output.GetReadOnly() and self.CanCopy()
+
+    def CanCopy(self):
+        start, end = self.output.GetSelection()
+        return start != end
+
+    def CanPaste(self):
+        return self.output.CanPaste()
+
+    def Undo(self):
+        self.output.Undo()
+
+    def Redo(self):
+        self.output.Redo()
+
+    def Cut(self):
+        self.output.Cut()
+
+    def Copy(self):
+        self.output.Copy()
+
+    def Paste(self):
+        self.output.Paste()
+
+    def SelectAll(self):
+        self.output.SelectAll()
+
     def OnStop(self, evt):
         if self.finder:
             self.finder.stop()

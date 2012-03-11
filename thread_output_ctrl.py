@@ -24,14 +24,19 @@ class ThreadOutputCtrl(wx.stc.StyledTextCtrl):
             queue, self.__queue = self.__queue, []
         lines = "".join(queue)
         if lines:
+            self.SetReadOnly(False)
             self.AppendText(lines)
+            self.EmptyUndoBuffer()
+            self.SetReadOnly(True)
 
     def start(self, interval=100):
+        self.SetReadOnly(True)
         self.__timer.Start(interval)
 
     def stop(self):
         self.__timer.Stop()
-        wx.CallAfter(self.flush)
+        self.flush()
+        self.SetReadOnly(False)
 
     def write(self, s):
         with self.__lock:

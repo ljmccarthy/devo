@@ -11,7 +11,7 @@ class TerminalCtrl(wx.Panel):
 
         self.thread = None
         self.process = None
-        self.text = ThreadOutputCtrl(self)
+        self.output = ThreadOutputCtrl(self)
 
         self.status_label = wx.StaticText(self)
         button_kill = wx.Button(self, label="Kill")
@@ -32,7 +32,7 @@ class TerminalCtrl(wx.Panel):
 
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(top_sizer, 0, wx.EXPAND | wx.ALL, 5)
-        sizer.Add(self.text, 1, wx.EXPAND)
+        sizer.Add(self.output, 1, wx.EXPAND)
         self.SetSizer(sizer)
 
         self.Bind(wx.EVT_BUTTON, self.OnKill, button_kill)
@@ -44,24 +44,48 @@ class TerminalCtrl(wx.Panel):
         self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateClear, button_copy)
         self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateClear, button_clear)
 
+    def CanUndo(self):
+        return self.output.CanUndo()
+
+    def CanRedo(self):
+        return self.output.CanRedo()
+
+    def CanCut(self):
+        return not self.output.GetReadOnly() and self.CanCopy()
+
     def CanCopy(self):
-        start, end = self.text.GetSelection()
+        start, end = self.output.GetSelection()
         return start != end
 
+    def CanPaste(self):
+        return self.output.GetReadOnly()
+
+    def Undo(self):
+        self.output.Undo()
+
+    def Redo(self):
+        self.output.Redo()
+
+    def Cut(self):
+        self.output.Cut()
+
     def Copy(self):
-        self.text.Copy()
+        self.output.Copy()
+
+    def Paste(self):
+        self.output.Paste()
 
     def SelectAll(self):
-        self.text.SetSelection(-1, -1)
+        self.output.SelectAll()
 
     def OnCopyToEditor(self, evt):
-        self.env.open_text(self.text.GetText())
+        self.env.open_output(self.output.Getoutput())
 
     def OnClear(self, evt):
-        self.text.ClearAll()
+        self.output.ClearAll()
 
     def OnUpdateClear(self, evt):
-        evt.Enable(not self.text.IsEmpty())
+        evt.Enable(not self.output.IsEmpty())
 
     def OnStop(self, evt):
         self.stop()
@@ -87,8 +111,8 @@ class TerminalCtrl(wx.Panel):
 
         self.cmdline = cmdline
         self.status_label.SetLabel(cmdline + "\nRunning")
-        self.text.ClearAll()
-        self.text.start()
+        self.output.ClearAll()
+        self.output.start()
 
     def stop(self):
         if self.process:
@@ -107,17 +131,17 @@ class TerminalCtrl(wx.Panel):
                 line = process.stdout.readline()
                 if not line:
                     break
-                self.text.write(line.decode("utf-8", "replace"))
+                self.output.write(line.decode("utf-8", "replace"))
             rc = process.wait()
         finally:
             wx.CallAfter(self.__thread_exit, process, rc)
 
     def __thread_exit(self, process, rc):
-        self.text.flush()
+        self.output.flush()
         self.status_label.SetLabel(
             "%s\nProcess terminated%s" % (self.cmdline,
                 " with return code %d" % rc if rc is not None else ""))
         if self.process is process:
             self.thread = None
             self.process = None
-            self.text.stop()
+            self.output.stop()
