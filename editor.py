@@ -26,7 +26,7 @@ class Editor(wx.stc.StyledTextCtrl, wx.FileDropTarget):
     def __init__(self, parent, env, path=""):
         pre = wx.stc.PreStyledTextCtrl()
         pre.Hide()
-        pre.Create(parent, size=wx.Size(1, 1), style=wx.BORDER_NONE)
+        pre.Create(parent, pos=(-1, -1), size=(1, 1), style=wx.BORDER_NONE)
         self.PostCreate(pre)
         wx.FileDropTarget.__init__(self)
 
