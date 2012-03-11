@@ -1,7 +1,10 @@
-import sys, subprocess
+import sys, os, subprocess
 
 def run_shell_command(cmdline, pipe_output=True, **kwargs):
-    args = ["bash"] if sys.platform != "win32" else cmdline
+    if sys.platform == "win32":
+        args = cmdline
+    else:
+        args = [os.environ.get("SHELL", "/bin/sh")]
 
     process = subprocess.Popen(args,
         stdin = subprocess.PIPE if sys.platform != "win32" else None,
@@ -21,9 +24,11 @@ def run_shell_command(cmdline, pipe_output=True, **kwargs):
 def kill_shell_process(process, force=False):
     if sys.platform != "win32":
         signal = "-KILL" if force else "-TERM"
-        subprocess.call(["pkill", signal, "-P", str(process.pid)])
+        rc = subprocess.call(["pkill", signal, "-P", str(process.pid)])
+        if rc == 0:
+            return
+
+    if force:
+        process.kill()
     else:
-        if force:
-            process.kill()
-        else:
-            process.terminate()
+        process.terminate()
