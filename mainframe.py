@@ -277,6 +277,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.fmon.stop()
         async.shutdown_scheduler()
         self.tree.Destroy()
+        self.find_in_files.Destroy()
         self.Destroy()
 
     @managed("cm")

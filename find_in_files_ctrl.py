@@ -39,6 +39,11 @@ class FindInFilesCtrl(wx.Panel):
         self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateClear, button_clear)
         self.output.Bind(wx.EVT_LEFT_DCLICK, self.OnLineDoubleClicked)
 
+    def Destroy(self):
+        if self.finder:
+            self.finder.stop()
+        wx.Panel.Destroy(self)
+
     def OnStop(self, evt):
         if self.finder:
             self.finder.stop()
@@ -96,10 +101,13 @@ class FindInFilesCtrl(wx.Panel):
         self.output.write("\n")
 
     def __do_finish(self, finder):
-        if finder is self.finder:
-            self.details = None
-            self.finder = None
-            self.output.stop()
+        try:
+            if finder is self.finder:
+                self.details = None
+                self.finder = None
+                self.output.stop()
+        except wx.PyDeadObjectError:
+            pass
 
     def finish(self, finder, message):
         completed_time = time.time() - self.start_time
