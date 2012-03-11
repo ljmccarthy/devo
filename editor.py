@@ -89,10 +89,13 @@ class Editor(wx.stc.StyledTextCtrl, wx.FileDropTarget):
         self.modified_externally = True
         self.sig_title_changed.signal(self)
 
+    def CentreLine(self, line):
+        self.ScrollToLine(line - (self.LinesOnScreen() // 2))
+
     def SetCurrentLine(self, line):
         pos = self.PositionFromLine(line)
         self.SetSelection(pos, pos)
-        self.ScrollToLine(line - (self.LinesOnScreen() // 2))
+        self.CentreLine(line)
 
     @coroutine
     def TryClose(self):
