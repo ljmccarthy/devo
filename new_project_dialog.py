@@ -12,7 +12,7 @@ class NewProjectDialog(wx.Dialog):
         grid.AddGrowableCol(1)
         grid.Add(wx.StaticText(self, label="Project Name"), 0, wx.ALIGN_CENTRE_VERTICAL)
         grid.Add(self.text_name, 1, wx.EXPAND | wx.ALIGN_CENTRE_VERTICAL)
-        grid.Add(wx.StaticText(self, label="Root Folder"), 0, wx.ALIGN_CENTRE_VERTICAL)
+        grid.Add(wx.StaticText(self, label="Directory"), 0, wx.ALIGN_CENTRE_VERTICAL)
         grid.Add(self.fp_root, 1, wx.EXPAND | wx.ALIGN_CENTRE_VERTICAL)
         btnsizer = wx.StdDialogButtonSizer()
         btn_ok = wx.Button(self, wx.ID_OK)
