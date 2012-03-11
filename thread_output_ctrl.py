@@ -1,4 +1,4 @@
-import Queue
+import threading
 import wx, wx.stc
 from editor_fonts import init_stc_style
 
@@ -10,28 +10,32 @@ class ThreadOutputCtrl(wx.stc.StyledTextCtrl):
         self.SetTabWidth(8)
         self.SetUseTabs(False)
 
-        self.queue = Queue.Queue(1024)
-        self.timer = wx.Timer(self)
+        self.__lock = threading.Lock()
+        self.__queue = []
+        self.__timer = wx.Timer(self)
 
-        self.Bind(wx.EVT_TIMER, self.__OnTimer, self.timer)
+        self.Bind(wx.EVT_TIMER, self.__OnTimer, self.__timer)
 
     def __OnTimer(self, evt):
         self.flush()
 
     def flush(self):
-        lines = "".join(self.queue.get_nowait() for _ in xrange(self.queue.qsize()))
+        with self.__lock:
+            queue, self.__queue = self.__queue, []
+        lines = "".join(queue)
         if lines:
             self.AppendText(lines)
 
     def start(self, interval=100):
-        self.timer.Start(interval)
+        self.__timer.Start(interval)
 
     def stop(self):
-        self.timer.Stop()
+        self.__timer.Stop()
         wx.CallAfter(self.flush)
 
     def write(self, s):
-        self.queue.put(s)
+        with self.__lock:
+            self.__queue.append(s)
 
     def IsEmpty(self):
         return self.GetTextLength() == 0
