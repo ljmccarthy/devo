@@ -676,7 +676,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             dlg.Destroy()
 
     def OnConfigureSharedCommands(self, evt):
-        dlg = CommandsDialog(self, self.settings.get("commands", []))
+        dlg = CommandsDialog(self, self.settings.get("commands", []), title="Configure Shared Commands")
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 self.settings["commands"] = dlg.GetCommands()
@@ -688,7 +688,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     def OnConfigureProjectCommands(self, evt):
         if not self.project_filename:
             return
-        dlg = CommandsDialog(self, self.project.get("commands", []))
+        dlg = CommandsDialog(self, self.project.get("commands", []), title="Configure Project Commands")
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 self.project["commands"] = dlg.GetCommands()

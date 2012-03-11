@@ -157,9 +157,9 @@ class EditCommandDialog(wx.Dialog):
             frame.Destroy()
 
 class CommandsDialog(wx.Dialog):
-    def __init__(self, parent, commands=[]):
+    def __init__(self, parent, commands=[], title="Configure Commands"):
         style = wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
-        wx.Dialog.__init__(self, parent, title="Configure Commands", style=style)
+        wx.Dialog.__init__(self, parent, title=title, style=style)
         
         self.cmdlist = wx.ListBox(self)
         self.cmdlist.SetMinSize((300, 200))
