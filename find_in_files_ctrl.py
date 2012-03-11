@@ -62,13 +62,10 @@ class FindInFilesCtrl(wx.Panel):
         except ValueError:
             line_num = 1
 
-        for cur_line in xrange(cur_line, 0, -1):
+        for cur_line in xrange(cur_line, -1, -1):
             path = self.output.GetLine(cur_line).rstrip()
             if r_path_start.match(path):
-                try:
-                    self.env.open_file(path, line_num)
-                except IOError:
-                    pass
+                self.env.open_file(path, line_num)
                 break
 
     def find(self, details):
@@ -78,7 +75,7 @@ class FindInFilesCtrl(wx.Panel):
         if details.regexp:
             matcher = re.compile(details.find)
         else:
-            matcher = make_matcher(details.find)
+            matcher = make_matcher(details.find, case_sensitive=details.case)
 
         self.start_time = time.time()
         self.details = details
