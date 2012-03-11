@@ -1,11 +1,13 @@
 import os, collections
 import wx
 from file_picker import DirPicker
+from util import get_combo_history
 
-FindInFilesDetails = collections.namedtuple("FindInFilesDetails", "find path case regexp")
+FindInFilesDetails = collections.namedtuple("FindInFilesDetails",
+    "case regexp find find_history path path_history")
 
 class FindInFilesDialog(wx.Dialog):
-    def __init__(self, parent):
+    def __init__(self, parent, details=None):
         style = wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
         wx.Dialog.__init__(self, parent, title="Find in Files", style=style)
 
@@ -44,6 +46,14 @@ class FindInFilesDialog(wx.Dialog):
         self.SetMaxSize((-1, self.Size.height))
         self.Centre()
 
+        if details is not None:
+            self.combo_find.SetItems(details.find_history)
+            self.combo_find.SetValue(details.find)
+            self.dir_picker.SetHistory(details.path_history)
+            self.dir_picker.SetValue(details.path)
+            self.check_case.SetValue(details.case)
+            self.check_regexp.SetValue(details.regexp)
+
         self.combo_find.SetFocus()
         self.combo_find.SetMark(0, len(self.combo_find.GetValue()))
 
@@ -67,7 +77,9 @@ class FindInFilesDialog(wx.Dialog):
 
     def GetDetails(self):
         return FindInFilesDetails(
-            self.find, self.path, self.check_case.GetValue(), self.check_regexp.GetValue())
+            case = self.check_case.GetValue(), regexp = self.check_regexp.GetValue(),
+            find = self.find, find_history = get_combo_history(self.combo_find),
+            path = self.path, path_history = self.dir_picker.GetHistory())
 
     def OnUpdateFind(self, evt):
         find = self.find

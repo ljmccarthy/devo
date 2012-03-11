@@ -123,6 +123,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.deleted_paths = set()
         self.reloading = False
         self.find_details = FindReplaceDetails("", "")
+        self.find_in_files_details = None
         self.editor_focus = None
 
         agwFlags = aui.AUI_MGR_TRANSPARENT_HINT \
@@ -664,12 +665,12 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             self.manager.Update()
 
     def OnFindInFiles(self, evt):
-        dlg = FindInFilesDialog(self)
+        dlg = FindInFilesDialog(self, self.find_in_files_details)
         try:
             dlg.path = self.project_root
             if dlg.ShowModal() == wx.ID_OK:
-                details = dlg.GetDetails()
-                self.find_in_files.find(details)
+                self.find_in_files_details = dlg.GetDetails()
+                self.find_in_files.find(self.find_in_files_details)
                 self.ShowPane(self.find_in_files)
         finally:
             dlg.Destroy()

@@ -55,6 +55,15 @@ def iter_tree_breadth_first(tree, item):
         for subsubitem in iter_tree_breadth_first(tree, subitem):
             yield subsubitem
 
+def get_combo_history(combo, size=10):
+    value = combo.GetValue()
+    history = combo.GetStrings()
+    if value.strip():
+        if value in history:
+            history.remove(value)
+        history.insert(0, value)
+    return history[:size]
+
 def is_focused(win):
     focus = wx.Window.FindFocus()
     while focus:

@@ -1,6 +1,7 @@
 import wx
 import os
 from dialogs import dialogs
+from util import get_combo_history
 
 ID_BROWSE = wx.NewId()
 
@@ -26,6 +27,7 @@ class FilePicker(wx.Panel):
         sizer.AddSpacer(5)
         sizer.Add(btn_browse, 0, wx.ALIGN_CENTRE_VERTICAL|wx.ALL)
         self.SetSizer(sizer)
+
         self.Bind(wx.EVT_BUTTON, self.__OnBrowse, id=ID_BROWSE)
 
     def __OnBrowse(self, evt):
@@ -41,6 +43,12 @@ class FilePicker(wx.Panel):
 
     def SetValue(self, value):
         self.path_ctrl.SetValue(value)
+
+    def GetHistory(self):
+        return get_combo_history(self.path_ctrl)
+
+    def SetHistory(self, history):
+        self.path_ctrl.SetItems(history)
 
 def FileOpenPicker(parent, size=(100, -1), value="", combo=False):
     return FilePicker(parent, dialogs.get_file_to_open, size, value, combo)
