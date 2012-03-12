@@ -1,8 +1,11 @@
 #!/usr/bin/env python2
 
 import sys, os
-os.chdir(sys.path[0])
-sys.path.append(os.path.join(sys.path[0], "..", "fsmonitor"))
+
+if not hasattr(sys, "frozen"):
+    module_dir = os.path.dirname(os.path.realpath(__file__))
+    os.chdir(module_dir)
+    sys.path.append(os.path.join(module_dir, "..", "fsmonitor"))
 
 import getopt
 import wx
