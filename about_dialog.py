@@ -30,7 +30,7 @@ class AboutDialog(wx.Dialog):
         wx.Dialog.__init__(self, parent, title="About Devo")
         self.env = env
 
-        logo_font_size = 25 if sys.platform == "__WXMAC__" else 20 
+        logo_font_size = 25 if sys.platform == "__WXMAC__" else 20
         subtitle_font_size = 24 if sys.platform == "__WXMAC__" else 10
 
         fontsize = self.GetFont().PointSize
@@ -47,9 +47,9 @@ class AboutDialog(wx.Dialog):
         btn_license = wx.Button(self, label="License")
         btn_ok = wx.Button(self, wx.ID_OK)
         btn_ok.SetDefault()
-        btn_sizer.Add(btn_license, 0, wx.ALL, 5)
+        btn_sizer.Add(btn_license)
         btn_sizer.AddStretchSpacer()
-        btn_sizer.Add(btn_ok, 0, wx.ALL, 5)
+        btn_sizer.Add(btn_ok)
 
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(label_devo, 0, wx.LEFT | wx.RIGHT | wx.TOP, 10)
