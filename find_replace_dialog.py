@@ -149,14 +149,14 @@ class FindReplaceDialog(wx.Dialog):
         grid.Add(chksizer)
 
         btnsizer = wx.BoxSizer(wx.HORIZONTAL)
-        btnsizer.AddStretchSpacer()
         btn_goto_start = wx.Button(self, label="&Go to Start")
-        btnsizer.Add(btn_goto_start, 0, wx.ALL, 5)
+        btnsizer.Add(btn_goto_start, 0, wx.ALL, 2)
+        btnsizer.AddStretchSpacer()
         btn_find = wx.Button(self, wx.ID_FIND, "&Find")
         btn_find.SetDefault()
-        btnsizer.Add(btn_find, 0, wx.ALL, 5)
-        btnsizer.Add(wx.Button(self, wx.ID_REPLACE, "&Replace"), 0, wx.ALL, 5)
-        btnsizer.Add(wx.Button(self, wx.ID_REPLACE_ALL, "Replace &All"), 0, wx.ALL, 5)
+        btnsizer.Add(btn_find, 0, wx.ALL, 2)
+        btnsizer.Add(wx.Button(self, wx.ID_REPLACE, "&Replace"), 0, wx.ALL, 2)
+        btnsizer.Add(wx.Button(self, wx.ID_REPLACE_ALL, "Replace &All"), 0, wx.ALL, 2)
 
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(grid, 0, wx.EXPAND | wx.ALL, 5)
@@ -181,10 +181,13 @@ class FindReplaceDialog(wx.Dialog):
         self.Bind(wx.EVT_BUTTON, self.OnFind, id=wx.ID_FIND)
         self.Bind(wx.EVT_BUTTON, self.OnReplace, id=wx.ID_REPLACE)
         self.Bind(wx.EVT_BUTTON, self.OnReplaceAll, id=wx.ID_REPLACE_ALL)
+        self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateFind, id=wx.ID_FIND)
+        self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateReplace, id=wx.ID_REPLACE)
+        self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateReplace, id=wx.ID_REPLACE_ALL)
         bind_escape_key(self)
 
     def OnGoToStart(self, evt):
-        self.editor.SetMark(0, 0)
+        self.editor.SetSelection(0, 0)
 
     def OnFind(self, evt):
         details = self.GetFindDetails(True)
@@ -209,6 +212,12 @@ class FindReplaceDialog(wx.Dialog):
             dialogs.info(self,
                 "Pattern not found: '%s'" % details.find,
                 "Replace All")
+
+    def OnUpdateFind(self, evt):
+        evt.Enable(bool(self.combo_find.GetValue()))
+
+    def OnUpdateReplace(self, evt):
+        evt.Enable(bool(self.combo_find.GetValue() and self.combo_replace.GetValue()))
 
     def GetFindDetails(self, show_error=False):
         try:
