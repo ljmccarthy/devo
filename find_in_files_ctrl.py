@@ -107,7 +107,7 @@ class FindInFilesCtrl(wx.Panel):
                 self.env.open_file(path, line_num)
                 break
 
-    def find(self, details):
+    def find(self, details, filter=None):
         if self.finder:
             self.finder.stop()
 
@@ -116,7 +116,7 @@ class FindInFilesCtrl(wx.Panel):
 
         self.start_time = time.time()
         self.details = details
-        self.finder = FindInFiles(details.path, matcher, self)
+        self.finder = FindInFiles(details.path, matcher, output=self, filter=filter)
         async_call(self.finder.search)
         self.output.ClearAll()
         self.output.start()

@@ -1,14 +1,19 @@
 import os, re
+from dirtree_node import get_file_info
 from util import is_text_file
 
 class FindInFilesAborted(Exception):
     pass
 
+def null_filter(info):
+    return True
+
 class FindInFiles(object):
-    def __init__(self, path, match, output):
+    def __init__(self, path, match, output, filter=None):
         self.path = path
         self.match = match
         self.output = output
+        self.filter = filter or null_filter
         self.encoding = "utf-8"
         self.quit = False
 
@@ -47,14 +52,15 @@ class FindInFiles(object):
             for name in dirlist:
                 if self.quit:
                     raise FindInFilesAborted()
-                path = os.path.join(dirpath, name)
-                try:
-                    if os.path.isfile(path):
-                        self._search_file(path)
-                    elif os.path.isdir(path):
-                        self._search_dir(path)
-                except OSError:
-                    pass
+                info = get_file_info(dirpath, name)
+                if self.filter(info):
+                    try:
+                        if info.is_file:
+                            self._search_file(info.path)
+                        elif info.is_dir:
+                            self._search_dir(info.path)
+                    except OSError:
+                        pass
 
     def search(self):
         self.quit = False

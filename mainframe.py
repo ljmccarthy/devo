@@ -10,6 +10,7 @@ from async import async_call, coroutine, queued_coroutine, managed, CoroutineMan
 from dialogs import dialogs
 from commands_dialog import CommandsDialog
 from dirtree import DirTreeCtrl, DirNode
+from dirtree_filter import DirTreeFilter
 from editor import Editor
 from file_monitor import FileMonitor
 from find_in_files_ctrl import FindInFilesCtrl
@@ -130,7 +131,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                  | aui.AUI_MGR_NO_VENETIAN_BLINDS_FADE
         self.manager = aui.AuiManager(self, agwFlags=agwFlags)
         self.notebook = aui.AuiNotebook(self, agwStyle=NB_STYLE)
-        self.tree = DirTreeCtrl(self, self.env)
+        self.filter = DirTreeFilter()
+        self.tree = DirTreeCtrl(self, self.env, filter=self.filter)
         self.terminal = TerminalCtrl(self, self.env)
         self.find_in_files = FindInFilesCtrl(self, self.env)
 
@@ -670,7 +672,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             dlg.path = self.project_root
             if dlg.ShowModal() == wx.ID_OK:
                 self.find_in_files_details = dlg.GetDetails()
-                self.find_in_files.find(self.find_in_files_details)
+                self.find_in_files.find(self.find_in_files_details, filter=self.filter)
                 self.ShowPane(self.find_in_files)
         finally:
             dlg.Destroy()
