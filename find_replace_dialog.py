@@ -5,7 +5,7 @@ from dialog_util import bind_escape_key
 from util import get_combo_history
 
 class FindReplaceDetails(object):
-    def __init__(self, find, replace, case=False, reverse=False, regexp=False,
+    def __init__(self, find="", replace="", case=False, reverse=False, regexp=False,
                  find_history=(), replace_history=()):
         self.case = case
         self.reverse = reverse

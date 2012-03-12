@@ -4,7 +4,7 @@ from async import async_call, coroutine
 from dialogs import dialogs
 from editor_fonts import init_stc_style
 from fileutil import atomic_write_file, read_file
-from find_replace_dialog import FindReplaceDialog
+from find_replace_dialog import FindReplaceDetails, FindReplaceDialog
 from go_to_line_dialog import GoToLineDialog
 from menu_defs import edit_menu
 from signal_wx import Signal
@@ -286,8 +286,8 @@ class Editor(wx.stc.StyledTextCtrl, wx.FileDropTarget):
             self.env.open_file(filename)
         return True
 
-    def DoFind(self):
-        dlg = FindReplaceDialog(wx.GetApp().GetTopWindow(), self, os.path.basename(self.path), self.env.find_details)
+    def DoFind(self, find_details):
+        dlg = FindReplaceDialog(wx.GetApp().GetTopWindow(), self, os.path.basename(self.path), find_details)
         try:
             dlg.ShowModal()
             self.env.find_details = dlg.GetFindDetails()
@@ -296,14 +296,14 @@ class Editor(wx.stc.StyledTextCtrl, wx.FileDropTarget):
 
     def Find(self):
         selected = self.GetSelectedText().strip().split("\n")[0]
+        find_details = self.env.find_details or FindReplaceDetails(find=selected)
         if selected:
-            find_details = self.env.find_details
             find_details.find = selected
             find_details.replace = ""
             find_details.case = False
             find_details.regexp = False
             find_details.reverse = False
-        self.DoFind()
+        self.DoFind(find_details)
 
     def FindNext(self):
         if self.CanFindNext():
