@@ -11,13 +11,32 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
 
     def __init__(self, parent, env):
         wx.stc.StyledTextCtrl.__init__(self, parent, pos=(-1, -1), size=(1, 1), style=wx.BORDER_NONE)
-        self.UsePopUp(False)
         self.env = env
+        self._highlighted_line = None
+        self.UsePopUp(False)
+        self.DefineMarkers()
 
         self.Bind(wx.EVT_CONTEXT_MENU, self.OnContextMenu)
 
     def OnContextMenu(self, evt):
         self.PopupMenu(edit_menu.Create())
+
+    def DefineMarkers(self):
+        self.MarkerDefine(0, wx.stc.STC_MARK_BACKGROUND, background="#CCCCFF")
+
+    def ClearHighlight(self):
+        if self._highlighted_line is not None:
+            self.MarkerDelete(self._highlighted_line, 0)
+            self._highlighted_line = None
+
+    def SetHighlightedLine(self, line):
+        self.ClearHighlight()
+        self.MarkerAdd(line, 0)
+        self._highlighted_line = line
+
+    def ClearAll(self):
+        self.ClearHighlight()
+        wx.stc.StyledTextCtrl.ClearAll(self)
 
     def CanCut(self):
         return not self.GetReadOnly() and self.CanCopy()

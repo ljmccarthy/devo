@@ -35,8 +35,8 @@ class AppEnv(object):
     def __init__(self, mainframe):
         self._mainframe = mainframe
 
-    def open_file(self, path, line=None):
-        return self._mainframe.OpenEditor(path, line)
+    def open_file(self, path, line=None, highlight=False):
+        return self._mainframe.OpenEditor(path, line, highlight)
 
     def open_text(self, text):
         return self._mainframe.OpenEditorWithText(text)
@@ -46,6 +46,12 @@ class AppEnv(object):
 
     def add_recent_file(self, path):
         self._mainframe.AddRecentFile(path)
+
+    def clear_highlight(self):
+        self._mainframe.ClearHighlight()
+
+    def set_highlighted_file(self, path, line):
+        self._mainframe.SetHighlightedFile(path, line)
 
     def get_file_to_save(self):
         if self._mainframe.project_root:
@@ -117,6 +123,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.find_details = None
         self.find_in_files_details = None
         self.editor_focus = None
+        self.editor_highlight = None
 
         agwFlags = aui.AUI_MGR_TRANSPARENT_HINT \
                  | aui.AUI_MGR_HINT_FADE \
@@ -144,6 +151,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.Bind(wx.EVT_END_SESSION, self.OnClose)
         self.Bind(wx.EVT_ACTIVATE, self.OnActivate)
         self.Bind(wx.EVT_CHILD_FOCUS, self.OnChildFocus)
+        self.Bind(aui.EVT_AUI_PANE_CLOSE, self.OnPaneClose)
         self.Bind(aui.EVT_AUINOTEBOOK_TAB_MIDDLE_UP, self.OnPageClose)
         self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CLOSE, self.OnPageClose)
         self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnPageChanged)
@@ -495,17 +503,27 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                 self.SetTitle("Devo")
                 self.StartFileMonitor()
 
+    def OnPaneClose(self, evt):
+        window = evt.GetPane().window
+        if window is self.find_in_files:
+            self.ClearHighlight()
+
     def OnPageClose(self, evt):
         evt.Veto()
         editor = self.notebook.GetPage(evt.GetSelection())
         self.ClosePage(editor)
 
+    def ForgetEditor(self, editor):
+        if editor is self.editor_focus:
+            self.editor_focus = None
+        if editor is self.editor_highlight:
+            self.editor_highlight = None
+
     @managed("cm")
     @coroutine
     def ClosePage(self, editor):
         if (yield editor.TryClose()):
-            if editor is self.editor_focus:
-                self.editor_focus = None
+            self.ForgetEditor(editor)
             with frozen_window(self.notebook):
                 self.notebook.DeletePage(self.notebook.GetPageIndex(editor))
                 if self.notebook.GetPageCount() == 0:
@@ -556,7 +574,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
 
     @managed("cm")
     @queued_coroutine("cq")
-    def OpenEditor(self, path, line=None):
+    def OpenEditor(self, path, line=None, highlight=False):
         path = os.path.realpath(path)
 
         try:
@@ -573,6 +591,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                 self.notebook.SetSelection(i)
             if line is not None:
                 editor.SetCurrentLine(line - 1)
+                if highlight:
+                    self.SetHighlightedEditor(editor, line)
             editor.SetFocus()
         else:
             editor = Editor(self.notebook, self.env, path)
@@ -584,6 +604,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                     self.AddRecentFile(path)
                     if line is not None:
                         editor.SetCurrentLine(line - 1)
+                        if highlight:
+                            self.SetHighlightedEditor(editor, line)
                     editor.SetFocus()
 
     def OpenEditorWithText(self, text):
@@ -663,6 +685,21 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         if self.editor_focus:
             return self.editor_focus.GetSelectedText().strip().split("\n", 1)[0]
         return ""
+
+    def ClearHighlight(self):
+        if self.editor_highlight:
+            self.editor_highlight.ClearHighlight()
+            self.editor_highlight = None
+
+    def SetHighlightedEditor(self, editor, line):
+        self.ClearHighlight()
+        self.editor_highlight = editor
+        editor.SetHighlightedLine(line - 1)
+
+    def SetHighlightedFile(self, path, line):
+        editor = self.FindEditor(os.path.realpath(path))
+        if editor:
+            self.SetHighlightedEditor(editor, line)
 
     def OnFindInFiles(self, evt):
         details = self.find_in_files_details

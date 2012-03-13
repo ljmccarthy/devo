@@ -98,6 +98,7 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
 
     def SetNullSyntax(self):
         init_stc_style(self)
+        self.DefineMarkers()
         self.SetIndent(4)
         self.SetTabWidth(8)
         self.SetUseTabs(False)
@@ -107,6 +108,7 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
         if m:
             syntax = syntax_dict[m.lastgroup]
             init_stc_style(self, lexer=syntax.lexer, keywords=syntax.keywords)
+            self.DefineMarkers()
             for style_num, spec in syntax.stylespecs:
                 self.StyleSetSpec(style_num, spec)
             self.SetIndent(syntax.indent)

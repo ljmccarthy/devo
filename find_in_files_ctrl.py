@@ -62,6 +62,7 @@ class FindInFilesCtrl(wx.Panel):
 
     def OnClear(self, evt):
         self.output.ClearAll()
+        self.env.clear_highlight()
 
     def OnCopyToEditor(self, evt):
         self.env.open_text(self.output.GetText())
@@ -70,7 +71,7 @@ class FindInFilesCtrl(wx.Panel):
         evt.Enable(not self.output.IsEmpty())
 
     def OnLineDoubleClicked(self, evt):
-        cur_line = self.output.GetCurrentLine()
+        cur_line = mark_line = self.output.GetCurrentLine()
 
         try:
             s = self.output.GetLine(cur_line).lstrip()
@@ -80,13 +81,15 @@ class FindInFilesCtrl(wx.Panel):
             try:
                 s = self.output.GetLine(cur_line + 1).lstrip()
                 line_num = int(s.split(":", 1)[0])
+                mark_line = cur_line + 1
             except ValueError:
-                line_num = 1
+                return
 
         for cur_line in xrange(cur_line, -1, -1):
             path = self.output.GetLine(cur_line).rstrip()
             if r_path_start.match(path):
-                self.env.open_file(path, line_num)
+                self.env.open_file(path, line_num, highlight=True)
+                self.output.SetHighlightedLine(mark_line)
                 break
 
     def find(self, details, filter=None):
@@ -101,6 +104,7 @@ class FindInFilesCtrl(wx.Panel):
         self.finder = FindInFiles(details.path, matcher, output=self, filter=filter)
         async_call(self.finder.search)
         self.output.ClearAll()
+        self.env.clear_highlight()
         self.output.start()
 
     def add_file(self, filepath):
