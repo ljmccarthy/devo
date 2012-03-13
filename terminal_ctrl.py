@@ -87,12 +87,10 @@ class TerminalCtrl(wx.Panel):
     def stop(self):
         if self.process:
             kill_shell_process(self.process)
-            self.process = None
 
     def kill(self):
         if self.process:
             kill_shell_process(self.process, force=True)
-            self.process = None
 
     def __thread(self, process):
         rc = None
@@ -107,7 +105,6 @@ class TerminalCtrl(wx.Panel):
             wx.CallAfter(self.__thread_exit, process, rc)
 
     def __thread_exit(self, process, rc):
-        self.output.flush()
         self.status_label.SetLabel(
             "%s\nProcess terminated%s" % (self.cmdline,
                 " with return code %d" % rc if rc is not None else ""))
