@@ -20,6 +20,7 @@ from menu import MenuItem
 from menu_defs import menubar
 from new_project_dialog import NewProjectDialog
 from settings import read_settings, write_settings
+from styled_text_ctrl import StyledTextCtrl
 from shell import run_shell_command
 from terminal_ctrl import TerminalCtrl
 from util import frozen_window, frozen_or_hidden_window, is_text_file, new_id_range
@@ -81,8 +82,6 @@ MAX_RECENT_FILES = 20
 NB_STYLE = (aui.AUI_NB_CLOSE_ON_ALL_TABS  | aui.AUI_NB_TOP | aui.AUI_NB_TAB_SPLIT
            | aui.AUI_NB_TAB_MOVE | aui.AUI_NB_SCROLL_BUTTONS | aui.AUI_NB_WINDOWLIST_BUTTON
            | wx.BORDER_NONE)
-
-editor_types = (Editor, TerminalCtrl, FindInFilesCtrl)
 
 class MainFrame(wx.Frame, wx.FileDropTarget):
     def __init__(self, project_root=None):
@@ -841,7 +840,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         if focus is self:
             return
         while focus:
-            if isinstance(focus, editor_types):
+            if isinstance(focus, StyledTextCtrl):
                 self.editor_focus = focus
                 return
             focus = focus.Parent

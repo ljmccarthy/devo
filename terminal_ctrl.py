@@ -1,24 +1,27 @@
 import wx
 import threading
 from dialogs import dialogs
-from output_mixin import OutputCtrlMixin
 from shell import run_shell_command, kill_shell_process
 from thread_output_ctrl import ThreadOutputCtrl
+from util import get_text_extent
 
-class TerminalCtrl(wx.Panel, OutputCtrlMixin):
+class TerminalCtrl(wx.Panel):
     def __init__(self, parent, env):
         wx.Panel.__init__(self, parent)
         self.env = env
 
         self.thread = None
         self.process = None
-        self.output = ThreadOutputCtrl(self, env)
+        self.output = ThreadOutputCtrl(self, env, auto_scroll=True)
+
+        text_width, text_height = get_text_extent(self.GetFont(), "Copy to Editor")
+        button_size = (text_width + 30, text_height + 10)
 
         self.status_label = wx.StaticText(self)
-        button_kill = wx.Button(self, label="&Kill", size=(120, 25))
-        button_stop = wx.Button(self, label="&Stop", size=(120, 25))
-        button_copy = wx.Button(self, label="&Copy to Editor", size=(120, 25))
-        button_clear = wx.Button(self, label="C&lear", size=(120, 25))
+        button_kill = wx.Button(self, label="&Kill", size=button_size)
+        button_stop = wx.Button(self, label="&Stop", size=button_size)
+        button_copy = wx.Button(self, label="&Copy to Editor", size=button_size)
+        button_clear = wx.Button(self, label="C&lear", size=button_size)
 
         top_sizer = wx.BoxSizer(wx.HORIZONTAL)
         top_sizer.Add(self.status_label, 0, wx.ALIGN_CENTER)

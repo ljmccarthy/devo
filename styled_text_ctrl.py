@@ -10,10 +10,7 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
     name = ""
 
     def __init__(self, parent, env):
-        pre = wx.stc.PreStyledTextCtrl()
-        pre.Hide()
-        pre.Create(parent, pos=(-1, -1), size=(1, 1), style=wx.BORDER_NONE)
-        self.PostCreate(pre)
+        wx.stc.StyledTextCtrl.__init__(self, parent, pos=(-1, -1), size=(1, 1), style=wx.BORDER_NONE)
         self.UsePopUp(False)
         self.env = env
 
@@ -30,9 +27,12 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
         return start != end
 
     def CanFindNext(self):
-        return bool(self.env.find_details is not None and self.env.find_details.find)
+        return bool(self.env.find_details and self.env.find_details.find)
 
     CanFindPrev = CanFindNext
+
+    def IsEmpty(self):
+        return self.GetTextLength() == 0
 
     def CentreLine(self, line):
         self.ScrollToLine(line - (self.LinesOnScreen() // 2))

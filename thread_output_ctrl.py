@@ -4,12 +4,14 @@ from editor_fonts import init_stc_style
 from styled_text_ctrl import StyledTextCtrl
 
 class ThreadOutputCtrl(StyledTextCtrl):
-    def __init__(self, parent, env):
+    def __init__(self, parent, env, auto_scroll=False):
         StyledTextCtrl.__init__(self, parent, env)
         init_stc_style(self)
         self.SetIndent(4)
         self.SetTabWidth(8)
         self.SetUseTabs(False)
+
+        self.auto_scroll = auto_scroll
 
         self.__lock = threading.Lock()
         self.__queue = []
@@ -28,6 +30,8 @@ class ThreadOutputCtrl(StyledTextCtrl):
             with self.ModifyReadOnly():
                 self.AppendText(lines)
                 self.EmptyUndoBuffer()
+            if self.auto_scroll:
+                self.ScrollToLine(self.GetLineCount() - 1)
 
     def start(self, interval=100):
         self.SetReadOnly(True)
@@ -41,9 +45,6 @@ class ThreadOutputCtrl(StyledTextCtrl):
     def write(self, s):
         with self.__lock:
             self.__queue.append(s)
-
-    def IsEmpty(self):
-        return self.GetTextLength() == 0
 
     def ClearAll(self):
         with self.ModifyReadOnly():

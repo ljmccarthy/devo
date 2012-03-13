@@ -64,6 +64,11 @@ def get_combo_history(combo, size=10):
         history.insert(0, value)
     return history[:size]
 
+def get_text_extent(font, text):
+    dc = wx.MemoryDC()
+    dc.SetFont(font)
+    return dc.GetTextExtent(text)
+
 def is_focused(win):
     focus = wx.Window.FindFocus()
     while focus:
