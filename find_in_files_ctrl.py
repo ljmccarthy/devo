@@ -21,15 +21,15 @@ class FindInFilesCtrl(wx.Panel, OutputCtrlMixin):
 
         self.status_label = wx.StaticText(self)
         button_stop = wx.Button(self, label="&Stop", size=(120, 25))
-        button_clear = wx.Button(self, label="C&lear", size=(120, 25))
         button_copy = wx.Button(self, label="&Copy to Editor", size=(120, 25))
+        button_clear = wx.Button(self, label="C&lear", size=(120, 25))
         top_sizer = wx.BoxSizer(wx.HORIZONTAL)
         top_sizer.Add(self.status_label, 0, wx.ALIGN_CENTER)
         top_sizer.Add(button_stop, 0, wx.ALIGN_CENTER)
         top_sizer.AddSpacer(5)
-        top_sizer.Add(button_clear, 0, wx.ALIGN_CENTER)
-        top_sizer.AddSpacer(5)
         top_sizer.Add(button_copy, 0, wx.ALIGN_CENTER)
+        top_sizer.AddSpacer(5)
+        top_sizer.Add(button_clear, 0, wx.ALIGN_CENTER)
         top_sizer.AddStretchSpacer()
 
         sizer = wx.BoxSizer(wx.VERTICAL)
@@ -38,11 +38,11 @@ class FindInFilesCtrl(wx.Panel, OutputCtrlMixin):
         self.SetSizer(sizer)
 
         self.Bind(wx.EVT_BUTTON, self.OnStop, button_stop)
-        self.Bind(wx.EVT_BUTTON, self.OnClear, button_clear)
         self.Bind(wx.EVT_BUTTON, self.OnCopyToEditor, button_copy)
+        self.Bind(wx.EVT_BUTTON, self.OnClear, button_clear)
         self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateStop, button_stop)
-        self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateClear, button_clear)
         self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateClear, button_copy)
+        self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateClear, button_clear)
         self.output.Bind(wx.EVT_LEFT_DCLICK, self.OnLineDoubleClicked)
 
     def Destroy(self):
