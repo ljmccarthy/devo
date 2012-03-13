@@ -50,7 +50,7 @@ class EditCommandDialog(wx.Dialog):
         self.field_detach = wx.CheckBox(self, label="Detach Process")
         self.field_detach.SetValue(command.get("detach", False))
 
-        grid = wx.FlexGridSizer(6, 2, 5, 5)
+        grid = wx.FlexGridSizer(cols=2, vgap=5, hgap=5)
         grid.AddGrowableCol(1, 1)
         grid.Add(wx.StaticText(self, label="Name in Menu"), 0, wx.ALIGN_CENTER_VERTICAL)
         grid.Add(self.field_name, 0, wx.EXPAND)
@@ -172,20 +172,21 @@ class CommandsDialog(wx.Dialog):
         for command in commands:
             self.cmdlist.Append(command["name"], command)
 
+        spacer = 10 if wx.Platform == "__WXMAC__" else 5
         right_sizer = wx.BoxSizer(wx.VERTICAL)
         right_sizer.Add(btn_add, 0, wx.EXPAND)
-        right_sizer.AddSpacer(5)
+        right_sizer.AddSpacer(spacer)
         right_sizer.Add(btn_edit, 0, wx.EXPAND)
-        right_sizer.AddSpacer(5)
+        right_sizer.AddSpacer(spacer)
         right_sizer.Add(btn_remove, 0, wx.EXPAND)
-        right_sizer.AddSpacer(15)
+        right_sizer.AddSpacer(spacer * 3)
         right_sizer.Add(btn_move_up, 0, wx.EXPAND)
-        right_sizer.AddSpacer(5)
+        right_sizer.AddSpacer(spacer)
         right_sizer.Add(btn_move_down, 0, wx.EXPAND)
         right_sizer.AddStretchSpacer()
         main_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        main_sizer.Add(self.cmdlist, 1, wx.EXPAND | wx.ALL, 5)
-        main_sizer.Add(right_sizer, 0, wx.EXPAND | wx.TOP | wx.BOTTOM | wx.RIGHT, 5)
+        main_sizer.Add(self.cmdlist, 1, wx.EXPAND | wx.ALL, spacer)
+        main_sizer.Add(right_sizer, 0, wx.EXPAND | wx.TOP | wx.BOTTOM | wx.RIGHT, spacer)
         
         btn_sizer = wx.StdDialogButtonSizer()
         btn_ok = wx.Button(self, wx.ID_OK)
