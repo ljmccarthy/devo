@@ -61,11 +61,11 @@ class FindInFilesDialog(wx.Dialog):
 
     @property
     def find(self):
-        return self.combo_find.GetValue().strip()
+        return self.combo_find.GetValue()
 
     @find.setter
     def find(self, value):
-        self.combo_find.SetValue(value.strip())
+        self.combo_find.SetValue(value)
 
     @property
     def path(self):
