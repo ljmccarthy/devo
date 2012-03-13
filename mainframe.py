@@ -14,7 +14,7 @@ from dirtree_filter import DirTreeFilter
 from editor import Editor
 from file_monitor import FileMonitor
 from find_in_files_ctrl import FindInFilesCtrl
-from find_in_files_dialog import FindInFilesDialog
+from find_in_files_dialog import FindInFilesDetails, FindInFilesDialog
 from lru import LruQueue
 from menu import MenuItem
 from menu_defs import menubar
@@ -665,7 +665,16 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         return ""
 
     def OnFindInFiles(self, evt):
-        dlg = FindInFilesDialog(self, self.find_in_files_details)
+        details = self.find_in_files_details
+        selection = self.GetCurrentSelection()
+        if selection:
+            if not details:
+                details = FindInFilesDetails()
+            details.find = selection
+            details.case = False
+            details.regexp = False
+
+        dlg = FindInFilesDialog(self, details)
         try:
             dlg.path = self.project_root
             if dlg.ShowModal() == wx.ID_OK:

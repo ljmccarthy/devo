@@ -3,8 +3,15 @@ import wx
 from file_picker import DirPicker
 from util import get_combo_history
 
-FindInFilesDetails = collections.namedtuple("FindInFilesDetails",
-    "case regexp find find_history path path_history")
+class FindInFilesDetails(object):
+    def __init__(self, case=False, regexp=False, find="", find_history=(),
+                 path="", path_history=()):
+        self.case = case
+        self.regexp = regexp
+        self.find = find
+        self.find_history = find_history
+        self.path = path
+        self.path_history = path_history
 
 class FindInFilesDialog(wx.Dialog):
     def __init__(self, parent, details=None):
