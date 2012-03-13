@@ -4,6 +4,7 @@ import wx, wx.stc
 
 from find_replace_dialog import FindReplaceDetails, FindReplaceDialog
 from go_to_line_dialog import GoToLineDialog
+from menu_defs import edit_menu
 
 class StyledTextCtrl(wx.stc.StyledTextCtrl):
     name = ""
@@ -13,7 +14,13 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
         pre.Hide()
         pre.Create(parent, pos=(-1, -1), size=(1, 1), style=wx.BORDER_NONE)
         self.PostCreate(pre)
+        self.UsePopUp(False)
         self.env = env
+
+        self.Bind(wx.EVT_CONTEXT_MENU, self.OnContextMenu)
+
+    def OnContextMenu(self, evt):
+        self.PopupMenu(edit_menu.Create())
 
     def CanCut(self):
         return not self.GetReadOnly() and self.CanCopy()

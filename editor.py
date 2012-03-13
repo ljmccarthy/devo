@@ -4,8 +4,6 @@ from async import async_call, coroutine
 from dialogs import dialogs
 from editor_fonts import init_stc_style
 from fileutil import atomic_write_file, read_file
-from find_replace_dialog import FindReplaceDetails, FindReplaceDialog
-from menu_defs import edit_menu
 from signal_wx import Signal
 from styled_text_ctrl import StyledTextCtrl
 from syntax import filename_syntax_re, syntax_dict
@@ -26,8 +24,6 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
     def __init__(self, parent, env, path=""):
         StyledTextCtrl.__init__(self, parent, env)
         wx.FileDropTarget.__init__(self)
-
-        self.UsePopUp(False)
         self.SetDropTarget(None)
 
         self.path = path
@@ -49,7 +45,6 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
 
         self.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
         self.Bind(wx.EVT_RIGHT_DOWN, self.OnRightDown)
-        self.Bind(wx.EVT_CONTEXT_MENU, self.OnContextMenu)
         self.Bind(wx.stc.EVT_STC_SAVEPOINTLEFT, self.OnSavePointLeft)
         self.Bind(wx.stc.EVT_STC_SAVEPOINTREACHED, self.OnSavePointReached)
         self.Bind(wx.stc.EVT_STC_UPDATEUI, self.OnStcUpdateUI)
@@ -253,9 +248,6 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
             self.SetSelection(pos, pos)
             self.SetCurrentPos(pos)
         evt.Skip()
-
-    def OnContextMenu(self, evt):
-        self.PopupMenu(edit_menu.Create())
 
     def OnSavePointLeft(self, evt):
         self.sig_title_changed.signal(self)
