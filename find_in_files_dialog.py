@@ -14,7 +14,7 @@ class FindInFilesDialog(wx.Dialog):
         self.combo_find = wx.ComboBox(self, size=(300, -1))
         self.dir_picker = DirPicker(self, size=(300, -1), combo=True)
         self.check_case = wx.CheckBox(self, wx.ID_ANY, "&Case sensitive")
-        self.check_regexp = wx.CheckBox(self, label="Regular &expression")
+        self.check_regexp = wx.CheckBox(self, label="Regular e&xpression")
 
         grid = wx.FlexGridSizer(cols=2, vgap=5, hgap=5)
         grid.AddGrowableCol(1, 1)

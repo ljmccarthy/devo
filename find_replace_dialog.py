@@ -140,7 +140,7 @@ class FindReplaceDialog(wx.Dialog):
         grid.Add(self.combo_replace, 0, wx.EXPAND)
         grid.AddSpacer(0)
         self.check_case = wx.CheckBox(self, wx.ID_ANY, "&Case sensitive")
-        self.check_regexp = wx.CheckBox(self, wx.ID_ANY, "Regular &expression")
+        self.check_regexp = wx.CheckBox(self, wx.ID_ANY, "Regular e&xpression")
         self.check_reverse = wx.CheckBox(self, wx.ID_ANY, "Re&verse")
         chksizer = wx.BoxSizer(wx.VERTICAL)
         chksizer.Add(self.check_case, 0, wx.ALL, 2)
