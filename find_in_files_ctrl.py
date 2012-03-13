@@ -2,6 +2,7 @@ import sys, re, time
 import wx
 from async import async_call
 from find_in_files import FindInFiles, make_matcher
+from styled_text_ctrl import MARKER_FIND
 from thread_output_ctrl import ThreadOutputCtrl
 from util import get_text_extent
 
@@ -60,9 +61,12 @@ class FindInFilesCtrl(wx.Panel):
     def OnUpdateStop(self, evt):
         evt.Enable(bool(self.finder))
 
-    def OnClear(self, evt):
+    def Clear(self):
         self.output.ClearAll()
-        self.env.clear_highlight()
+        self.env.clear_highlight(MARKER_FIND)
+
+    def OnClear(self, evt):
+        self.Clear()
 
     def OnCopyToEditor(self, evt):
         self.env.open_text(self.output.GetText())
@@ -83,14 +87,17 @@ class FindInFilesCtrl(wx.Panel):
                 line_num = int(s.split(":", 1)[0])
                 mark_line = cur_line + 1
             except ValueError:
+                evt.Skip()
                 return
 
         for cur_line in xrange(cur_line, -1, -1):
             path = self.output.GetLine(cur_line).rstrip()
             if r_path_start.match(path):
-                self.env.open_file(path, line_num, highlight=True)
-                self.output.SetHighlightedLine(mark_line)
-                break
+                self.env.open_file(path, line_num, MARKER_FIND)
+                self.output.SetHighlightedLine(mark_line, MARKER_FIND)
+                return
+
+        evt.Skip()
 
     def find(self, details, filter=None):
         if self.finder:
@@ -103,8 +110,7 @@ class FindInFilesCtrl(wx.Panel):
         self.details = details
         self.finder = FindInFiles(details.path, matcher, output=self, filter=filter)
         async_call(self.finder.search)
-        self.output.ClearAll()
-        self.env.clear_highlight()
+        self.Clear()
         self.output.start()
 
     def add_file(self, filepath):

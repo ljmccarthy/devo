@@ -6,13 +6,16 @@ from find_replace_dialog import FindReplaceDetails, FindReplaceDialog
 from go_to_line_dialog import GoToLineDialog
 from menu_defs import edit_menu
 
+MARKER_FIND = 0
+MARKER_ERROR = 1
+
 class StyledTextCtrl(wx.stc.StyledTextCtrl):
     name = ""
 
     def __init__(self, parent, env):
         wx.stc.StyledTextCtrl.__init__(self, parent, pos=(-1, -1), size=(1, 1), style=wx.BORDER_NONE)
         self.env = env
-        self._highlighted_line = None
+        self._highlighted_lines = [None, None]
         self.UsePopUp(False)
         self.DefineMarkers()
 
@@ -22,20 +25,23 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
         self.PopupMenu(edit_menu.Create())
 
     def DefineMarkers(self):
-        self.MarkerDefine(0, wx.stc.STC_MARK_BACKGROUND, background="#CCCCFF")
+        self.MarkerDefine(MARKER_FIND, wx.stc.STC_MARK_BACKGROUND, background="#CCCCFF")
+        self.MarkerDefine(MARKER_ERROR, wx.stc.STC_MARK_BACKGROUND, background="#FFCCCC")
 
-    def ClearHighlight(self):
-        if self._highlighted_line is not None:
-            self.MarkerDelete(self._highlighted_line, 0)
-            self._highlighted_line = None
+    def ClearHighlight(self, marker_type):
+        line = self._highlighted_lines[marker_type]
+        if line is not None:
+            self.MarkerDelete(line, marker_type)
+            self._highlighted_lines[marker_type] = None
 
-    def SetHighlightedLine(self, line):
-        self.ClearHighlight()
-        self.MarkerAdd(line, 0)
-        self._highlighted_line = line
+    def SetHighlightedLine(self, line, marker_type):
+        self.ClearHighlight(marker_type)
+        self.MarkerAdd(line, marker_type)
+        self._highlighted_lines[marker_type] = line
 
     def ClearAll(self):
-        self.ClearHighlight()
+        self.ClearHighlight(MARKER_FIND)
+        self.ClearHighlight(MARKER_ERROR)
         wx.stc.StyledTextCtrl.ClearAll(self)
 
     def CanCut(self):

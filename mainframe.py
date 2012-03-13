@@ -20,7 +20,7 @@ from menu import MenuItem
 from menu_defs import menubar
 from new_project_dialog import NewProjectDialog
 from settings import read_settings, write_settings
-from styled_text_ctrl import StyledTextCtrl
+from styled_text_ctrl import StyledTextCtrl, MARKER_FIND, MARKER_ERROR
 from shell import run_shell_command
 from terminal_ctrl import TerminalCtrl
 from util import frozen_window, frozen_or_hidden_window, is_text_file, new_id_range, shorten_path
@@ -35,8 +35,8 @@ class AppEnv(object):
     def __init__(self, mainframe):
         self._mainframe = mainframe
 
-    def open_file(self, path, line=None, highlight=False):
-        return self._mainframe.OpenEditor(path, line, highlight)
+    def open_file(self, path, line=None, marker_type=None):
+        return self._mainframe.OpenEditor(path, line, marker_type)
 
     def open_text(self, text):
         return self._mainframe.OpenEditorWithText(text)
@@ -47,11 +47,11 @@ class AppEnv(object):
     def add_recent_file(self, path):
         self._mainframe.AddRecentFile(path)
 
-    def clear_highlight(self):
-        self._mainframe.ClearHighlight()
+    def clear_highlight(self, marker_type):
+        self._mainframe.ClearHighlight(marker_type)
 
-    def set_highlighted_file(self, path, line):
-        self._mainframe.SetHighlightedFile(path, line)
+    def set_highlighted_file(self, path, line, marker_type):
+        self._mainframe.SetHighlightedFile(path, line, marker_type)
 
     def get_file_to_save(self):
         if self._mainframe.project_root:
@@ -123,7 +123,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.find_details = None
         self.find_in_files_details = None
         self.editor_focus = None
-        self.editor_highlight = None
+        self.editor_highlight = [None, None]
 
         agwFlags = aui.AUI_MGR_TRANSPARENT_HINT \
                  | aui.AUI_MGR_HINT_FADE \
@@ -506,7 +506,9 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     def OnPaneClose(self, evt):
         window = evt.GetPane().window
         if window is self.find_in_files:
-            self.ClearHighlight()
+            self.ClearHighlight(MARKER_FIND)
+        elif window is self.terminal:
+            self.ClearHighlight(MARKER_ERROR)
 
     def OnPageClose(self, evt):
         evt.Veto()
@@ -516,8 +518,9 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     def ForgetEditor(self, editor):
         if editor is self.editor_focus:
             self.editor_focus = None
-        if editor is self.editor_highlight:
-            self.editor_highlight = None
+        for marker_type, editor_highlight in enumerate(self.editor_highlight):
+            if editor is editor_highlight:
+                self.editor_highlight[marker_type] = None
 
     @managed("cm")
     @coroutine
@@ -568,14 +571,17 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         if sel != wx.NOT_FOUND:
             return self.notebook.GetPage(sel)
 
+    def GetFullPath(self, path):
+        return os.path.realpath(os.path.join(self.project_root, path))
+
     def AddRecentFile(self, path):
-        self.recent_files.add(os.path.realpath(path))
+        self.recent_files.add(self.GetFullPath(path))
         self.UpdateMenuBar()
 
     @managed("cm")
     @queued_coroutine("cq")
-    def OpenEditor(self, path, line=None, highlight=False):
-        path = os.path.realpath(path)
+    def OpenEditor(self, path, line=None, marker_type=None):
+        path = self.GetFullPath(path)
 
         try:
             if not (yield async_call(is_text_file, path)):
@@ -591,8 +597,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                 self.notebook.SetSelection(i)
             if line is not None:
                 editor.SetCurrentLine(line - 1)
-                if highlight:
-                    self.SetHighlightedEditor(editor, line)
+                if marker_type is not None:
+                    self.SetHighlightedEditor(editor, line, marker_type)
             editor.SetFocus()
         else:
             editor = Editor(self.notebook, self.env, path)
@@ -604,8 +610,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                     self.AddRecentFile(path)
                     if line is not None:
                         editor.SetCurrentLine(line - 1)
-                        if highlight:
-                            self.SetHighlightedEditor(editor, line)
+                        if marker_type is not None:
+                            self.SetHighlightedEditor(editor, line, marker_type)
                     editor.SetFocus()
 
     def OpenEditorWithText(self, text):
@@ -686,20 +692,20 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             return self.editor_focus.GetSelectedText().strip().split("\n", 1)[0]
         return ""
 
-    def ClearHighlight(self):
-        if self.editor_highlight:
-            self.editor_highlight.ClearHighlight()
-            self.editor_highlight = None
+    def ClearHighlight(self, marker_type):
+        if self.editor_highlight[marker_type]:
+            self.editor_highlight[marker_type].ClearHighlight(marker_type)
+            self.editor_highlight[marker_type] = None
 
-    def SetHighlightedEditor(self, editor, line):
-        self.ClearHighlight()
-        self.editor_highlight = editor
-        editor.SetHighlightedLine(line - 1)
+    def SetHighlightedEditor(self, editor, line, marker_type):
+        self.ClearHighlight(marker_type)
+        self.editor_highlight[marker_type] = editor
+        editor.SetHighlightedLine(line - 1, marker_type)
 
-    def SetHighlightedFile(self, path, line):
-        editor = self.FindEditor(os.path.realpath(path))
+    def SetHighlightedFile(self, path, line, marker_type):
+        editor = self.FindEditor(self.GetFullPath(path))
         if editor:
-            self.SetHighlightedEditor(editor, line)
+            self.SetHighlightedEditor(editor, line, marker_type)
 
     def OnFindInFiles(self, evt):
         details = self.find_in_files_details

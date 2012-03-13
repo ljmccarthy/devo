@@ -1,9 +1,15 @@
+import re, threading
 import wx
-import threading
+
 from dialogs import dialogs
 from shell import run_shell_command, kill_shell_process
+from styled_text_ctrl import MARKER_ERROR
 from thread_output_ctrl import ThreadOutputCtrl
 from util import get_text_extent, shorten_text
+
+file_line_patterns = [
+    re.compile(ur"^\s*File \"(?P<file>.*)\", line (?P<line>\d+)", re.UNICODE),
+]
 
 class TerminalCtrl(wx.Panel):
     def __init__(self, parent, env):
@@ -47,12 +53,17 @@ class TerminalCtrl(wx.Panel):
         self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateStop, button_stop)
         self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateClear, button_copy)
         self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateClear, button_clear)
+        self.output.Bind(wx.EVT_LEFT_DCLICK, self.OnLineDoubleClicked)
 
     def OnCopyToEditor(self, evt):
         self.env.open_text(self.output.GetText())
 
-    def OnClear(self, evt):
+    def Clear(self):
         self.output.ClearAll()
+        self.env.clear_highlight(MARKER_ERROR)
+
+    def OnClear(self, evt):
+        self.Clear()
 
     def OnUpdateClear(self, evt):
         evt.Enable(not self.output.IsEmpty())
@@ -66,6 +77,21 @@ class TerminalCtrl(wx.Panel):
 
     def OnUpdateStop(self, evt):
         evt.Enable(self.process is not None)
+
+    def OnLineDoubleClicked(self, evt):
+        output_line = self.output.GetCurrentLine()
+        s = self.output.GetLine(output_line)
+
+        for pattern in file_line_patterns:
+            m = pattern.match(s)
+            if m:
+                path = m.group("file")
+                line = int(m.group("line"))
+                self.env.open_file(path, line, MARKER_ERROR)
+                self.output.SetHighlightedLine(output_line, MARKER_ERROR)
+                return
+
+        evt.Skip()
 
     @property
     def is_running(self):
@@ -81,7 +107,7 @@ class TerminalCtrl(wx.Panel):
 
         self.cmdline = cmdline
         self.status_label.SetLabel(shorten_text(cmdline, 100) + "\nRunning")
-        self.output.ClearAll()
+        self.Clear()
         self.output.start()
 
     def stop(self):
