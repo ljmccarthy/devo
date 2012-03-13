@@ -36,7 +36,7 @@ class NewProjectDialog(wx.Dialog):
         return self.text_name.GetValue().strip()
 
     def GetRoot(self):
-        return self.fp_root.GetValue()
+        return os.path.expanduser(self.fp_root.GetValue())
 
 if __name__ == "__main__":
     app = wx.PySimpleApp()
