@@ -108,7 +108,7 @@ class Dialogs(object):
         dlg = TextInputDialog(*args, **kwargs)
         try:
             if dlg.ShowModal() == wx.ID_OK:
-                return dlg.textctrl.GetValue()
+                return dlg.GetValue()
         finally:
             dlg.Destroy()
 

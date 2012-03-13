@@ -20,3 +20,6 @@ class TextInputDialog(wx.Dialog):
         self.Fit()
         self.SetMinSize(self.GetSize())
         self.textctrl.SetFocus()
+
+    def GetValue():
+        return self.textctrl.GetValue()
