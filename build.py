@@ -153,11 +153,7 @@ def build_cxfreeze():
 
 def build():
     os.chdir(project_root)
-
-    try:
-        shutil.rmtree(dist_dir)
-    except OSError:
-        pass
+    shutil.rmtree(dist_dir, True)
 
     from get_aui import get_aui
     try:
@@ -168,7 +164,7 @@ def build():
     from compile_resources import compile_resources
     compile_resources()
 
-    syspath = sys.path
+    syspath = sys.path[:]
     try:
         if sys.platform == "win32":
             build_py2exe()
