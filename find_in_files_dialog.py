@@ -1,4 +1,4 @@
-import os, collections
+import os
 import wx
 from file_picker import DirPicker
 from util import get_combo_history
