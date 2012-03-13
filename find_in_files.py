@@ -95,8 +95,8 @@ class FindInFilesFileOutput(object):
     def end_find(self, finder):
         pass
 
-def find_in_files(path, matcher, output):
-    return FindInFiles(path, matcher, output).search()
+def find_in_files(path, matcher, output, filter=None):
+    return FindInFiles(path, matcher, output, filter).search()
 
 def make_matcher(pattern, case_sensitive=True, is_regexp=False):
     if not is_regexp:
