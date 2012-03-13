@@ -91,8 +91,6 @@ class FindReplaceDetails(object):
                         break
                     m = m2
             if m and m.start() != m.end():
-                if hasattr(editor, "ShowPosition"):
-                    editor.ShowPosition(pos + m.start())
                 editor.CentreLine(editor.LineFromPosition(pos))
                 editor.SetSelection(pos + m.start(), pos + m.end())
                 return True
