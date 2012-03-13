@@ -30,7 +30,7 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
         return start != end
 
     def CanFindNext(self):
-        return self.env.find_details is not None
+        return bool(self.env.find_details is not None and self.env.find_details.find)
 
     CanFindPrev = CanFindNext
 
@@ -51,7 +51,7 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
         self.EndUndoAction()
 
     def Find(self):
-        selected = self.GetSelectedText().strip().split("\n")[0]
+        selected = self.GetSelectedText().strip().split("\n", 1)[0]
         find_details = self.env.find_details or FindReplaceDetails(find=selected)
         if selected:
             find_details.find = selected
