@@ -1,10 +1,11 @@
 import threading
-import wx, wx.stc
+import wx
 from editor_fonts import init_stc_style
+from styled_text_ctrl import StyledTextCtrl
 
-class ThreadOutputCtrl(wx.stc.StyledTextCtrl):
-    def __init__(self, parent, style=wx.TE_READONLY):
-        wx.stc.StyledTextCtrl.__init__(self, parent)
+class ThreadOutputCtrl(StyledTextCtrl):
+    def __init__(self, parent, env):
+        StyledTextCtrl.__init__(self, parent, env)
         init_stc_style(self)
         self.SetIndent(4)
         self.SetTabWidth(8)
@@ -24,10 +25,9 @@ class ThreadOutputCtrl(wx.stc.StyledTextCtrl):
             queue, self.__queue = self.__queue, []
         lines = "".join(queue)
         if lines:
-            self.SetReadOnly(False)
-            self.AppendText(lines)
-            self.EmptyUndoBuffer()
-            self.SetReadOnly(True)
+            with self.ModifyReadOnly():
+                self.AppendText(lines)
+                self.EmptyUndoBuffer()
 
     def start(self, interval=100):
         self.SetReadOnly(True)
@@ -44,3 +44,7 @@ class ThreadOutputCtrl(wx.stc.StyledTextCtrl):
 
     def IsEmpty(self):
         return self.GetTextLength() == 0
+
+    def ClearAll(self):
+        with self.ModifyReadOnly():
+            StyledTextCtrl.ClearAll(self)

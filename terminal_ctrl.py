@@ -1,23 +1,24 @@
 import wx
 import threading
 from dialogs import dialogs
+from output_mixin import OutputCtrlMixin
 from shell import run_shell_command, kill_shell_process
 from thread_output_ctrl import ThreadOutputCtrl
 
-class TerminalCtrl(wx.Panel):
+class TerminalCtrl(wx.Panel, OutputCtrlMixin):
     def __init__(self, parent, env):
         wx.Panel.__init__(self, parent)
         self.env = env
 
         self.thread = None
         self.process = None
-        self.output = ThreadOutputCtrl(self)
+        self.output = ThreadOutputCtrl(self, env)
 
         self.status_label = wx.StaticText(self)
-        button_kill = wx.Button(self, label="Kill", size=(120, 25))
-        button_stop = wx.Button(self, label="Stop", size=(120, 25))
-        button_copy = wx.Button(self, label="Copy to Editor", size=(120, 25))
-        button_clear = wx.Button(self, label="Clear", size=(120, 25))
+        button_kill = wx.Button(self, label="&Kill", size=(120, 25))
+        button_stop = wx.Button(self, label="&Stop", size=(120, 25))
+        button_copy = wx.Button(self, label="&Copy to Editor", size=(120, 25))
+        button_clear = wx.Button(self, label="C&lear", size=(120, 25))
 
         top_sizer = wx.BoxSizer(wx.HORIZONTAL)
         top_sizer.Add(self.status_label, 0, wx.ALIGN_CENTER)
@@ -43,40 +44,6 @@ class TerminalCtrl(wx.Panel):
         self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateStop, button_stop)
         self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateClear, button_copy)
         self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateClear, button_clear)
-
-    def CanUndo(self):
-        return self.output.CanUndo()
-
-    def CanRedo(self):
-        return self.output.CanRedo()
-
-    def CanCut(self):
-        return not self.output.GetReadOnly() and self.CanCopy()
-
-    def CanCopy(self):
-        start, end = self.output.GetSelection()
-        return start != end
-
-    def CanPaste(self):
-        return self.output.CanPaste()
-
-    def Undo(self):
-        self.output.Undo()
-
-    def Redo(self):
-        self.output.Redo()
-
-    def Cut(self):
-        self.output.Cut()
-
-    def Copy(self):
-        self.output.Copy()
-
-    def Paste(self):
-        self.output.Paste()
-
-    def SelectAll(self):
-        self.output.SelectAll()
 
     def OnCopyToEditor(self, evt):
         self.env.open_text(self.output.GetText())

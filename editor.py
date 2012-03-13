@@ -5,9 +5,9 @@ from dialogs import dialogs
 from editor_fonts import init_stc_style
 from fileutil import atomic_write_file, read_file
 from find_replace_dialog import FindReplaceDetails, FindReplaceDialog
-from go_to_line_dialog import GoToLineDialog
 from menu_defs import edit_menu
 from signal_wx import Signal
+from styled_text_ctrl import StyledTextCtrl
 from syntax import filename_syntax_re, syntax_dict
 
 def decode_text(text):
@@ -22,18 +22,14 @@ def encode_text(text, encoding):
     except UnicodeEncodeError:
         return text.encode("utf-8"), "utf-8"
 
-class Editor(wx.stc.StyledTextCtrl, wx.FileDropTarget):
+class Editor(StyledTextCtrl, wx.FileDropTarget):
     def __init__(self, parent, env, path=""):
-        pre = wx.stc.PreStyledTextCtrl()
-        pre.Hide()
-        pre.Create(parent, pos=(-1, -1), size=(1, 1), style=wx.BORDER_NONE)
-        self.PostCreate(pre)
+        StyledTextCtrl.__init__(self, parent, env)
         wx.FileDropTarget.__init__(self)
 
         self.UsePopUp(False)
         self.SetDropTarget(None)
 
-        self.env = env
         self.path = path
         self.file_encoding = "utf-8"
         self.modified_externally = False
@@ -63,6 +59,10 @@ class Editor(wx.stc.StyledTextCtrl, wx.FileDropTarget):
                 self.modified_externally or super(Editor, self).GetModify())
 
     @property
+    def name(self):
+        return os.path.basename(self.path)
+
+    @property
     def modified(self):
         return self.GetModify()
 
@@ -78,24 +78,9 @@ class Editor(wx.stc.StyledTextCtrl, wx.FileDropTarget):
         return "Line %d, Column %d" % (
             self.GetCurrentLine() + 1, self.GetColumn(self.GetCurrentPos()) + 1)
 
-    def CanCut(self):
-        return not self.GetReadOnly() and self.CanCopy()
-
-    def CanCopy(self):
-        start, end = self.GetSelection()
-        return start != end
-
     def SetModified(self):
         self.modified_externally = True
         self.sig_title_changed.signal(self)
-
-    def CentreLine(self, line):
-        self.ScrollToLine(line - (self.LinesOnScreen() // 2))
-
-    def SetCurrentLine(self, line):
-        pos = self.PositionFromLine(line)
-        self.SetSelection(pos, pos)
-        self.CentreLine(line)
 
     @coroutine
     def TryClose(self):
@@ -285,54 +270,6 @@ class Editor(wx.stc.StyledTextCtrl, wx.FileDropTarget):
         for filename in filenames:
             self.env.open_file(filename)
         return True
-
-    def DoFind(self, find_details):
-        dlg = FindReplaceDialog(wx.GetApp().GetTopWindow(), self, os.path.basename(self.path), find_details)
-        try:
-            dlg.ShowModal()
-            self.env.find_details = dlg.GetFindDetails()
-        finally:
-            dlg.Destroy()
-
-    def Find(self):
-        selected = self.GetSelectedText().strip().split("\n")[0]
-        find_details = self.env.find_details or FindReplaceDetails(find=selected)
-        if selected:
-            find_details.find = selected
-            find_details.replace = ""
-            find_details.case = False
-            find_details.regexp = False
-            find_details.reverse = False
-        self.DoFind(find_details)
-
-    def FindNext(self):
-        if self.CanFindNext():
-            self.env.find_details.Find(self)
-
-    def FindPrev(self):
-        if self.CanFindPrev():
-            self.env.find_details.Find(self, reverse=True)
-
-    def CanFindNext(self):
-        return self.env.find_details is not None
-
-    CanFindPrev = CanFindNext
-
-    def GoToLine(self):
-        dlg = GoToLineDialog(wx.GetApp().GetTopWindow(), os.path.basename(self.path))
-        try:
-            if dlg.ShowModal() == wx.ID_OK:
-                self.GotoLine(dlg.GetLineNumber())
-        finally:
-            dlg.Destroy()
-
-    def Unindent(self):
-        start, end = self.GetSelection()
-        self.BeginUndoAction()
-        for line in xrange(self.LineFromPosition(start), self.LineFromPosition(end - 1) + 1):
-            indent = self.GetLineIndentation(line)
-            self.SetLineIndentation(line, indent - self.GetIndent())
-        self.EndUndoAction()
 
     def SavePerspective(self):
         p = {

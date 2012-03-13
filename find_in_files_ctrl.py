@@ -2,6 +2,7 @@ import sys, re, time
 import wx
 from async import async_call
 from find_in_files import FindInFiles, make_matcher
+from output_mixin import OutputCtrlMixin
 from thread_output_ctrl import ThreadOutputCtrl
 
 if sys.platform == "win32":
@@ -9,23 +10,26 @@ if sys.platform == "win32":
 else:
     r_path_start = re.compile(r"^/")
 
-class FindInFilesCtrl(wx.Panel):
+class FindInFilesCtrl(wx.Panel, OutputCtrlMixin):
     def __init__(self, parent, env):
         wx.Panel.__init__(self, parent)
         self.env = env
         self.max_line_length = 100
         self.finder = None
 
-        self.output = ThreadOutputCtrl(self)
+        self.output = ThreadOutputCtrl(self, env)
 
         self.status_label = wx.StaticText(self)
         button_stop = wx.Button(self, label="&Stop", size=(120, 25))
-        button_clear = wx.Button(self, label="&Clear", size=(120, 25))
+        button_clear = wx.Button(self, label="C&lear", size=(120, 25))
+        button_copy = wx.Button(self, label="&Copy to Editor", size=(120, 25))
         top_sizer = wx.BoxSizer(wx.HORIZONTAL)
         top_sizer.Add(self.status_label, 0, wx.ALIGN_CENTER)
         top_sizer.Add(button_stop, 0, wx.ALIGN_CENTER)
         top_sizer.AddSpacer(5)
         top_sizer.Add(button_clear, 0, wx.ALIGN_CENTER)
+        top_sizer.AddSpacer(5)
+        top_sizer.Add(button_copy, 0, wx.ALIGN_CENTER)
         top_sizer.AddStretchSpacer()
 
         sizer = wx.BoxSizer(wx.VERTICAL)
@@ -35,48 +39,16 @@ class FindInFilesCtrl(wx.Panel):
 
         self.Bind(wx.EVT_BUTTON, self.OnStop, button_stop)
         self.Bind(wx.EVT_BUTTON, self.OnClear, button_clear)
+        self.Bind(wx.EVT_BUTTON, self.OnCopyToEditor, button_copy)
         self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateStop, button_stop)
         self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateClear, button_clear)
+        self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateClear, button_copy)
         self.output.Bind(wx.EVT_LEFT_DCLICK, self.OnLineDoubleClicked)
 
     def Destroy(self):
         if self.finder:
             self.finder.stop()
         wx.Panel.Destroy(self)
-
-    def CanUndo(self):
-        return self.output.CanUndo()
-
-    def CanRedo(self):
-        return self.output.CanRedo()
-
-    def CanCut(self):
-        return not self.output.GetReadOnly() and self.CanCopy()
-
-    def CanCopy(self):
-        start, end = self.output.GetSelection()
-        return start != end
-
-    def CanPaste(self):
-        return self.output.CanPaste()
-
-    def Undo(self):
-        self.output.Undo()
-
-    def Redo(self):
-        self.output.Redo()
-
-    def Cut(self):
-        self.output.Cut()
-
-    def Copy(self):
-        self.output.Copy()
-
-    def Paste(self):
-        self.output.Paste()
-
-    def SelectAll(self):
-        self.output.SelectAll()
 
     def OnStop(self, evt):
         if self.finder:
@@ -87,6 +59,9 @@ class FindInFilesCtrl(wx.Panel):
 
     def OnClear(self, evt):
         self.output.ClearAll()
+
+    def OnCopyToEditor(self, evt):
+        self.env.open_text(self.output.GetText())
 
     def OnUpdateClear(self, evt):
         evt.Enable(not self.output.IsEmpty())
