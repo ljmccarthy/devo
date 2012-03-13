@@ -104,7 +104,7 @@ def make_matcher(pattern, case_sensitive=True, is_regexp=False):
     flags = re.UNICODE
     if not case_sensitive:
         flags |= re.IGNORECASE
-    return re.compile(pattern, flags).match
+    return re.compile(pattern, flags).search
 
 if __name__ == "__main__":
     import sys
