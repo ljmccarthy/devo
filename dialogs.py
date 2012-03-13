@@ -33,11 +33,15 @@ class Dialogs(object):
         self.message_dialog(parent, message, caption, wx.OK | wx.ICON_INFORMATION)
 
     def _get_file_dialog(self, parent, message, path, wildcard, context, style):
+        if wx.Platform == "__WXMAC__":
+            message = ""
+        else:
+            message = self._make_caption(message)
+
         if context:
             path = self._paths.get(context, path)
-        dlg = wx.FileDialog(parent,
-            wildcard=wildcard, message=self._make_caption(message),
-            defaultDir=path, style=style)
+
+        dlg = wx.FileDialog(parent, wildcard=wildcard, message=message, defaultDir=path, style=style)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 selected_path = dlg.GetPath()
