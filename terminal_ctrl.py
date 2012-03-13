@@ -3,7 +3,7 @@ import threading
 from dialogs import dialogs
 from shell import run_shell_command, kill_shell_process
 from thread_output_ctrl import ThreadOutputCtrl
-from util import get_text_extent
+from util import get_text_extent, shorten_text
 
 class TerminalCtrl(wx.Panel):
     def __init__(self, parent, env):
@@ -80,7 +80,7 @@ class TerminalCtrl(wx.Panel):
         self.thread.start()
 
         self.cmdline = cmdline
-        self.status_label.SetLabel(cmdline + "\nRunning")
+        self.status_label.SetLabel(shorten_text(cmdline, 100) + "\nRunning")
         self.output.ClearAll()
         self.output.start()
 

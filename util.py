@@ -1,3 +1,4 @@
+import os.path
 import wx
 
 class frozen_window(object):
@@ -24,23 +25,6 @@ if wx.Platform == "__WXMSW__":
     frozen_or_hidden_window = frozen_window
 else:
     frozen_or_hidden_window = hidden_window
-
-non_printable_chars = "\x00\x01\x02\x03\x04\x05\x06\x07\x0E\x0F" + \
-    "\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F\x7F"
-
-def count_non_printable(s):
-    count = 0
-    for c in s:
-        if c in non_printable_chars:
-            count += 1
-    return count
-
-# Heuristic idea from Subversion:
-# http://subversion.apache.org/faq.html#binary-files
-def is_text_file(path):
-    with open(path, "rb") as f:
-        data = f.read(1024)
-    return not ("\0" in data or count_non_printable(data) > len(data) // 6)
 
 def iter_tree_children(tree, item):
     item = tree.GetFirstChild(item)[0]
@@ -95,3 +79,30 @@ def CallLater(timer, func, *args, **kwargs):
         _TryCallLater(timer, func, args, kwargs)
     else:
         wx.CallAfter(_TryCallLater, timer, func, args, kwargs)
+
+non_printable_chars = "\x00\x01\x02\x03\x04\x05\x06\x07\x0E\x0F" + \
+    "\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F\x7F"
+
+def count_non_printable(s):
+    count = 0
+    for c in s:
+        if c in non_printable_chars:
+            count += 1
+    return count
+
+# Heuristic idea from Subversion:
+# http://subversion.apache.org/faq.html#binary-files
+def is_text_file(path):
+    with open(path, "rb") as f:
+        data = f.read(1024)
+    return not ("\0" in data or count_non_printable(data) > len(data) // 6)
+
+def shorten_text(text, max_length):
+    return text[:max_length - 2] + "..." if len(text) > max_length else text
+
+def shorten_path(path):
+    parts = path.split(os.path.sep)
+    if len(parts) > 6:
+        return os.path.sep.join(parts[:3] + ["..."] + parts[-2:])
+    else:
+        return path

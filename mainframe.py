@@ -23,14 +23,7 @@ from settings import read_settings, write_settings
 from styled_text_ctrl import StyledTextCtrl
 from shell import run_shell_command
 from terminal_ctrl import TerminalCtrl
-from util import frozen_window, frozen_or_hidden_window, is_text_file, new_id_range
-
-def shorten_path(path):
-    parts = path.split(os.path.sep)
-    if len(parts) > 6:
-        return os.path.sep.join(parts[:3] + ["..."] + parts[-2:])
-    else:
-        return path
+from util import frozen_window, frozen_or_hidden_window, is_text_file, new_id_range, shorten_path
 
 def make_project_filename(project_root):
     return os.path.join(project_root, ".devo-project")
@@ -664,6 +657,11 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         if not pane.IsShown():
             pane.Show()
             self.manager.Update()
+
+    def GetCurrentSelection(self):
+        if self.editor_focus:
+            return self.editor_focus.GetSelectedText().strip().split("\n", 1)[0]
+        return ""
 
     def OnFindInFiles(self, evt):
         dlg = FindInFilesDialog(self, self.find_in_files_details)
