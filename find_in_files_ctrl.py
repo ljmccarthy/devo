@@ -71,13 +71,17 @@ class FindInFilesCtrl(wx.Panel):
 
     def OnLineDoubleClicked(self, evt):
         cur_line = self.output.GetCurrentLine()
-        s = self.output.GetLine(cur_line).strip()
 
         try:
+            s = self.output.GetLine(cur_line).lstrip()
             line_num = int(s.split(":", 1)[0])
             cur_line -= 1
         except ValueError:
-            line_num = 1
+            try:
+                s = self.output.GetLine(cur_line + 1).lstrip()
+                line_num = int(s.split(":", 1)[0])
+            except ValueError:
+                line_num = 1
 
         for cur_line in xrange(cur_line, -1, -1):
             path = self.output.GetLine(cur_line).rstrip()
