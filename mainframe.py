@@ -321,6 +321,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         if not success:
             yield self.OpenDefaultProject()
 
+        yield self.SaveSettings()
+
     @managed("cm")
     @coroutine
     def SaveSettings(self):
@@ -482,6 +484,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                 self._ShowLoadProjectError(e, project_root)
                 if project_root in self.project_info:
                     del self.project_info[project_root]
+                    yield self.SaveSettings()
                     self.UpdateMenuBar()
                 yield False
             finally:
