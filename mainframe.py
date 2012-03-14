@@ -107,7 +107,6 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.session_filename = ""
 
         self.settings = {}
-        self.saved_settings = {}
         self.project = {}
         self.project_root = ""
         self.project_info = {}
@@ -287,10 +286,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     def Startup(self, project_root=None):
         try:
             self.settings = (yield async_call(read_settings, self.settings_filename))
-            self.saved_settings = self.settings.copy()
         except Exception:
             self.settings = {}
-            self.saved_settings = {}
             try:
                 backup_filename = self.settings_filename + ".bak"
                 if not os.path.exists(backup_filename):
@@ -298,7 +295,6 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             except OSError:
                 pass
 
-        self.saved_settings = self.settings.copy()
         self.recent_files = LruQueue(self.settings.get("recent_files", []), MAX_RECENT_FILES)
 
         for project_path in self.settings.get("projects", ()):
@@ -332,11 +328,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.settings["last_project"] = self.project_root
         self.settings["recent_files"] = list(self.recent_files)
         self.settings["dialogs"] = dialogs.save_state()
-        if self.settings == self.saved_settings:
-            yield True
         try:
             yield async_call(write_settings, self.settings_filename, self.settings)
-            self.saved_settings = self.settings.copy()
             yield True
         except Exception, e:
             dialogs.error(self, "Error saving settings:\n\n%s" % e)
@@ -351,11 +344,11 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             session["notebook"] = self.notebook.SavePerspective()
             session["editors"] = editors = []
             session["selection"] = self.notebook.GetSelection()
-        for editor in self.editors:
-            if editor.path and editor.modified:
-                if not (yield editor.TryClose()):
-                    yield False
-            editors.append(editor.SavePerspective())
+            for editor in self.editors:
+                if editor.path and editor.modified:
+                    if not (yield editor.TryClose()):
+                        yield False
+                editors.append(editor.SavePerspective())
         yield async_call(write_settings, self.session_filename, session)
         yield True
 
@@ -459,6 +452,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         if (yield self.SaveProject()):
             self.SetProject(project, project_root)
             yield self.SaveProject()
+            yield self.SaveSettings()
 
     def _ShowLoadProjectError(self, exn, filename):
         self.Show()
@@ -471,6 +465,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     @coroutine
     def OpenProject(self, project_root):
         project_root = os.path.realpath(project_root)
+        newly_added = project_root not in self.project_info
         if (yield self.SaveProject()):
             try:
                 project = (yield async_call(read_settings, make_project_filename(project_root)))
@@ -479,6 +474,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                     yield self.LoadSession()
                 except IOError:
                     pass
+                if newly_added:
+                    yield self.SaveSettings()
                 self.Show()
                 yield True
             except Exception, e:
