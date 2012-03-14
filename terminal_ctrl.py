@@ -78,19 +78,24 @@ class TerminalCtrl(wx.Panel):
     def OnUpdateStop(self, evt):
         evt.Enable(self.process is not None)
 
-    def OnLineDoubleClicked(self, evt):
-        output_line = self.output.GetCurrentLine()
+    def OpenFileOnLine(self, output_line, highlight_line):
         s = self.output.GetLine(output_line)
-
         for pattern in file_line_patterns:
             m = pattern.match(s)
             if m:
                 path = m.group("file")
                 line = int(m.group("line"))
                 self.env.open_file(path, line, MARKER_ERROR)
-                self.output.SetHighlightedLine(output_line, MARKER_ERROR)
-                return
+                self.output.SetHighlightedLine(highlight_line, MARKER_ERROR)
+                return True
+        return False
 
+    def OnLineDoubleClicked(self, evt):
+        output_line = self.output.GetCurrentLine()
+        if self.OpenFileOnLine(output_line, output_line):
+            return
+        if self.OpenFileOnLine(output_line - 1, output_line):
+            return
         evt.Skip()
 
     @property
