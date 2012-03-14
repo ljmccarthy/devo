@@ -328,7 +328,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     @managed("cm")
     @coroutine
     def SaveSettings(self):
-        self.settings["projects"] = self.project_info.keys()
+        self.settings["projects"] = sorted(self.project_info)
         self.settings["last_project"] = self.project_root
         self.settings["recent_files"] = list(self.recent_files)
         self.settings["dialogs"] = dialogs.save_state()
