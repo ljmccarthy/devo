@@ -1,6 +1,14 @@
 import sys, os, subprocess
 
-def run_shell_command(cmdline, pipe_output=True, **kwargs):
+def make_environment(env=None):
+    if env is None:
+        env = os.environ
+    env = env.copy()
+    env["PYTHONUNBUFFERED"] = "1"
+    env["PYTHONIOENCODING"] = "UTF-8"
+    return env
+
+def run_shell_command(cmdline, pipe_output=True, env=None, **kwargs):
     if sys.platform == "win32":
         args = cmdline
     else:
@@ -13,6 +21,7 @@ def run_shell_command(cmdline, pipe_output=True, **kwargs):
         bufsize = 1,
         close_fds = (sys.platform != "win32"),
         shell = (sys.platform == "win32"),
+        env = make_environment(env),
         **kwargs)
 
     if sys.platform != "win32":
