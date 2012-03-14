@@ -438,6 +438,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.fmon.start()
 
     def SetProject(self, project, project_root):
+        project_root = os.path.realpath(project_root)
         name = os.path.basename(project_root)
         self.project = project
         self.project_root = project_root
@@ -457,6 +458,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     def OpenNewProject(self, project, project_root):
         if (yield self.SaveProject()):
             self.SetProject(project, project_root)
+            yield self.SaveProject()
 
     def _ShowLoadProjectError(self, exn, filename):
         self.Show()
