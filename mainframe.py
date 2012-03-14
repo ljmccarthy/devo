@@ -110,7 +110,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.saved_settings = {}
         self.project = {}
         self.project_root = ""
-        self.projects = {}
+        self.project_info = {}
         self.recent_files = LruQueue(maxlen=MAX_RECENT_FILES)
 
         self.cm = CoroutineManager()
@@ -226,7 +226,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
 
     @property
     def projects_sorted(self):
-        return sorted(self.projects.iteritems(), key=lambda x: x[1]["name"].lower())
+        return sorted(self.project_info.iteritems(), key=lambda x: x[1]["name"].lower())
 
     def GetMenuHooks(self):
         shared_commands = self.settings.get("commands", [])
@@ -299,8 +299,15 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                 pass
 
         self.saved_settings = self.settings.copy()
-        self.projects = self.settings.get("projects", {})
         self.recent_files = LruQueue(self.settings.get("recent_files", []), MAX_RECENT_FILES)
+
+        for project_path in self.settings.get("projects", ()):
+            try:
+                project = (yield async_call(read_settings, make_project_filename(project_path)))
+                project.setdefault("name", os.path.basename(project_path))
+                self.project_info[project_path] = project
+            except Exception:
+                pass
 
         if "dialogs" in self.settings:
             dialogs.load_state(self.settings["dialogs"])
@@ -321,7 +328,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     @managed("cm")
     @coroutine
     def SaveSettings(self):
-        self.settings["projects"] = self.projects
+        self.settings["projects"] = self.project_info.keys()
         self.settings["last_project"] = self.project_root
         self.settings["recent_files"] = list(self.recent_files)
         self.settings["dialogs"] = dialogs.save_state()
@@ -437,8 +444,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.project_filename = make_project_filename(project_root)
         self.session_filename = make_session_filename(project_root)
         project.setdefault("name", name)
-        name = project["name"]
-        self.projects[project_root] = {"name": name}
+        self.project_info[project_root] = project
 
         self.DeleteAllPages()
         self.tree.SetTopLevel([DirNode(self.project_root)])
@@ -475,8 +481,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                 yield True
             except Exception, e:
                 self._ShowLoadProjectError(e, project_root)
-                if project_root in self.projects:
-                    del self.projects[project_root]
+                if project_root in self.project_info:
+                    del self.project_info[project_root]
                     self.UpdateMenuBar()
                 yield False
             finally:
@@ -828,7 +834,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
 
     def OnSelectProject(self, evt):
         index = evt.GetId() - self.project_first_id
-        if 0 <= index < len(self.projects):
+        if 0 <= index < len(self.project_info):
             self.OpenProject(self.projects_sorted[index][0])
 
     def OnAboutBox(self, evt):
