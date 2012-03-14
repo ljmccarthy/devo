@@ -85,7 +85,7 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
             find_details.regexp = False
             find_details.reverse = False
 
-        dlg = FindReplaceDialog(wx.GetApp().GetTopWindow(), self, self.name, find_details)
+        dlg = FindReplaceDialog(self, self.name, find_details)
         try:
             dlg.ShowModal()
             self.env.find_details = dlg.GetFindDetails()
@@ -101,7 +101,7 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
             self.env.find_details.Find(self, reverse=True)
 
     def GoToLine(self):
-        dlg = GoToLineDialog(wx.GetApp().GetTopWindow(), self.name)
+        dlg = GoToLineDialog(self, self.name)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 self.GotoLine(dlg.GetLineNumber())

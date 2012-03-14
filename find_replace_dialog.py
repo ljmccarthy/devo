@@ -120,12 +120,12 @@ class FindReplaceDetails(object):
             editor.EndUndoAction()
 
 class FindReplaceDialog(wx.Dialog):
-    def __init__(self, parent, editor, filename="", details=None):
+    def __init__(self, editor, filename="", details=None):
         title = "Find and Replace"
         if filename:
             title += " [%s]" % filename
 
-        wx.Dialog.__init__(self, parent, title=title)
+        wx.Dialog.__init__(self, editor, title=title)
         self.editor = editor
 
         self.combo_find = wx.ComboBox(self, size=(300, -1))
@@ -165,7 +165,12 @@ class FindReplaceDialog(wx.Dialog):
         sizer.Add(btnsizer, 0, wx.EXPAND | wx.ALL, spacer)
         self.SetSizer(sizer)
         self.Fit()
-        self.Centre()
+
+        # Position in bottom-right corner
+        pos = editor.Parent.ClientToScreen(editor.Position)
+        self.SetPosition((
+            pos.x + (editor.Size.width - self.Size.width) - 20,
+            pos.y + (editor.Size.height - self.Size.height) - 20))
 
         if details is not None:
             self.combo_find.SetItems(details.find_history)

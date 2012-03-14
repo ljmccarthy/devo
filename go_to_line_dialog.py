@@ -22,7 +22,12 @@ class GoToLineDialog(wx.Dialog):
         sizer.Add(btn_ok, 0, flags, 5)
         self.SetSizer(sizer)
         self.Fit()
-        self.Centre()
+
+        # Position in bottom-right corner
+        pos = parent.Parent.ClientToScreen(parent.Position)
+        self.SetPosition((
+            pos.x + (parent.Size.width - self.Size.width) - 20,
+            pos.y + (parent.Size.height - self.Size.height) - 20))
 
         self.Bind(wx.EVT_BUTTON, self.OnOK, id=wx.ID_OK)
         self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateOK, id=wx.ID_OK)
