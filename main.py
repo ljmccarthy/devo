@@ -19,10 +19,11 @@ class App(wx.App):
         try:
             import async_wx, log_file
             async_wx.set_wx_scheduler()
-            log_filename = os.path.join(tempfile.gettempdir(), "devo-errors.log")
-            self.log_file = log_file.get_log_file(log_filename)
-            sys.stdout, self.stdout = self.log_file, sys.stdout
-            sys.stderr, self.stderr = self.log_file, sys.stderr
+            if hasattr(sys, "frozen"):
+                log_filename = os.path.join(tempfile.gettempdir(), "devo-errors.log")
+                self.log_file = log_file.get_log_file(log_filename)
+                sys.stdout, self.stdout = self.log_file, sys.stdout
+                sys.stderr, self.stderr = self.log_file, sys.stderr
             return True
         except Exception:
             message = "Devo failed to initialize due to the following error:\n\n" + traceback.format_exc()
@@ -37,10 +38,11 @@ class App(wx.App):
         self.first_drop = False
 
     def Shutdown(self):
-        sys.stdout = self.stdout
-        sys.stderr = self.stderr
-        f, self.log_file = self.log_file, None
-        f.close()
+        if hasattr(sys, "frozen"):
+            sys.stdout = self.stdout
+            sys.stderr = self.stderr
+            f, self.log_file = self.log_file, None
+            f.close()
 
 def process_args(args):
     try:
