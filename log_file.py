@@ -23,6 +23,7 @@ class LogFileWrapper(object):
         self.filename = filename
         self.max_log_size = max_log_size
         self.file = None
+        self.timestamp = time.strftime("===== %Y-%m-%d %H:%M:%S =====\n")
 
     def write(self, s):
         if self.file is None:
@@ -30,11 +31,10 @@ class LogFileWrapper(object):
             header_newline = ""
             if contents:
                 header_newline = "\n" if contents[-1] == "\n" else "\n\n"
-            header = time.strftime(header_newline + "===== %Y-%m-%d %H:%M:%S =====\n")
             file = open(self.filename, "w")
             try:
                 file.write(contents)
-                file.write(header)
+                file.write(header_newline + self.timestamp)
                 file.flush()
             except Exception:
                 file.close()
