@@ -55,6 +55,8 @@ menubar = MenuBar([
         MenuHook("project_commands"),
     ]),
     Menu("&Help", [
+        MenuItem(ID.REPORT_BUG, "Report Bug"),
+        MenuSeparator,
         MenuItem(ID.ABOUT_BOX, "&About Devo..."),
     ]),
 ])

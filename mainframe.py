@@ -199,6 +199,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.Bind(wx.EVT_UPDATE_UI_RANGE, self.OnUpdateUI_ProjectCommand,
                   id=self.project_command_first_id, id2=self.project_command_last_id)
 
+        self.Bind(wx.EVT_MENU, self.OnReportBug, id=ID.REPORT_BUG)
         self.Bind(wx.EVT_MENU, self.OnAboutBox, id=ID.ABOUT_BOX)
 
         self.Bind(wx.EVT_UPDATE_UI, self.EditorUpdateUI("GetModify"), id=ID.SAVE)
@@ -856,6 +857,9 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         index = evt.GetId() - self.project_first_id
         if 0 <= index < len(self.project_info):
             self.OpenProject(self.projects_sorted[index][0])
+
+    def OnReportBug(self, evt):
+        wx.LaunchDefaultBrowser("https://github.com/shaurz/devo/issues/new")
 
     def OnAboutBox(self, evt):
         dlg = AboutDialog(self, self.env)
