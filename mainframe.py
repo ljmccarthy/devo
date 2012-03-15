@@ -391,7 +391,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                 for p in session.get("editors", ()):
                     editor = self.NewEditor()
                     if "path" in p:
-                        path = self.GetFullPath(p["path"])
+                        path = p["path"] = self.GetFullPath(p["path"])
                         if path in seen_paths:
                             editors.append((editor, None))
                             continue
