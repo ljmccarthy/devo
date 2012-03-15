@@ -98,6 +98,10 @@ class TerminalCtrl(wx.Panel):
             return
         evt.Skip()
 
+    def set_status(self, status):
+        self.status_label.SetLabel(status)
+        self.Layout()
+
     @property
     def is_running(self):
         return bool(self.process)
@@ -111,7 +115,7 @@ class TerminalCtrl(wx.Panel):
         self.thread.start()
 
         self.cmdline = cmdline
-        self.status_label.SetLabel(shorten_text(cmdline, 100) + "\nRunning")
+        self.set_status(shorten_text(cmdline, 60) + "\nRunning")
         self.Clear()
         self.output.start()
 
@@ -136,9 +140,9 @@ class TerminalCtrl(wx.Panel):
             wx.CallAfter(self.__thread_exit, process, rc)
 
     def __thread_exit(self, process, rc):
-        self.status_label.SetLabel(
-            "%s\nProcess terminated%s" % (self.cmdline,
-                " with return code %d" % rc if rc is not None else ""))
+        self.set_status("%s\nProcess terminated%s" % (
+            shorten_text(self.cmdline, 60),
+            " with return code %d" % rc if rc is not None else ""))
         if self.process is process:
             self.thread = None
             self.process = None
