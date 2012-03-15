@@ -385,23 +385,33 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             errors = []
             try:
                 editors = []
-                if "editors" in session:
-                    for p in session["editors"]:
-                        editor = self.NewEditor()
-                        future = editor.LoadPerspective(p)
-                        editors.append((editor, future))
+                seen_paths = set()
+
+                for p in session.get("editors", ()):
+                    editor = self.NewEditor()
+                    if "path" in p:
+                        path = self.GetFullPath(p["path"])
+                        if path in seen_paths:
+                            editors.append((editor, None))
+                            continue
+                        seen_paths.add(path)
+                    future = editor.LoadPerspective(p)
+                    editors.append((editor, future))
 
                 if "dirtree" in session:
                     self.tree.LoadPerspective(session["dirtree"])
 
                 to_remove = []
                 for i, (editor, future) in reversed(list(enumerate(editors))):
-                    try:
-                        yield future
-                    except Exception, e:
+                    if future is None:
                         to_remove.append(i)
-                        if not (isinstance(e, IOError) and e.errno == errno.ENOENT):
-                            errors.append(e)
+                    else:
+                        try:
+                            yield future
+                        except Exception, e:
+                            to_remove.add(i)
+                            if not (isinstance(e, IOError) and e.errno == errno.ENOENT):
+                                errors.append(e)
                 errors.reverse()
 
                 if "notebook" in session:
