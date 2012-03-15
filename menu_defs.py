@@ -37,7 +37,7 @@ menubar = MenuBar([
     ]),
     edit_menu,
     Menu("&Project", [
-        MenuItem(ID.NEW_PROJECT, "&New Project", "Ctrl+Alt+T"),
+        MenuItem(ID.NEW_PROJECT, "&New Project...", "Ctrl+Alt+T"),
         MenuItem(ID.OPEN_PROJECT, "&Open Project...", "Ctrl+Alt+O"),
         MenuItem(ID.CLOSE_PROJECT, "&Close Project", "Ctrl+Alt+W"),
         #MenuSeparator,
