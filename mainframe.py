@@ -154,6 +154,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.Bind(aui.EVT_AUINOTEBOOK_TAB_MIDDLE_UP, self.OnPageClose)
         self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CLOSE, self.OnPageClose)
         self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnPageChanged)
+        self.Bind(aui.EVT_AUINOTEBOOK_BG_DCLICK, self.OnTabAreaDClick)
 
         self.Bind(wx.EVT_MENU, self.OnNewFile, id=ID.NEW)
         self.Bind(wx.EVT_MENU, self.OnOpenFile, id=ID.OPEN)
@@ -554,9 +555,10 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                     self.SetStatusText("", 0)
                     self.SetStatusText("", 1)
 
-    def AddPage(self, win):
-        i = self.notebook.GetSelection() + 1
-        self.notebook.InsertPage(i, win, win.title, select=True)
+    def AddPage(self, win, index=None):
+        if index is None:
+            index = self.notebook.GetSelection() + 1
+        self.notebook.InsertPage(index, win, win.title, select=True)
         win.sig_title_changed.bind(self.OnPageTitleChanged)
         win.sig_status_changed.bind(self.OnPageStatusChanged)
         win.SetFocus()
@@ -576,10 +578,13 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         if win is self.notebook.GetCurrentPage():
             self.SetStatusText(win.status_text, 0)
 
-    def NewEditor(self):
+    def OnTabAreaDClick(self, evt):
+        self.NewEditor(index=self.notebook.GetPageCount())
+
+    def NewEditor(self, index=None):
         with frozen_window(self.notebook):
             editor = Editor(self.notebook, self.env)
-            self.AddPage(editor)
+            self.AddPage(editor, index=index)
             return editor
 
     def FindEditor(self, path):
