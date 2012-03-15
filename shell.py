@@ -1,9 +1,14 @@
 import sys, os, subprocess
 
+remove_vars = ("PYTHONHOME", "PYTHONPATH", "VERSIONER_PYTHON_PREFER_32_BIT")
+
 def make_environment(env=None):
     if env is None:
         env = os.environ
     env = env.copy()
+    for var in remove_vars:
+        if var in env:
+            del env[var]
     env["PYTHONUNBUFFERED"] = "1"
     env["PYTHONIOENCODING"] = "UTF-8"
     return env
