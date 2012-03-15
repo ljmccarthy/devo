@@ -96,6 +96,42 @@ class FutureAlreadySet(Exception):
 class FutureCancelled(Exception):
     pass
 
+class _FutureCleanup(object):
+    __slots__ = (
+        "__future_ref",
+        "__context",
+        "__on_finished",
+        "__traceback",
+    )
+
+    def __init__(self, future, context, on_finished):
+        self.__future_ref = weakref.ref(future, self.__finish)
+        self.__context = context
+        self.__on_finished = on_finished
+        self.__traceback = ""
+
+    def failure_traceback(self, traceback):
+        self.__traceback = traceback
+
+    def failure_handled(self):
+        self.__future_ref = None
+        self.__traceback = ""
+
+    def finish_handled(self):
+        self.__on_finished = ()
+
+    def __finish(self, ref):
+        if self.__future_ref:
+            self.__future_ref = None
+            self.__on_finished, on_finished = None, self.__on_finished
+            if self.__traceback:
+                message = "Future failed: %s\n" % self.__traceback.rstrip("\n")
+                if self.__context:
+                    message += "Context of Future invocation:\n%s\n" % self.__context.rstrip("\n")
+                _global_scheduler.log_error(message)
+            for handler in on_finished:
+                _global_scheduler.post_call(handler)
+
 class Future(object):
     __slots__ = (
         "__weakref__",
@@ -105,11 +141,11 @@ class Future(object):
         "__on_failure",
         "__on_cancelled",
         "__on_finished",
-        "__failure_handled",
         "__status",
         "__result",
         "__traceback",
         "__cond",
+        "__cleanup",
     )
 
     def __init__(self, name="", context=""):
@@ -119,11 +155,11 @@ class Future(object):
         self.__on_failure = []
         self.__on_cancelled = []
         self.__on_finished = []
-        self.__failure_handled = False
         self.__status = WAITING
         self.__result = None
         self.__traceback = ""
         self.__cond = threading.Condition()
+        self.__cleanup = _FutureCleanup(self, context, self.__on_finished)
 
     def __repr__(self):
         cls = self.__class__
@@ -131,28 +167,32 @@ class Future(object):
 
     def __finish(self):
         with self.__cond:
+            failure_handled = True
             if self.__status == DONE:
                 handlers = self.__on_success
                 args = (self.__result,)
             elif self.__status == FAILED:
                 handlers = self.__on_failure
                 args = (self.__result, self.__traceback)
-                if handlers:
-                    self.__failure_handled = True
+                if not handlers:
+                    failure_handled = False
             elif self.__status == CANCELLED:
                 handlers = self.__on_cancelled
                 args = (self,)
             else:
                 return
             finished_handlers = self.__on_finished
-            self.__on_success = []
-            self.__on_failure = []
-            self.__on_cancelled = []
-            self.__on_finished = []
+            self.__on_success = None
+            self.__on_failure = None
+            self.__on_cancelled = None
+            self.__on_finished = None
+            self.__cleanup.finish_handled()
+            if failure_handled:
+                self.__cleanup.failure_handled()
         for handler in handlers:
             _global_scheduler.call(handler, *args)
         for handler in finished_handlers:
-            _global_scheduler.call(handler, self)
+            _global_scheduler.call(handler)
 
     def set_done(self, result):
         with self.__cond:
@@ -166,6 +206,8 @@ class Future(object):
         _global_scheduler.post_call(self.__finish)
 
     def set_failed(self, exn, traceback):
+        if not isinstance(traceback, basestring):
+            raise TypeError("Future traceback must be a string")
         with self.__cond:
             if self.__status == CANCELLED:
                 return
@@ -174,6 +216,7 @@ class Future(object):
             self.__result = exn
             self.__traceback = traceback
             self.__status = FAILED
+            self.__cleanup.failure_traceback(traceback)
             self.__cond.notify_all()
         _global_scheduler.post_call(self.__finish)
 
@@ -205,7 +248,7 @@ class Future(object):
             if self.__status == DONE:
                 return self.__result
             elif self.__status == FAILED:
-                self.__failure_handled = True
+                self.__cleanup.failure_handled()
                 raise self.__result
             elif self.__status == CANCELLED:
                 raise FutureCancelled()
@@ -234,37 +277,31 @@ class Future(object):
             return self.__result
 
     def bind(self, success=None, failure=None, cancelled=None, finished=None):
+        calls = []
         with self.__cond:
             if success is not None:
                 if self.__status == DONE:
-                    _global_scheduler.post_call(success, self.__result)
+                    calls.append((success, self.__result))
                 elif self.__status == WAITING:
                     self.__on_success.append(success)
             if failure is not None:
                 if self.__status == FAILED:
-                    self.__failure_handled = True
-                    _global_scheduler.post_call(failure, self.__result, self.__traceback)
+                    self.__cleanup.failure_handled()
+                    calls.append((failure, self.__result, self.__traceback))
                 elif self.__status == WAITING:
                     self.__on_failure.append(failure)
             if cancelled is not None:
                 if self.__status == CANCELLED:
-                    _global_scheduler.post_call(cancelled, self)
+                    calls.append((cancelled, self))
                 elif self.__status == WAITING:
                     self.__on_cancelled.append(cancelled)
             if finished is not None:
                 if self.__status != WAITING:
-                    _global_scheduler.post_call(finished, self)
+                    calls.append((finished,))
                 elif self.__status == WAITING:
                     self.__on_finished.append(finished)
-
-    def __del__(self):
-        if Future:
-            if self.__status == FAILED and not self.__failure_handled:
-                message = "Future failed: %s\n" % self.__traceback.rstrip("\n")
-                if self.context:
-                    message += "Context of Future invocation:\n%s\n" % self.context.rstrip("\n")
-                _global_scheduler.log_error(message)
-            self.cancel()
+        for call in calls:
+            _global_scheduler.post_call(*call)
 
 class Coroutine(Future):
     __slots__ = (
@@ -371,7 +408,7 @@ class CoroutineQueue(object):
             co.start()
         return co
 
-    def __next(self, future):
+    def __next(self):
         if self.__queue:
             co = self.__queue.pop()
             self.__running = weakref.ref(co)
