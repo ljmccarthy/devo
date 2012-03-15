@@ -444,27 +444,29 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
 
     def SetProject(self, project, project_root):
         project_root = os.path.realpath(project_root)
-        name = os.path.basename(project_root)
         self.project = project
         self.project_root = project_root
         self.project_filename = make_project_filename(project_root)
         self.session_filename = make_session_filename(project_root)
-        project.setdefault("name", name)
+        project.setdefault("name", os.path.basename(project_root))
         self.project_info[project_root] = project
 
         self.DeleteAllPages()
         self.tree.SetTopLevel([DirNode(self.project_root)])
         self.UpdateMenuBar()
-        self.SetTitle("Devo [%s]" % name)
+        self.SetTitle("Devo [%s]" % project["name"])
         self.StartFileMonitor()
 
     @managed("cm")
     @coroutine
     def OpenNewProject(self, project, project_root):
         if (yield self.SaveProject()):
-            self.SetProject(project, project_root)
-            yield self.SaveProject()
-            yield self.SaveSettings()
+            if os.path.exists(make_project_filename(project_root)):
+                yield self.OpenProject(project_root, update=project)
+            else:
+                self.SetProject(project, project_root)
+                yield self.SaveProject()
+                yield self.SaveSettings()
 
     def _ShowLoadProjectError(self, exn, filename):
         self.Show()
@@ -475,12 +477,13 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
 
     @managed("cm")
     @coroutine
-    def OpenProject(self, project_root):
+    def OpenProject(self, project_root, update={}):
         project_root = os.path.realpath(project_root)
         newly_added = project_root not in self.project_info
         if (yield self.SaveProject()):
             try:
                 project = (yield async_call(read_settings, make_project_filename(project_root)))
+                project.update(update)
                 self.SetProject(project, project_root)
                 try:
                     yield self.LoadSession()
