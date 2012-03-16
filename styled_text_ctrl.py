@@ -2,9 +2,11 @@ import os.path
 from contextlib import contextmanager
 import wx, wx.stc
 
+from editor_fonts import font_face, font_size
 from find_replace_dialog import FindReplaceDetails, FindReplaceDialog
 from go_to_line_dialog import GoToLineDialog
 from menu_defs import edit_menu
+from syntax import filename_syntax_re, syntax_dict, plain
 
 MARKER_FIND = 0
 MARKER_ERROR = 1
@@ -17,16 +19,37 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
         self.env = env
         self._highlighted_lines = [None, None]
         self.UsePopUp(False)
-        self.DefineMarkers()
-
+        self.SetSyntax(plain)
         self.Bind(wx.EVT_CONTEXT_MENU, self.OnContextMenu)
 
     def OnContextMenu(self, evt):
+        self.SetFocus()
         self.PopupMenu(edit_menu.Create())
 
-    def DefineMarkers(self):
+    def SetSyntax(self, syntax):
+        self.syntax = syntax
+        self.ClearDocumentStyle()
+        self.SetLexer(syntax.lexer)
+        self.SetKeyWords(0, syntax.keywords)
+        self.StyleResetDefault()
+        self.StyleSetFontAttr(wx.stc.STC_STYLE_DEFAULT, font_size, font_face, False, False, False)
+        self.StyleSetSpec(wx.stc.STC_STYLE_DEFAULT, "")
+        self.StyleClearAll()
         self.MarkerDefine(MARKER_FIND, wx.stc.STC_MARK_BACKGROUND, background="#CCCCFF")
         self.MarkerDefine(MARKER_ERROR, wx.stc.STC_MARK_BACKGROUND, background="#FFCCCC")
+        for style_num, spec in syntax.stylespecs:
+            self.StyleSetSpec(style_num, spec)
+        self.SetIndent(syntax.indent)
+        self.SetTabWidth(syntax.indent if syntax.use_tabs else 8)
+        self.SetUseTabs(syntax.use_tabs)
+        self.Colourise(0, -1)
+
+    def SetSyntaxFromFilename(self, path):
+        m = filename_syntax_re.match(os.path.basename(path))
+        if m:
+            self.SetSyntax(syntax_dict[m.lastgroup])
+        else:
+            self.SetSyntax(plain)
 
     def ClearHighlight(self, marker_type):
         line = self._highlighted_lines[marker_type]
@@ -67,13 +90,61 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
         self.SetSelection(pos, pos)
         self.CentreLine(line)
 
-    def Unindent(self):
+    def SetRangeText(self, start, end, text):
+        self.SetTargetStart(start)
+        self.SetTargetEnd(end)
+        self.ReplaceTarget(text)
+
+    def GetLineSelection(self):
         start, end = self.GetSelection()
+        return (self.LineFromPosition(start), self.LineFromPosition(end - 1) + 1)
+
+    def GetLineSelectionRange(self):
+        return xrange(*self.GetLineSelection())
+
+    def SetLineSelection(self, start_line, end_line):
+        self.SetSelection(self.PositionFromLine(start_line), self.GetLineEndPosition(end_line) - 1)
+
+    def Unindent(self):
         self.BeginUndoAction()
-        for line in xrange(self.LineFromPosition(start), self.LineFromPosition(end - 1) + 1):
+        for line in self.GetLineSelectionRange():
             indent = self.GetLineIndentation(line)
             self.SetLineIndentation(line, indent - self.GetIndent())
         self.EndUndoAction()
+
+    def GetSelectionIndent(self):
+        indent = None
+        for line in self.GetLineSelectionRange():
+            if self.GetLine(line).strip():
+                if indent is None:
+                    indent = self.GetLineIndentation(line)
+                else:
+                    indent = min(indent, self.GetLineIndentation(line))
+        return indent or 0
+
+    def Comment(self):
+        start_line, end_line = self.GetLineSelection()
+        indent = self.GetSelectionIndent()
+        self.BeginUndoAction()
+        for line in self.GetLineSelectionRange():
+            if not self.GetLine(line).strip():
+                self.SetLineIndentation(line, indent)
+            self.InsertText(self.PositionFromLine(line) + indent, self.syntax.comment_token)
+        self.EndUndoAction()
+        self.SetLineSelection(start_line, end_line)
+
+    def Uncomment(self):
+        start_line, end_line = self.GetLineSelection()
+        self.BeginUndoAction()
+        for line in self.GetLineSelectionRange():
+            s = self.GetLineRaw(line)
+            if s:
+                offset = len(s) - len(s.strip()) - 1
+                if s[offset : offset + len(self.syntax.comment_token)] == self.syntax.comment_token:
+                    pos = self.PositionFromLine(line) + offset
+                    self.SetRangeText(pos, pos + len(self.syntax.comment_token), "")
+        self.EndUndoAction()
+        self.SetLineSelection(start_line, end_line)
 
     def Find(self):
         selected = self.GetSelectedText().strip().split("\n", 1)[0]

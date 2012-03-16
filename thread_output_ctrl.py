@@ -1,15 +1,10 @@
 import threading
 import wx
-from editor_fonts import init_stc_style
 from styled_text_ctrl import StyledTextCtrl
 
 class ThreadOutputCtrl(StyledTextCtrl):
     def __init__(self, parent, env, auto_scroll=False):
         StyledTextCtrl.__init__(self, parent, env)
-        init_stc_style(self)
-        self.SetIndent(4)
-        self.SetTabWidth(8)
-        self.SetUseTabs(False)
 
         self.auto_scroll = auto_scroll
 

@@ -19,6 +19,8 @@ edit_menu = Menu("&Edit", [
     MenuItem(ID.GO_TO_LINE, "&Go To Line...", "Ctrl+G"),
     MenuSeparator,
     MenuItem(ID.UNINDENT, "Unin&dent", "Shift+Tab"),
+    MenuItem(ID.COMMENT, "Comment"),
+    MenuItem(ID.UNCOMMENT, "Uncomment"),
 ])
 
 menubar = MenuBar([

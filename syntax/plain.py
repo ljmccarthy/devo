@@ -2,7 +2,7 @@ import wx.stc
 
 ident = "plain"
 name = "Plain Text"
-extensions = []
+extensions = ["*"]
 lexer = wx.stc.STC_LEX_NULL
 indent = 4
 use_tabs = False

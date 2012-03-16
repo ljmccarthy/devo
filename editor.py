@@ -2,11 +2,9 @@ import os
 import wx, wx.stc
 from async import async_call, coroutine
 from dialogs import dialogs
-from editor_fonts import init_stc_style
 from fileutil import atomic_write_file, read_file
 from signal_wx import Signal
 from styled_text_ctrl import StyledTextCtrl
-from syntax import filename_syntax_re, syntax_dict
 
 def decode_text(text):
     try:
@@ -38,7 +36,6 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
         self.SetBackSpaceUnIndents(True)
         self.SetViewWhiteSpace(wx.stc.STC_WS_VISIBLEALWAYS)
         self.SetWhitespaceForeground(True, "#dddddd")
-        self.SetNullSyntax()
 
         self.default_scroll_width = self.TextWidth(wx.stc.STC_STYLE_DEFAULT, "W")
         self.SetScrollWidth(self.default_scroll_width)
@@ -95,28 +92,6 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
             if self.path:
                 self.env.remove_monitor_path(self.path)
             yield True
-
-    def SetNullSyntax(self):
-        init_stc_style(self)
-        self.DefineMarkers()
-        self.SetIndent(4)
-        self.SetTabWidth(8)
-        self.SetUseTabs(False)
-
-    def SetSyntaxFromFilename(self, path):
-        m = filename_syntax_re.match(os.path.basename(path))
-        if m:
-            syntax = syntax_dict[m.lastgroup]
-            init_stc_style(self, lexer=syntax.lexer, keywords=syntax.keywords)
-            self.DefineMarkers()
-            for style_num, spec in syntax.stylespecs:
-                self.StyleSetSpec(style_num, spec)
-            self.SetIndent(syntax.indent)
-            self.SetTabWidth(syntax.indent if syntax.use_tabs else 8)
-            self.SetUseTabs(syntax.use_tabs)
-            self.Colourise(0, -1)
-        else:
-            self.SetNullSyntax()
 
     def SetStatic(self, title, text):
         self.static_title = title
