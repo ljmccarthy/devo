@@ -680,8 +680,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             self.OpenEditor(filename)
         return True
 
-    def GetNewProject(self):
-        dlg = NewProjectDialog(self)
+    def GetNewProject(self, path=""):
+        dlg = NewProjectDialog(self, path=path)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 project_root = dlg.GetRoot()
@@ -699,7 +699,12 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     def OnOpenProject(self, evt):
         project_root = dialogs.get_directory(self, "Select Project Directory")
         if project_root:
-            self.OpenProject(project_root)
+            if os.path.exists(make_project_filename(project_root)):
+                self.OpenProject(project_root)
+            else:
+                project, project_root = self.GetNewProject(project_root)
+                if project:
+                    self.OpenNewProject(project, project_root)
 
     def OnCloseProject(self, evt):
         if self.project_filename:
