@@ -4,7 +4,7 @@ class DirTreeFilter(object):
         self.show_files = show_files
         self.show_dirs = show_dirs
         self.hidden_exts = [".pyc", ".pyo", ".o", ".a", ".obj", ".lib", ".swp", "~"]
-        self.hidden_dirs = ["CVS"]
+        self.hidden_dirs = ["CVS", "__pycache__"]
 
     def __call__(self, info):
         if info.hidden and not self.show_hidden:
