@@ -18,9 +18,10 @@ edit_menu = Menu("&Edit", [
     MenuItem(ID.FIND_PREV, "Find Pre&vious", "Shift+F3"),
     MenuItem(ID.GO_TO_LINE, "&Go To Line...", "Ctrl+G"),
     MenuSeparator,
-    MenuItem(ID.UNINDENT, "Unin&dent", "Shift+Tab"),
-    MenuItem(ID.COMMENT, "Comment"),
-    MenuItem(ID.UNCOMMENT, "Uncomment"),
+    MenuItem(ID.INDENT, "In&dent", "Ctrl+I"),
+    MenuItem(ID.UNINDENT, "Unin&dent", "Ctrl+U"),
+    MenuItem(ID.COMMENT, "Comment", "Ctrl+E"),
+    MenuItem(ID.UNCOMMENT, "Uncomment", "Ctrl+R"),
 ])
 
 menubar = MenuBar([

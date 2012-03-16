@@ -71,8 +71,7 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
         return not self.GetReadOnly() and self.CanCopy()
 
     def CanCopy(self):
-        start, end = self.GetSelection()
-        return start != end
+        return self.HasSelection()
 
     def CanFindNext(self):
         return bool(self.env.find_details and self.env.find_details.find)
@@ -95,15 +94,27 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
         self.SetTargetEnd(end)
         self.ReplaceTarget(text)
 
+    def HasSelection(self):
+        start, end = self.GetSelection()
+        return start != end
+
     def GetLineSelection(self):
         start, end = self.GetSelection()
-        return (self.LineFromPosition(start), self.LineFromPosition(end - 1) + 1)
+        return (self.LineFromPosition(start), self.LineFromPosition(end - 1))
 
     def GetLineSelectionRange(self):
-        return xrange(*self.GetLineSelection())
+        start_line, end_line = self.GetLineSelection()
+        return xrange(start_line, end_line + 1)
 
     def SetLineSelection(self, start_line, end_line):
         self.SetSelection(self.PositionFromLine(start_line), self.GetLineEndPosition(end_line) - 1)
+
+    def Indent(self):
+        self.BeginUndoAction()
+        for line in self.GetLineSelectionRange():
+            indent = self.GetLineIndentation(line)
+            self.SetLineIndentation(line, indent + self.GetIndent())
+        self.EndUndoAction()
 
     def Unindent(self):
         self.BeginUndoAction()
@@ -123,18 +134,16 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
         return indent or 0
 
     def Comment(self):
-        start_line, end_line = self.GetLineSelection()
         indent = self.GetSelectionIndent()
         self.BeginUndoAction()
         for line in self.GetLineSelectionRange():
             if not self.GetLine(line).strip():
                 self.SetLineIndentation(line, indent)
-            self.InsertText(self.PositionFromLine(line) + indent, self.syntax.comment_token)
+            pos = self.PositionFromLine(line) + indent
+            self.SetRangeText(pos, pos, self.syntax.comment_token)
         self.EndUndoAction()
-        self.SetLineSelection(start_line, end_line)
 
     def Uncomment(self):
-        start_line, end_line = self.GetLineSelection()
         self.BeginUndoAction()
         for line in self.GetLineSelectionRange():
             s = self.GetLineRaw(line)
@@ -144,7 +153,6 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
                     pos = self.PositionFromLine(line) + offset
                     self.SetRangeText(pos, pos + len(self.syntax.comment_token), "")
         self.EndUndoAction()
-        self.SetLineSelection(start_line, end_line)
 
     def Find(self):
         selected = self.GetSelectedText().strip().split("\n", 1)[0]

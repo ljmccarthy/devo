@@ -176,6 +176,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.Bind(wx.EVT_MENU, self.EditorAction("FindNext"), id=ID.FIND_NEXT)
         self.Bind(wx.EVT_MENU, self.EditorAction("FindPrev"), id=ID.FIND_PREV)
         self.Bind(wx.EVT_MENU, self.EditorAction("GoToLine"), id=ID.GO_TO_LINE)
+        self.Bind(wx.EVT_MENU, self.EditorAction("Indent"), id=ID.INDENT)
         self.Bind(wx.EVT_MENU, self.EditorAction("Unindent"), id=ID.UNINDENT)
         self.Bind(wx.EVT_MENU, self.EditorAction("Comment"), id=ID.COMMENT)
         self.Bind(wx.EVT_MENU, self.EditorAction("Uncomment"), id=ID.UNCOMMENT)
