@@ -6,6 +6,7 @@ extensions = ["*.c", "*.cpp", "*.cxx", "*.cc", "*.h", "*.hpp", "*.hxx"]
 lexer = wx.stc.STC_LEX_CPP
 indent = 4
 use_tabs = False
+comment_token = "//"
 
 stylespecs = (
     (wx.stc.STC_STYLE_DEFAULT,            ""),
