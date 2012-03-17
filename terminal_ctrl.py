@@ -99,7 +99,7 @@ class TerminalCtrl(wx.Panel):
         evt.Skip()
 
     def set_status(self, status):
-        self.status_label.SetLabel(status)
+        self.status_label.SetLabel(status.replace("&", "&&"))
         self.Layout()
 
     @property
