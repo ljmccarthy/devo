@@ -40,11 +40,14 @@ def run_shell_command(cmdline, pipe_output=True, env=None, **kwargs):
     return process
 
 def kill_shell_process(process, force=False):
-    if sys.platform != "win32":
+    if sys.platform[:5] == "linux":
         signal = "-KILL" if force else "-TERM"
-        rc = subprocess.call(["pkill", signal, "-P", str(process.pid)])
-        if rc == 0:
-            return
+        try:
+            rc = subprocess.call(["pkill", signal, "-P", str(process.pid)])
+            if rc == 0:
+                return
+        except OSError:
+            pass
 
     if force:
         process.kill()
