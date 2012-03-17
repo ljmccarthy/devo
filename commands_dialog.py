@@ -98,17 +98,12 @@ class EditCommandDialog(wx.Dialog):
     def _GetNonEmptyString(self, ctrl):
         value = ctrl.Value.strip()
         if not value:
-            raise Exception("Field is required")
+            raise Exception("Field is required.")
         return value
 
     def _GetAccel(self, ctrl):
         value = ctrl.Value.strip()
         return value and unparse_accelerator(*parse_accelerator(value))
-
-    def _GetCmdline(self, ctrl):
-        value = self._GetNonEmptyString(ctrl)
-        check_variables(value)
-        return value
 
     def _GetWorkDir(self, ctrl):
         value = ctrl.Value.strip()
@@ -121,7 +116,7 @@ class EditCommandDialog(wx.Dialog):
     _fields = (
         ("name", _GetNonEmptyString),
         ("accel", _GetAccel),
-        ("cmdline", _GetCmdline),
+        ("cmdline", _GetNonEmptyString),
         ("workdir", _GetWorkDir),
         ("before", _GetStringSelection),
         ("detach", _GetValue),
