@@ -112,6 +112,8 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
 
     def GetLineSelection(self):
         start, end = self.GetSelection()
+        if start == end:
+            end += 1
         return (self.LineFromPosition(start), self.LineFromPosition(end - 1))
 
     def GetLineSelectionRange(self):
