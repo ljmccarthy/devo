@@ -629,6 +629,11 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                         yield False
             except IOError:
                 pass
+
+            if not os.path.exists(path):
+                dialogs.error(self, "File does not exist:\n\n%s" % path)
+                yield False
+
             editor = Editor(self.notebook, self.env, path)
             if not (yield editor.TryLoadFile(path)):
                 editor.Destroy()
