@@ -532,6 +532,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     def OnPaneClose(self, evt):
         window = evt.GetPane().window
         if window is self.find_in_files:
+            self.find_in_files.stop()
             self.ClearHighlight(MARKER_FIND)
         elif window is self.terminal:
             self.ClearHighlight(MARKER_ERROR)

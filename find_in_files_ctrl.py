@@ -99,9 +99,12 @@ class FindInFilesCtrl(wx.Panel):
 
         evt.Skip()
 
-    def find(self, details, filter=None):
+    def stop(self):
         if self.finder:
             self.finder.stop()
+
+    def find(self, details, filter=None):
+        self.stop()
 
         matcher = make_matcher(details.find,
             case_sensitive=details.case, is_regexp=details.regexp)
