@@ -97,9 +97,9 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
             self.ScrollToLine(line - (self.LinesOnScreen() // 2))
 
     def SetCurrentLine(self, line):
+        self.CentreLine(line)
         pos = self.PositionFromLine(line)
         self.SetSelection(pos, pos)
-        self.CentreLine(line)
 
     def SetRangeText(self, start, end, text):
         self.SetTargetStart(start)
