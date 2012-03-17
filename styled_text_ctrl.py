@@ -90,8 +90,7 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
         return self.GetTextLength() == 0
 
     def GetLastVisibleLine(self):
-        point = wx.Point(0, self.ClientSize.height - self.TextHeight(0))
-        return self.LineFromPosition(self.PositionFromPoint(point))
+        return self.GetFirstVisibleLine() + self.LinesOnScreen() - 1
 
     def CentreLine(self, line):
         if not (self.GetFirstVisibleLine() <= line <= self.GetLastVisibleLine()):
