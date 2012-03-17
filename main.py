@@ -45,11 +45,14 @@ class App(wx.App):
             f.close()
 
 def process_args(args):
-    try:
-        opts, args = getopt.gnu_getopt(args, "", ["project="])
-    except getopt.GetoptError, e:
-        sys.stderr.write("devo: error: %s\n" % e)
-        sys.exit(1)
+    if sys.platform == "darwin" and hasattr(sys, "frozen"):
+        opts, args = [], []
+    else:
+        try:
+            opts, args = getopt.gnu_getopt(args, "", ["project="])
+        except getopt.GetoptError, e:
+            sys.stderr.write("devo: error: %s\n" % e)
+            sys.exit(1)
 
     project = None
     for opt, arg in opts:
