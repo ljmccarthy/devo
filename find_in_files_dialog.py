@@ -76,7 +76,7 @@ class FindInFilesDialog(wx.Dialog):
 
     @property
     def path(self):
-        return self.dir_picker.GetValue().strip()
+        return os.path.expanduser(self.dir_picker.GetValue().strip())
 
     @path.setter
     def path(self, value):
