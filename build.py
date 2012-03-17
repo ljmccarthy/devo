@@ -122,7 +122,7 @@ def build_py2app():
                 site_packages = True,
                 #iconfile = "res/devo.icns",
                 plist = dict(
-                    CFBundleName = target_name,
+                    CFBundleName = app_name,
                     CFBundleShortVersionString = app_version,
                     CFBundleGetInfoString = "%s %s" % (app_name, app_version),
                     CFBundleExecutable = target_name,
