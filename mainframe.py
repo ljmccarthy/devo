@@ -612,14 +612,6 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     @queued_coroutine("cq")
     def OpenEditor(self, path, line=None, marker_type=None):
         path = self.GetFullPath(path)
-
-        try:
-            if not (yield async_call(is_text_file, path)):
-                if not dialogs.ask_open_binary(self, path):
-                    yield False
-        except IOError:
-            pass
-
         editor = self.FindEditor(path)
         if editor:
             i = self.notebook.GetPageIndex(editor)
@@ -631,6 +623,12 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                     self.SetHighlightedEditor(editor, line, marker_type)
             editor.SetFocus()
         else:
+            try:
+                if not (yield async_call(is_text_file, path)):
+                    if not dialogs.ask_open_binary(self, path):
+                        yield False
+            except IOError:
+                pass
             editor = Editor(self.notebook, self.env, path)
             if not (yield editor.TryLoadFile(path)):
                 editor.Destroy()
