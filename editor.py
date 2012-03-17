@@ -37,9 +37,6 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
         self.SetViewWhiteSpace(wx.stc.STC_WS_VISIBLEALWAYS)
         self.SetWhitespaceForeground(True, "#dddddd")
 
-        self.default_scroll_width = self.TextWidth(wx.stc.STC_STYLE_DEFAULT, "W")
-        self.SetScrollWidth(self.default_scroll_width)
-
         self.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
         self.Bind(wx.EVT_RIGHT_DOWN, self.OnRightDown)
         self.Bind(wx.stc.EVT_STC_SAVEPOINTLEFT, self.OnSavePointLeft)
@@ -119,10 +116,6 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
             self.SetSyntaxFromFilename(path)
             self.SetText(text)
             self.SetSavePoint()
-
-            width = max(self.TextWidth(wx.stc.STC_STYLE_DEFAULT, line)
-                        for line in text.split("\n"))
-            self.SetScrollWidth(max(width, self.default_scroll_width))
 
             if old_path:
                 self.env.remove_monitor_path(old_path)

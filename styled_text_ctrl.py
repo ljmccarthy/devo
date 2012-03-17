@@ -20,11 +20,19 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
         self._highlighted_lines = [None, None]
         self.UsePopUp(False)
         self.SetSyntax(plain)
+        self.SetScrollWidth(1)
+
         self.Bind(wx.EVT_CONTEXT_MENU, self.OnContextMenu)
+        self.Bind(wx.stc.EVT_STC_CHANGE, self.OnChange)
 
     def OnContextMenu(self, evt):
         self.SetFocus()
         self.PopupMenu(edit_menu.Create())
+
+    def OnChange(self, evt):
+        # Assumes that all styles use the same fixed-width font.
+        max_len = max(self.LineLength(line) for line in xrange(self.GetLineCount()))
+        self.SetScrollWidth((max_len + 1) * self.TextWidth(wx.stc.STC_STYLE_DEFAULT, "_"))
 
     def SetSyntax(self, syntax):
         self.syntax = syntax
