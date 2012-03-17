@@ -30,6 +30,10 @@ def run_shell_command(cmdline, pipe_output=True, env=None, **kwargs):
         **kwargs)
 
     if sys.platform != "win32":
+        if sys.platform == "darwin":
+            process.stdin.write(
+                'source ~/.bash_profile\n' +
+                'export PATH="${PATH}:/usr/local/bin"\n')
         process.stdin.write(cmdline)
         process.stdin.close()
 
