@@ -1,19 +1,30 @@
 import sys, os, subprocess
 
-remove_vars = ("PYTHONHOME", "PYTHONPATH", "VERSIONER_PYTHON_PREFER_32_BIT")
+remove_vars = (
+    "PYTHONHOME", "PYTHONPATH", "VERSIONER_PYTHON_PREFER_32_BIT",
+    "EXECUTABLEPATH", "RESOURCEPATH", "ARGVZERO",
+)
 
-def make_environment(env=None):
+def make_environment(env=None, cwd=None):
     if env is None:
         env = os.environ
     env = env.copy()
+
     for var in remove_vars:
         if var in env:
             del env[var]
+
     env["PYTHONUNBUFFERED"] = "1"
     env["PYTHONIOENCODING"] = "UTF-8"
+
+    if cwd is None:
+        env["PWD"] = os.getcwd()
+    else:
+        env["PWD"] = os.path.realpath(cwd)
+
     return env
 
-def run_shell_command(cmdline, pipe_output=True, env=None, **kwargs):
+def run_shell_command(cmdline, pipe_output=True, env=None, cwd=None, **kwargs):
     if sys.platform == "win32":
         args = cmdline
     else:
@@ -26,7 +37,8 @@ def run_shell_command(cmdline, pipe_output=True, env=None, **kwargs):
         bufsize = 1,
         close_fds = (sys.platform != "win32"),
         shell = (sys.platform == "win32"),
-        env = make_environment(env),
+        cwd = cwd,
+        env = make_environment(env, cwd),
         **kwargs)
 
     if sys.platform != "win32":
