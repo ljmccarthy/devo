@@ -20,7 +20,7 @@ def make_environment(env=None, cwd=None):
     if cwd is None:
         env["PWD"] = os.getcwd()
     else:
-        env["PWD"] = os.path.realpath(cwd)
+        env["PWD"] = os.path.realpath(cwd).encode(sys.getfilesystemencoding())
 
     return env
 
