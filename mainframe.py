@@ -817,8 +817,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         cmdline = cmdline.encode("utf-8")
         workdir = os.path.expanduser(command.get("workdir", ""))
         workdir = string.Template(workdir).safe_substitute(env)
-        workdir = os.path.join(self.project_root, workdir)
-        
+        workdir = os.path.join(self.project_root or os.path.expanduser("~"), workdir)
+
         before = command.get("before", "")
         if before == "Save Current File":
             if editor and editor.path and editor.modified and not (yield editor.Save()):
