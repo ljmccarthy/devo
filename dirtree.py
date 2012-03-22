@@ -286,7 +286,7 @@ class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
             wx.TreeCtrl.Expand(self, item)
 
     @managed("cm")
-    @queued_coroutine("cq")
+    @coroutine
     def PopulateNode(self, node):
         if node.state == NODE_UNPOPULATED:
             f = node.expand(self, self.monitor, self.filter)
@@ -337,7 +337,7 @@ class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
             dialogs.error(self, str(e))
 
     @managed("cm")
-    @coroutine
+    @queued_coroutine("cq")
     def _InitialExpand(self, rootnode, toplevel):
         yield self.ExpandNode(rootnode)
         if isinstance(toplevel[0], SimpleNode):
@@ -394,19 +394,24 @@ class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
     def ExpandPath(self, path):
         return self.ExpandPaths([path])
 
-    def _SelectPath(self, item, path):
+    def _SelectExpandedPath(self, item, path):
         node = self.GetPyData(item)
         if node.path == path:
             self.SelectItem(node.item)
         elif node.type == 'd':
             for child_item in iter_tree_children(self, item):
-                self._SelectPath(child_item, path)
+                self._SelectExpandedPath(child_item, path)
 
     @managed("cm")
     @coroutine
-    def SelectPath(self, path):
+    def _SelectPath(self, path):
         yield self.ExpandPath(path)
-        self._SelectPath(self.GetRootItem(), path)
+        self._SelectExpandedPath(self.GetRootItem(), path)
+
+    @managed("cm")
+    @queued_coroutine("cq")
+    def SelectPath(self, path):
+        yield self._SelectPath(path)
 
     def SavePerspective(self):
         p = {}
@@ -419,10 +424,10 @@ class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
         return p
 
     @managed("cm")
-    @coroutine
+    @queued_coroutine("cq")
     def LoadPerspective(self, p):
         expanded = p.get("expanded", ())
         if expanded:
             yield self.ExpandPaths(expanded)
         if "selected" in p:
-            yield self.SelectPath(p["selected"])
+            yield self._SelectPath(p["selected"])
