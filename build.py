@@ -14,7 +14,7 @@ project_syspath = [
 target_name = "devo"
 main_script = "main.py"
 dist_dir = "dist"
-target_dir = os.path.join(dist_dir, "%s-%s" % (target_name, app_info.version))
+target_dir = os.path.join(dist_dir, "%s-%s" % (target_name, app_info.version_string))
 
 includes = []
 
@@ -68,7 +68,7 @@ def build_py2exe():
         dest_base      = target_name
         name           = app_info.name
         description    = app_info.name
-        version        = app_info.version
+        version        = app_info.version_string
         company_name   = app_info.company_name
         copyright      = app_info.copyright.encode("latin-1")
         #icon_resources = [(1, "res/devo.ico")]
@@ -118,8 +118,8 @@ def build_py2app():
                 #iconfile = "res/devo.icns",
                 plist = dict(
                     CFBundleName = app_info.name,
-                    CFBundleShortVersionString = app_info.version,
-                    CFBundleGetInfoString = "%s %s" % (app_info.name, app_info.version),
+                    CFBundleShortVersionString = app_info.version_string,
+                    CFBundleGetInfoString = "%s %s" % (app_info.name, app_info.version_string),
                     CFBundleExecutable = target_name,
                     CFBundleIdentifier = app_info.identifier,
                     LSArchitecturePriority = ["x86_64", "i386"],
