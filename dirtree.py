@@ -72,6 +72,8 @@ class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
         self.Bind(wx.EVT_MENU, self.OnItemRename, id=ID_RENAME)
         self.Bind(wx.EVT_MENU, self.OnItemDelete, id=ID_DELETE)
         self.Bind(wx.EVT_MENU, self.OnNewFolder, id=ID_NEW_FOLDER)
+        self.Bind(wx.EVT_MENU, self.OnSearch, id=ID_SEARCH)
+        self.Bind(wx.EVT_MENU, self.OnSearchFolder, id=ID_SEARCH_FOLDER)
         self.Bind(wx.EVT_MENU, self.OnExpandAll, id=ID_EXPAND_ALL)
         self.Bind(wx.EVT_MENU, self.OnCollapseAll, id=ID_COLLAPSE_ALL)
 
@@ -220,6 +222,16 @@ class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
                 "Please enter new folder name:")
             if name:
                 self.NewFolder(node, name)
+
+    def OnSearch(self, evt):
+        path = self.GetSelectedPath()
+        if path:
+            self.env.search(path=path)
+
+    def OnSearchFolder(self, evt):
+        path = self.GetSelectedPath()
+        if path:
+            self.env.search(path=os.path.dirname(path))
 
     @coroutine
     def OnExpandAll(self, evt):

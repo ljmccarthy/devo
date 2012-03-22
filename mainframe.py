@@ -59,6 +59,9 @@ class AppEnv(object):
         else:
             return dialogs.get_file_to_save(self._mainframe, context="open")
 
+    def search(self, **kwargs):
+        self._mainframe.Search(**kwargs)
+
     def add_monitor_path(self, path):
         self._mainframe.fmon.add_path(path)
 
@@ -746,25 +749,34 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         if editor:
             self.SetHighlightedEditor(editor, line, marker_type)
 
-    def OnSearch(self, evt):
-        details = self.search_details
-        selection = self.GetCurrentSelection()
-        if selection:
-            if not details:
-                details = SearchDetails()
-            details.find = selection
-            details.case = False
-            details.regexp = False
+    def Search(self, find=None, path=None):
+        details = self.search_details or SearchDetails()
+
+        if find is not None:
+            details.find = find
+        else:
+            selection = self.GetCurrentSelection()
+            if selection:
+                details.find = selection
+                details.case = False
+                details.regexp = False
+
+        if path is not None:
+            details.path = path
+        else:
+            details.path = self.project_root
 
         dlg = SearchDialog(self, details)
         try:
-            dlg.path = self.project_root
             if dlg.ShowModal() == wx.ID_OK:
                 self.search_details = dlg.GetDetails()
                 self.search.find(self.search_details, filter=self.filter)
                 self.ShowPane(self.search)
         finally:
             dlg.Destroy()
+
+    def OnSearch(self, evt):
+        self.Search()
 
     def OnConfigureSharedCommands(self, evt):
         dlg = CommandsDialog(self, self.settings.get("commands", []), title="Configure Shared Commands")

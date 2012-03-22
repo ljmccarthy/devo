@@ -6,6 +6,8 @@ ID_OPEN_FOLDER = wx.NewId()
 ID_RENAME = wx.NewId()
 ID_DELETE = wx.NewId()
 ID_NEW_FOLDER = wx.NewId()
+ID_SEARCH = wx.NewId()
+ID_SEARCH_FOLDER = wx.NewId()
 ID_EXPAND_ALL = wx.NewId()
 ID_COLLAPSE_ALL = wx.NewId()
 

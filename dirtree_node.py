@@ -18,6 +18,9 @@ file_context_menu = Menu("", [
     MenuItem(ID_NEW_FOLDER, "&New Folder"),
     MenuItem(ID_OPEN_FOLDER, "Open Containing &Folder"),
     MenuSeparator,
+    MenuItem(ID_SEARCH, "Searc&h..."),
+    MenuItem(ID_SEARCH_FOLDER, "Search Containing Folder..."),
+    MenuSeparator,
     MenuItem(ID_EXPAND_ALL, "E&xpand All"),
     MenuItem(ID_COLLAPSE_ALL, "&Collapse All"),
 ])
@@ -29,6 +32,8 @@ dir_context_menu = Menu("", [
     MenuSeparator,
     MenuItem(ID_NEW_FOLDER, "&New Folder"),
     MenuItem(ID_OPEN_FOLDER, "Open Containing &Folder"),
+    MenuSeparator,
+    MenuItem(ID_SEARCH, "Searc&h..."),
     MenuSeparator,
     MenuItem(ID_EXPAND_ALL, "E&xpand All"),
     MenuItem(ID_COLLAPSE_ALL, "&Collapse All"),    
