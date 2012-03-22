@@ -28,12 +28,14 @@ class SearchCtrl(wx.Panel):
         button_copy = wx.Button(self, label="&Copy to Editor", size=button_size)
         button_clear = wx.Button(self, label="C&lear", size=button_size)
         top_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        top_sizer.Add(self.status_label, 0, wx.ALIGN_CENTER)
         top_sizer.Add(button_stop, 0, wx.ALIGN_CENTER)
         top_sizer.AddSpacer(5)
         top_sizer.Add(button_copy, 0, wx.ALIGN_CENTER)
         top_sizer.AddSpacer(5)
         top_sizer.Add(button_clear, 0, wx.ALIGN_CENTER)
+        top_sizer.AddSpacer(5)
+        top_sizer.Add(self.status_label, 0, wx.ALIGN_CENTER)
+        top_sizer.AddSpacer(5)
         top_sizer.AddStretchSpacer()
 
         sizer = wx.BoxSizer(wx.VERTICAL)
@@ -116,15 +118,23 @@ class SearchCtrl(wx.Panel):
         self.Clear()
         self.output.start()
 
-    def add_file(self, filepath):
-        self.output.write(filepath + "\n")
+    def __set_status(self, finder, status):
+        try:
+            if finder is self.finder:
+                self.status_label.SetLabel(status)
+        except wx.PyDeadObjectError:
+            pass
 
-    def add_line(self, line_num, line):
+    def add_file(self, finder, filepath):
+        self.output.write(filepath + "\n")
+        wx.CallAfter(self.__set_status, finder, filepath)
+
+    def add_line(self, finder, line_num, line):
         if len(line) > self.max_line_length:
             line = line[:self.max_line_length] + "..."
         self.output.write("  %d: %s\n" % (line_num, line))
 
-    def end_file(self):
+    def end_file(self, finder):
         self.output.write("\n")
 
     def __do_finish(self, finder):
@@ -132,6 +142,7 @@ class SearchCtrl(wx.Panel):
             if finder is self.finder:
                 self.details = None
                 self.finder = None
+                self.status_label.SetLabel("")
                 self.output.stop()
         except wx.PyDeadObjectError:
             pass

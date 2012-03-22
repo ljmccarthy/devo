@@ -32,13 +32,13 @@ class Search(object):
                     line = line.decode("latin-1")
                 if self.match(line):
                     if not matched_file:
-                        self.output.add_file(filepath)
+                        self.output.add_file(self, filepath)
                         matched_file = True
-                    self.output.add_line(line_num, line)
+                    self.output.add_line(self, line_num, line)
                 if self.quit:
                     raise SearchAborted()
             if matched_file:
-                self.output.end_file()
+                self.output.end_file(self)
 
     def _search_dir(self, dirpath):
         if self.quit:
