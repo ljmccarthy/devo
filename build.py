@@ -2,6 +2,7 @@
 #coding=UTF-8
 
 import sys, os, shutil
+import app_info
 
 project_root = os.path.dirname(os.path.realpath(__file__))
 
@@ -10,16 +11,10 @@ project_syspath = [
     os.path.join(project_root, "..", "fsmonitor")
 ] + sys.path
 
-app_name = "Devo"
-app_version = "1.0"
-app_identifier = "com.iogopro.devo"
-copyright = u"Copyright © 2010-2012 Luke McCarthy"
-company_name = "Iogopro Software"
-
 target_name = "devo"
 main_script = "main.py"
 dist_dir = "dist"
-target_dir = os.path.join(dist_dir, "%s-%s" % (target_name, app_version))
+target_dir = os.path.join(dist_dir, "%s-%s" % (target_name, app_info.version))
 
 includes = []
 
@@ -71,11 +66,11 @@ def build_py2exe():
     class target(object):
         script         = main_script
         dest_base      = target_name
-        name           = app_name
-        description    = app_name
-        version        = app_version
-        company_name   = company_name
-        copyright      = copyright.encode("latin-1")
+        name           = app_info.name
+        description    = app_info.name
+        version        = app_info.version
+        company_name   = app_info.company_name
+        copyright      = app_info.copyright.encode("latin-1")
         #icon_resources = [(1, "res/devo.ico")]
 
     sys.argv.append("py2exe")
@@ -122,11 +117,11 @@ def build_py2app():
                 site_packages = True,
                 #iconfile = "res/devo.icns",
                 plist = dict(
-                    CFBundleName = app_name,
-                    CFBundleShortVersionString = app_version,
-                    CFBundleGetInfoString = "%s %s" % (app_name, app_version),
+                    CFBundleName = app_info.name,
+                    CFBundleShortVersionString = app_info.version,
+                    CFBundleGetInfoString = "%s %s" % (app_info.name, app_info.version),
                     CFBundleExecutable = target_name,
-                    CFBundleIdentifier = app_identifier,
+                    CFBundleIdentifier = app_info.identifier,
                     LSArchitecturePriority = ["x86_64", "i386"],
                 ),
             ),

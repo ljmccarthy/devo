@@ -1,5 +1,4 @@
-import sys
-import wx
+import app_info
 import ID
 from menu import MenuBar, Menu, MenuItem, MenuSeparator, MenuHook
 
@@ -60,6 +59,6 @@ menubar = MenuBar([
     Menu("&Help", [
         MenuItem(ID.REPORT_BUG, "Report Bug"),
         MenuSeparator,
-        MenuItem(ID.ABOUT_BOX, "&About Devo..."),
+        MenuItem(ID.ABOUT_BOX, "&About %s..." % app_info.name),
     ]),
 ])
