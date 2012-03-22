@@ -20,7 +20,10 @@ def make_environment(env=None, cwd=None):
     if cwd is None:
         env["PWD"] = os.getcwd()
     else:
-        env["PWD"] = os.path.realpath(cwd).encode(sys.getfilesystemencoding())
+        try:
+            env["PWD"] = os.path.realpath(cwd).encode(sys.getfilesystemencoding())
+        except LookupError:
+            env["PWD"] = os.path.realpath(cwd).encode("utf-8")
 
     return env
 
