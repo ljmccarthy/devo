@@ -50,22 +50,25 @@ class Search(object):
         else:
             dirlist.sort()
             for name in dirlist:
-                if self.quit:
-                    raise SearchAborted()
-                info = get_file_info(dirpath, name)
-                if self.filter(info):
-                    try:
-                        if info.is_file:
-                            self._search_file(info.path)
-                        elif info.is_dir:
-                            self._search_dir(info.path)
-                    except OSError:
-                        pass
+                self._search(dirpath, name)
+
+    def _search(self, dirpath, name):
+        if self.quit:
+            raise SearchAborted()
+        try:
+            info = get_file_info(dirpath, name)
+            if self.filter(info):
+                if info.is_file:
+                    self._search_file(info.path)
+                elif info.is_dir:
+                    self._search_dir(info.path)
+        except OSError:
+            pass
 
     def search(self):
         self.quit = False
         try:
-            self._search_dir(self.path)
+            self._search(*os.path.split(self.path))
         except SearchAborted:
             self.output.abort_find(self)
         except Exception:
