@@ -25,7 +25,7 @@ includes = []
 
 excludes = ["pywin", "pywin.debugger"]
 
-encodings = ["ascii", "latin_1", "utf_8", "utf_16", "utf_32", "hex_codec"]
+encodings = ["ascii", "latin_1", "utf_8", "utf_16", "utf_32", "hex_codec", "mbcs"]
 
 win32com_includes = ["win32com.shell"]
 
