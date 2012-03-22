@@ -9,9 +9,10 @@ from about_dialog import AboutDialog
 from async import async_call, coroutine, queued_coroutine, managed, CoroutineManager, CoroutineQueue
 from dialogs import dialogs
 from commands_dialog import CommandsDialog
-from dirtree import DirTreeCtrl, DirNode
+from dirtree import DirNode
 from dirtree_filter import DirTreeFilter
 from editor import Editor
+from editor_dirtree import EditorDirTreeCtrl
 from file_monitor import FileMonitor
 from lru import LruQueue
 from menu import MenuItem
@@ -133,7 +134,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.manager = aui.AuiManager(self, agwFlags=agwFlags)
         self.notebook = aui.AuiNotebook(self, agwStyle=NB_STYLE)
         self.filter = DirTreeFilter()
-        self.tree = DirTreeCtrl(self, self.env, filter=self.filter)
+        self.tree = EditorDirTreeCtrl(self, self.env, filter=self.filter)
         self.terminal = TerminalCtrl(self, self.env)
         self.search = SearchCtrl(self, self.env)
 

@@ -1,7 +1,6 @@
 import os
 import wx
 
-from dirdialog import DirDialog
 from save_changes_dialog import SaveChangesDialog
 from text_input_dialog import TextInputDialog
 
@@ -59,6 +58,7 @@ class Dialogs(object):
             parent, message, path, wildcard, context, wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
 
     def get_directory(self, parent, message="Select Folder", path=""):
+        from dirdialog import DirDialog
         dlg = DirDialog(parent, message=message, select_path=path)
         try:
             if dlg.ShowModal() == wx.ID_OK:

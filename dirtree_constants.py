@@ -1,15 +1,11 @@
 import wx
 
-ID_EDIT = wx.NewId()
-ID_OPEN = wx.NewId()
-ID_OPEN_FOLDER = wx.NewId()
-ID_RENAME = wx.NewId()
-ID_DELETE = wx.NewId()
-ID_NEW_FOLDER = wx.NewId()
-ID_SEARCH = wx.NewId()
-ID_SEARCH_FOLDER = wx.NewId()
-ID_EXPAND_ALL = wx.NewId()
-ID_COLLAPSE_ALL = wx.NewId()
+ID_DIRTREE_OPEN = wx.NewId()
+ID_DIRTREE_RENAME = wx.NewId()
+ID_DIRTREE_DELETE = wx.NewId()
+ID_DIRTREE_NEW_FOLDER = wx.NewId()
+ID_DIRTREE_EXPAND_ALL = wx.NewId()
+ID_DIRTREE_COLLAPSE_ALL = wx.NewId()
 
 IM_FOLDER = 0
 IM_FOLDER_DENIED = 1

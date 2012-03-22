@@ -10,8 +10,20 @@ from dialogs import dialogs
 from dirtree_constants import *
 from dirtree_filter import DirTreeFilter
 from dirtree_node import SimpleNode, FSNode, DirNode, NODE_UNPOPULATED, NODE_POPULATING
+from menu import Menu, MenuItem, MenuSeparator
 from util import iter_tree_children, iter_tree_breadth_first, frozen_window
 from resources import load_bitmap
+
+context_menu = Menu("", [
+    MenuItem(ID_DIRTREE_OPEN, "&Open"),
+    MenuItem(ID_DIRTREE_RENAME, "&Rename"),
+    MenuItem(ID_DIRTREE_DELETE, "&Delete"),
+    MenuSeparator,
+    MenuItem(ID_DIRTREE_NEW_FOLDER, "&New Folder..."),
+    MenuSeparator,
+    MenuItem(ID_DIRTREE_EXPAND_ALL, "E&xpand All"),
+    MenuItem(ID_DIRTREE_COLLAPSE_ALL, "&Collapse All"),
+])
 
 def make_top_level():
     if sys.platform == "win32":
@@ -27,7 +39,7 @@ def make_top_level():
         return [FSNode("/", 'd')]
 
 class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
-    def __init__(self, parent, env, filter=None, show_root=False):
+    def __init__(self, parent, filter=None, show_root=False):
         style = wx.TR_DEFAULT_STYLE | wx.TR_EDIT_LABELS | wx.BORDER_NONE
         if not show_root:
             style |= wx.TR_HIDE_ROOT
@@ -43,7 +55,6 @@ class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
         self.font = wx.Font(fontsize, old_font.Family, old_font.Style, old_font.Weight, faceName=old_font.FaceName)
         self.SetFont(self.font)
 
-        self.env = env
         self.filter = filter or DirTreeFilter()
         self.cq = CoroutineQueue()
         self.cm = CoroutineManager()
@@ -59,23 +70,17 @@ class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
         self.imglist.Add(load_bitmap("icons/file.png"))
         self.SetImageList(self.imglist)
 
-        self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.OnItemActivated)
         self.Bind(wx.EVT_TREE_ITEM_EXPANDING, self.OnItemExpanding)
         self.Bind(wx.EVT_TREE_ITEM_COLLAPSED, self.OnItemCollapsed)
         self.Bind(wx.EVT_TREE_ITEM_RIGHT_CLICK, self.OnItemRightClicked)
         self.Bind(wx.EVT_TREE_BEGIN_LABEL_EDIT, self.OnItemBeginLabelEdit)
         self.Bind(wx.EVT_TREE_END_LABEL_EDIT, self.OnItemEndLabelEdit)
         self.Bind(wx.EVT_TREE_BEGIN_DRAG, self.OnBeginDrag)
-        self.Bind(wx.EVT_MENU, self.OnItemEdit, id=ID_EDIT)
-        self.Bind(wx.EVT_MENU, self.OnItemOpen, id=ID_OPEN)
-        self.Bind(wx.EVT_MENU, self.OnItemOpenFolder, id=ID_OPEN_FOLDER)
-        self.Bind(wx.EVT_MENU, self.OnItemRename, id=ID_RENAME)
-        self.Bind(wx.EVT_MENU, self.OnItemDelete, id=ID_DELETE)
-        self.Bind(wx.EVT_MENU, self.OnNewFolder, id=ID_NEW_FOLDER)
-        self.Bind(wx.EVT_MENU, self.OnSearch, id=ID_SEARCH)
-        self.Bind(wx.EVT_MENU, self.OnSearchFolder, id=ID_SEARCH_FOLDER)
-        self.Bind(wx.EVT_MENU, self.OnExpandAll, id=ID_EXPAND_ALL)
-        self.Bind(wx.EVT_MENU, self.OnCollapseAll, id=ID_COLLAPSE_ALL)
+        self.Bind(wx.EVT_MENU, self.OnItemRename, id=ID_DIRTREE_RENAME)
+        self.Bind(wx.EVT_MENU, self.OnItemDelete, id=ID_DIRTREE_DELETE)
+        self.Bind(wx.EVT_MENU, self.OnNewFolder, id=ID_DIRTREE_NEW_FOLDER)
+        self.Bind(wx.EVT_MENU, self.OnExpandAll, id=ID_DIRTREE_EXPAND_ALL)
+        self.Bind(wx.EVT_MENU, self.OnCollapseAll, id=ID_DIRTREE_COLLAPSE_ALL)
 
         self.monitor = FSMonitorThread()
         self.monitor_timer = wx.Timer(self)
@@ -116,13 +121,6 @@ class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
             elif evt.action in (FSEvent.Delete, FSEvent.MoveFrom):
                 evt.user.remove(evt.name, self, self.monitor)
 
-    def OnItemActivated(self, evt):
-        node = self.GetEventNode(evt)
-        if node.type == 'f':
-            self.env.open_file(node.path)
-        elif node.type == 'd':
-            self.Toggle(node.item)
-
     def OnItemExpanding(self, evt):
         node = self.GetEventNode(evt)
         if node.type == 'd' and node.state == NODE_UNPOPULATED:
@@ -133,10 +131,13 @@ class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
         if node.type == 'd':
             self.CollapseNode(node)
 
+    def GetNodeMenu(self, node):
+        return context_menu
+
     def OnItemRightClicked(self, evt):
         self.SelectItem(evt.GetItem())
         node = self.GetEventNode(evt)
-        menu = node.context_menu
+        menu = self.GetNodeMenu(node)
         if menu:
             self.PopupMenu(menu.Create())
 
@@ -186,21 +187,6 @@ class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
                     break
                 item = self.GetItemParent(item)
 
-    def OnItemEdit(self, evt):
-        node = self.GetSelectedNode()
-        if node and node.type == 'f':
-            self.env.open_file(node.path)
-
-    def OnItemOpen(self, evt):
-        path = self.GetSelectedPath()
-        if path:
-            self._shell_open(path)
-
-    def OnItemOpenFolder(self, evt):
-        path = self.GetSelectedPath()
-        if path:
-            self._shell_open(os.path.dirname(path))
-
     def OnItemRename(self, evt):
         node = self.GetSelectedNode()
         if node and node.path:
@@ -222,16 +208,6 @@ class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
                 "Please enter new folder name:")
             if name:
                 self.NewFolder(node, name)
-
-    def OnSearch(self, evt):
-        path = self.GetSelectedPath()
-        if path:
-            self.env.search(path=path)
-
-    def OnSearchFolder(self, evt):
-        path = self.GetSelectedPath()
-        if path:
-            self.env.search(path=os.path.dirname(path))
 
     @coroutine
     def OnExpandAll(self, evt):
@@ -326,13 +302,6 @@ class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
             yield async_call(os.mkdir, path)
             if self.IsExpanded(node.item):
                 self.SelectLater(node.item, name)
-        except OSError, e:
-            dialogs.error(self, str(e))
-
-    @managed("cm")
-    def _shell_open(self, path):
-        try:
-            return async_call(fileutil.shell_open, path, workdir=os.path.dirname(path))
         except OSError, e:
             dialogs.error(self, str(e))
 

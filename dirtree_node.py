@@ -6,38 +6,7 @@ import wx
 import fileutil
 from async import async_call, coroutine
 from dirtree_constants import *
-from menu import Menu, MenuItem, MenuSeparator
 from util import iter_tree_children
-
-file_context_menu = Menu("", [
-    MenuItem(ID_OPEN, "&Open"),
-    MenuItem(ID_EDIT, "&Edit with Devo"),
-    MenuItem(ID_RENAME, "&Rename"),
-    MenuItem(ID_DELETE, "&Delete"),
-    MenuSeparator,
-    MenuItem(ID_NEW_FOLDER, "&New Folder"),
-    MenuItem(ID_OPEN_FOLDER, "Open Containing &Folder"),
-    MenuSeparator,
-    MenuItem(ID_SEARCH, "Searc&h..."),
-    MenuItem(ID_SEARCH_FOLDER, "Search Containing Folder..."),
-    MenuSeparator,
-    MenuItem(ID_EXPAND_ALL, "E&xpand All"),
-    MenuItem(ID_COLLAPSE_ALL, "&Collapse All"),
-])
-
-dir_context_menu = Menu("", [
-    MenuItem(ID_OPEN, "&Open"),
-    MenuItem(ID_RENAME, "&Rename"),
-    MenuItem(ID_DELETE, "&Delete"),
-    MenuSeparator,
-    MenuItem(ID_NEW_FOLDER, "&New Folder"),
-    MenuItem(ID_OPEN_FOLDER, "Open Containing &Folder"),
-    MenuSeparator,
-    MenuItem(ID_SEARCH, "Searc&h..."),
-    MenuSeparator,
-    MenuItem(ID_EXPAND_ALL, "E&xpand All"),
-    MenuItem(ID_COLLAPSE_ALL, "&Collapse All"),    
-])
 
 class FileInfo(collections.namedtuple("FileInfo", "filename dirpath stat_result listable hidden")):
     @property
@@ -101,7 +70,6 @@ def dirtree_delete(tree, parent_item, text):
 class SimpleNode(object):
     type = 'd'
     path = ""
-    context_menu = None
 
     def __init__(self, label, children):
         self.label = label
@@ -194,13 +162,6 @@ class FSNode(object):
     def remove(self, name, tree, monitor):
         if self.state == NODE_POPULATED:
             dirtree_delete(tree, self.item, name)
-
-    @property
-    def context_menu(self):
-        if self.type == 'f':
-            return file_context_menu
-        elif self.type == 'd':
-            return dir_context_menu
 
 def DirNode(path):
     return FSNode(path, 'd')
