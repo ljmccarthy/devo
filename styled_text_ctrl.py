@@ -17,7 +17,6 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
     def __init__(self, parent, env):
         wx.stc.StyledTextCtrl.__init__(self, parent, pos=(-1, -1), size=(1, 1), style=wx.BORDER_NONE)
         self.env = env
-        self._highlighted_lines = [None, None]
         self.UsePopUp(False)
         self.SetSyntax(plain)
         self.SetScrollWidth(1)
@@ -60,15 +59,11 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
             self.SetSyntax(plain)
 
     def ClearHighlight(self, marker_type):
-        line = self._highlighted_lines[marker_type]
-        if line is not None:
-            self.MarkerDelete(line, marker_type)
-            self._highlighted_lines[marker_type] = None
+        self.MarkerDeleteAll(marker_type)
 
     def SetHighlightedLine(self, line, marker_type):
         self.ClearHighlight(marker_type)
         self.MarkerAdd(line, marker_type)
-        self._highlighted_lines[marker_type] = line
 
     def ClearAll(self):
         self.ClearHighlight(MARKER_FIND)
