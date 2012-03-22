@@ -3,7 +3,7 @@ import wx
 from file_picker import DirPicker
 from util import get_combo_history
 
-class FindInFilesDetails(object):
+class SearchDetails(object):
     def __init__(self, case=False, regexp=False, find="", find_history=(),
                  path="", path_history=()):
         self.case = case
@@ -13,10 +13,10 @@ class FindInFilesDetails(object):
         self.path = path
         self.path_history = path_history
 
-class FindInFilesDialog(wx.Dialog):
+class SearchDialog(wx.Dialog):
     def __init__(self, parent, details=None):
         style = wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
-        wx.Dialog.__init__(self, parent, title="Find in Files", style=style)
+        wx.Dialog.__init__(self, parent, title="Search", style=style)
 
         self.combo_find = wx.ComboBox(self, size=(300, -1))
         self.dir_picker = DirPicker(self, size=(300, -1), combo=True)
@@ -35,7 +35,7 @@ class FindInFilesDialog(wx.Dialog):
         chksizer.Add(self.check_regexp, 0, wx.ALL, 2)
         grid.Add(chksizer)
 
-        btn_find = wx.Button(self, wx.ID_OK, label="&Find in Files")
+        btn_find = wx.Button(self, wx.ID_OK, label="&Search")
         btn_find.SetDefault()
         btn_cancel = wx.Button(self, wx.ID_CANCEL)
 
@@ -83,7 +83,7 @@ class FindInFilesDialog(wx.Dialog):
         self.dir_picker.SetValue(value.strip())
 
     def GetDetails(self):
-        return FindInFilesDetails(
+        return SearchDetails(
             case = self.check_case.GetValue(), regexp = self.check_regexp.GetValue(),
             find = self.find, find_history = get_combo_history(self.combo_find),
             path = self.path, path_history = self.dir_picker.GetHistory())
@@ -95,6 +95,6 @@ class FindInFilesDialog(wx.Dialog):
 
 if __name__ == "__main__":
     app = wx.PySimpleApp()
-    dlg = FindInFilesDialog(None)
+    dlg = SearchDialog(None)
     dlg.ShowModal()
     print dlg.GetDetails()

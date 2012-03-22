@@ -13,12 +13,12 @@ from dirtree import DirTreeCtrl, DirNode
 from dirtree_filter import DirTreeFilter
 from editor import Editor
 from file_monitor import FileMonitor
-from find_in_files_ctrl import FindInFilesCtrl
-from find_in_files_dialog import FindInFilesDetails, FindInFilesDialog
 from lru import LruQueue
 from menu import MenuItem
 from menu_defs import menubar
 from new_project_dialog import NewProjectDialog
+from search_ctrl import SearchCtrl
+from search_dialog import SearchDetails, SearchDialog
 from settings import read_settings, write_settings
 from styled_text_ctrl import StyledTextCtrl, MARKER_FIND, MARKER_ERROR
 from shell import run_shell_command
@@ -120,7 +120,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.deleted_paths = set()
         self.reloading = False
         self.find_details = None
-        self.find_in_files_details = None
+        self.search_details = None
         self.editor_focus = None
         self.editor_highlight = [None, None]
 
@@ -132,7 +132,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.filter = DirTreeFilter()
         self.tree = DirTreeCtrl(self, self.env, filter=self.filter)
         self.terminal = TerminalCtrl(self, self.env)
-        self.find_in_files = FindInFilesCtrl(self, self.env)
+        self.search = SearchCtrl(self, self.env)
 
         self.manager.AddPane(self.tree,
             aui.AuiPaneInfo().Left().BestSize((220, -1)).CaptionVisible(False))
@@ -140,8 +140,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             aui.AuiPaneInfo().CentrePane())
         self.manager.AddPane(self.terminal,
             aui.AuiPaneInfo().Hide().Bottom().BestSize((width, 180)).Caption("Terminal"))
-        self.manager.AddPane(self.find_in_files,
-            aui.AuiPaneInfo().Hide().Top().BestSize((width, 250)).Caption("Find in Files"))
+        self.manager.AddPane(self.search,
+            aui.AuiPaneInfo().Hide().Top().BestSize((width, 250)).Caption("Search"))
         self.manager.Update()
 
         self.Startup(project_root)
@@ -160,7 +160,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.Bind(wx.EVT_MENU, self.OnOpenFile, id=ID.OPEN)
         self.Bind(wx.EVT_MENU, self.OnCloseFile, id=ID.CLOSE)
         self.Bind(wx.EVT_MENU, self.OnClose, id=ID.EXIT)
-        self.Bind(wx.EVT_MENU, self.OnFindInFiles, id=ID.FIND_IN_FILES)
+        self.Bind(wx.EVT_MENU, self.OnSearch, id=ID.SEARCH)
         self.Bind(wx.EVT_MENU_RANGE, self.OnRecentFile,
                   id=self.recent_file_first_id, id2=self.recent_file_last_id)
 
@@ -283,7 +283,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.fmon.stop()
         async.shutdown_scheduler()
         self.tree.Destroy()
-        self.find_in_files.Destroy()
+        self.search.Destroy()
         self.Destroy()
 
     @managed("cm")
@@ -531,8 +531,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
 
     def OnPaneClose(self, evt):
         window = evt.GetPane().window
-        if window is self.find_in_files:
-            self.find_in_files.stop()
+        if window is self.search:
+            self.search.stop()
             self.ClearHighlight(MARKER_FIND)
         elif window is self.terminal:
             self.ClearHighlight(MARKER_ERROR)
@@ -746,23 +746,23 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         if editor:
             self.SetHighlightedEditor(editor, line, marker_type)
 
-    def OnFindInFiles(self, evt):
-        details = self.find_in_files_details
+    def OnSearch(self, evt):
+        details = self.search_details
         selection = self.GetCurrentSelection()
         if selection:
             if not details:
-                details = FindInFilesDetails()
+                details = SearchDetails()
             details.find = selection
             details.case = False
             details.regexp = False
 
-        dlg = FindInFilesDialog(self, details)
+        dlg = SearchDialog(self, details)
         try:
             dlg.path = self.project_root
             if dlg.ShowModal() == wx.ID_OK:
-                self.find_in_files_details = dlg.GetDetails()
-                self.find_in_files.find(self.find_in_files_details, filter=self.filter)
-                self.ShowPane(self.find_in_files)
+                self.search_details = dlg.GetDetails()
+                self.search.find(self.search_details, filter=self.filter)
+                self.ShowPane(self.search)
         finally:
             dlg.Destroy()
 

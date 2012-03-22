@@ -16,7 +16,7 @@ Key Features
 * Multiple project sessions which can be quickly switched from the Project menu.
 * User-defined commands which output to a terminal pane.
 * Find and replace by string or regular expression
-* Find in Files to recursively search in a directory.
+* Recursively search files for a string or regular expression.
 * Unsaved editors are saved in the session.
 * Automatically switches to hard tabs when editing Makefiles.
 

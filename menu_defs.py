@@ -32,7 +32,7 @@ menubar = MenuBar([
         MenuItem(ID.SAVEAS, "Save &As", "Ctrl+Shift+S"),
         MenuItem(ID.CLOSE, "&Close", "Ctrl+W"),
         MenuSeparator,
-        MenuItem(ID.FIND_IN_FILES, "Find &in Files...", "Ctrl+Shift+F"),
+        MenuItem(ID.SEARCH, "Searc&h...", "Ctrl+Shift+F"),
         MenuSeparator,
         MenuHook("recent_files"),
         MenuSeparator,

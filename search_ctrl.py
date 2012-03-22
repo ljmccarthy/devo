@@ -1,7 +1,7 @@
 import sys, re, time
 import wx
 from async import async_call
-from find_in_files import FindInFiles, make_matcher
+from search import Search, make_matcher
 from styled_text_ctrl import MARKER_FIND
 from thread_output_ctrl import ThreadOutputCtrl
 from util import get_text_extent
@@ -11,7 +11,7 @@ if sys.platform == "win32":
 else:
     r_path_start = re.compile(r"^/")
 
-class FindInFilesCtrl(wx.Panel):
+class SearchCtrl(wx.Panel):
     def __init__(self, parent, env):
         wx.Panel.__init__(self, parent)
         self.env = env
@@ -111,7 +111,7 @@ class FindInFilesCtrl(wx.Panel):
 
         self.start_time = time.time()
         self.details = details
-        self.finder = FindInFiles(details.path, matcher, output=self, filter=filter)
+        self.finder = Search(details.path, matcher, output=self, filter=filter)
         async_call(self.finder.search)
         self.Clear()
         self.output.start()

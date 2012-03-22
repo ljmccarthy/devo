@@ -2,13 +2,13 @@ import os, re
 from dirtree_node import get_file_info
 from util import is_text_file
 
-class FindInFilesAborted(Exception):
+class SearchAborted(Exception):
     pass
 
 def null_filter(info):
     return True
 
-class FindInFiles(object):
+class Search(object):
     def __init__(self, path, match, output, filter=None):
         self.path = path
         self.match = match
@@ -19,7 +19,7 @@ class FindInFiles(object):
 
     def _search_file(self, filepath):
         if self.quit:
-            raise FindInFilesAborted()
+            raise SearchAborted()
         if not is_text_file(filepath):
             return
         with open(filepath, "r") as f:
@@ -36,13 +36,13 @@ class FindInFiles(object):
                         matched_file = True
                     self.output.add_line(line_num, line)
                 if self.quit:
-                    raise FindInFilesAborted()
+                    raise SearchAborted()
             if matched_file:
                 self.output.end_file()
 
     def _search_dir(self, dirpath):
         if self.quit:
-            raise FindInFilesAborted()
+            raise SearchAborted()
         try:
             dirlist = os.listdir(dirpath)
         except OSError:
@@ -51,7 +51,7 @@ class FindInFiles(object):
             dirlist.sort()
             for name in dirlist:
                 if self.quit:
-                    raise FindInFilesAborted()
+                    raise SearchAborted()
                 info = get_file_info(dirpath, name)
                 if self.filter(info):
                     try:
@@ -66,7 +66,7 @@ class FindInFiles(object):
         self.quit = False
         try:
             self._search_dir(self.path)
-        except FindInFilesAborted:
+        except SearchAborted:
             self.output.abort_find(self)
         except Exception:
             self.output.end_find(self)
@@ -76,7 +76,7 @@ class FindInFiles(object):
     def stop(self):
         self.quit = True
 
-class FindInFilesFileOutput(object):
+class SearchFileOutput(object):
     def __init__(self, file):
         self.file = file
         self.max_line_length = 100
@@ -95,9 +95,6 @@ class FindInFilesFileOutput(object):
     def end_find(self, finder):
         pass
 
-def find_in_files(path, matcher, output, filter=None):
-    return FindInFiles(path, matcher, output, filter).search()
-
 def make_matcher(pattern, case_sensitive=True, is_regexp=False):
     if not is_regexp:
         pattern = "^.*" + re.escape(pattern)
@@ -108,4 +105,4 @@ def make_matcher(pattern, case_sensitive=True, is_regexp=False):
 
 if __name__ == "__main__":
     import sys
-    find_in_files(".", make_matcher("class"), FindInFilesFileOutput(sys.stdout))
+    Search(".", make_matcher("class"), SearchFileOutput(sys.stdout)).search()
