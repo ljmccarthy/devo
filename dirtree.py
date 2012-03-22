@@ -392,7 +392,7 @@ class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
         return self._ExpandPaths(self.GetRootItem(), paths)
 
     def ExpandPath(self, path):
-        return self._ExpandPaths(self.GetRootItem(), [path])
+        return self.ExpandPaths([path])
 
     def _SelectPath(self, item, path):
         node = self.GetPyData(item)
