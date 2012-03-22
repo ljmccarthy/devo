@@ -8,10 +8,9 @@ class DirDialogTreeCtrl(DirTreeCtrl):
     def __init__(self, parent, filter):
         DirTreeCtrl.__init__(self, parent, filter=filter)
 
-        self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.OnItemActivated)
-        self.Bind(wx.EVT_MENU, self.OnItemActivated, id=ID_DIRTREE_OPEN)
+        self.Bind(wx.EVT_MENU, self.OnItemOpen, id=ID_DIRTREE_OPEN)
 
-    def OnItemActivated(self, evt):
+    def OnItemOpen(self, evt):
         self.Parent.EndModal(wx.ID_OK)
 
 class DirDialog(wx.Dialog):
