@@ -138,7 +138,8 @@ class FindInFilesCtrl(wx.Panel):
 
     def finish(self, finder, message):
         completed_time = time.time() - self.start_time
-        self.output.write(message % (self.details.find, self.details.path, completed_time))
+        if finder is self.finder:
+            self.output.write(message % (self.details.find, self.details.path, completed_time))
         wx.CallAfter(self.__do_finish, finder)
 
     def end_find(self, finder):
