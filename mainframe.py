@@ -576,7 +576,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         editor = self.notebook.GetPage(evt.GetSelection())
         editor.SetFocus()
         self.SetStatusText(editor.status_text, 0)
-        self.SetStatusText(editor.path or "Untitled", 1)
+        self.SetStatusText(editor.status_text_path, 1)
 
     def OnPageTitleChanged(self, win):
         i = self.notebook.GetPageIndex(win)
@@ -586,6 +586,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     def OnPageStatusChanged(self, win):
         if win is self.notebook.GetCurrentPage():
             self.SetStatusText(win.status_text, 0)
+            self.SetStatusText(win.status_text_path, 1)
 
     def OnTabAreaDClick(self, evt):
         self.NewEditor(index=self.notebook.GetPageCount())

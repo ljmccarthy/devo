@@ -67,6 +67,10 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
         return "Line %d, Column %d" % (
             self.GetCurrentLine() + 1, self.GetColumn(self.GetCurrentPos()) + 1)
 
+    @property
+    def status_text_path(self):
+        return self.static_title or self.path or "Untitled"
+
     def SetModified(self):
         self.modified_externally = True
         self.sig_title_changed.signal(self)
@@ -97,6 +101,8 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
         self.SetSavePoint()
         self.EmptyUndoBuffer()
         self.SetReadOnly(True)
+        self.sig_title_changed.signal(self)
+        self.sig_status_changed.signal(self)
 
     @coroutine
     def LoadFile(self, path):
@@ -123,6 +129,7 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
         except:
             self.path = old_path
             self.sig_title_changed.signal(self)
+            self.sig_status_changed.signal(self)
             raise
         finally:
             self.Enable()
@@ -170,6 +177,7 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
                 self.env.add_monitor_path(path)
                 self.env.add_recent_file(path)
                 self.sig_title_changed.signal(self)
+                self.sig_status_changed.signal(self)
                 yield True
         yield False
 
