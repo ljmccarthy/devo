@@ -29,12 +29,11 @@ def make_top_level():
     if sys.platform == "win32":
         import win32api
         from win32com.shell import shell, shellcon
-        mycomputer = SimpleNode("My Computer",
-                        [FSNode(drive, 'd') for drive in
-                         win32api.GetLogicalDriveStrings().strip("\0").split("\0")])
+        drives = [FSNode(drive, 'd') for drive in
+                  win32api.GetLogicalDriveStrings().strip("\0").split("\0")]
         mydocs = shell.SHGetFolderPath(None, shellcon.CSIDL_PERSONAL, None, 0)
         desktop = shell.SHGetFolderPath(None, shellcon.CSIDL_DESKTOP, None, 0)
-        return [mycomputer, FSNode(mydocs, 'd'), FSNode(desktop, 'd')]
+        return drives + [FSNode(mydocs, 'd'), FSNode(desktop, 'd')]
     else:
         return [FSNode("/", 'd')]
 
