@@ -1,7 +1,7 @@
 #!/usr/bin/env python2.7
 #coding=UTF-8
 
-import sys, os, shutil
+import sys, os, shutil, subprocess
 import app_info
 
 project_root = os.path.dirname(os.path.realpath(__file__))
@@ -36,6 +36,9 @@ dll_excludes = [
     "powrprof.dll",
     "UxTheme.dll",
 ]
+
+def run(*args, **kwargs):
+    subprocess.Popen(args, **kwargs).communicate()
 
 class Attributes(object):
     def __init__(self, **kwargs):
@@ -127,6 +130,9 @@ def build_py2app():
             ),
         ),
     )
+
+    run("hdiutil", "create", "-srcfolder", target_dir, "-volname", app_info.name,
+        "-format", "UDBZ", "-ov", os.path.join(dist_dir, app_info.name + ".dmg"))
 
 def build_cxfreeze():
     import cx_Freeze
