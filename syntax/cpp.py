@@ -2,7 +2,7 @@ import wx.stc
 
 ident = "c"
 name = "C/C++"
-extensions = ["*.c", "*.cpp", "*.cxx", "*.cc", "*.h", "*.hpp", "*.hxx"]
+extensions = ["*.c", "*.cpp", "*.cxx", "*.cc", "*.h", "*.hpp", "*.hxx", "*.m", "*.mm"]
 lexer = wx.stc.STC_LEX_CPP
 indent = 4
 use_tabs = False
