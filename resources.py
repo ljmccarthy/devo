@@ -28,3 +28,12 @@ else:
         if not bitmap.Ok():
             raise ResourceError("Failed to load bitmap: %r" % name)
         return bitmap
+
+def load_icon(name):
+    return wx.IconFromBitmap(load_bitmap(name))
+
+def load_icon_bundle(names):
+    bundle = wx.IconBundle()
+    for name in names:
+        bundle.AddIcon(load_icon(name))
+    return bundle

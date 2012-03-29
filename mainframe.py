@@ -18,6 +18,7 @@ from lru import LruQueue
 from menu import MenuItem
 from menu_defs import menubar
 from new_project_dialog import NewProjectDialog
+from resources import load_icon_bundle
 from search_ctrl import SearchCtrl
 from search_dialog import SearchDetails, SearchDialog
 from settings import read_settings, write_settings
@@ -99,6 +100,9 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.SetMenuBar(menubar.Create())
         self.CreateStatusBar(2)
         self.SetStatusWidths([200, -1])
+
+        self.SetIcons(load_icon_bundle(
+            "icons/devo-icon-%s.png" % size for size in (16, 24, 32, 48, 64, 128, 256)))
 
         self.recent_file_first_id, self.recent_file_last_id = new_id_range(MAX_RECENT_FILES)
         self.shared_command_first_id, self.shared_command_last_id = new_id_range(100)
