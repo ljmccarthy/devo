@@ -418,7 +418,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                         try:
                             yield future
                         except Exception, e:
-                            to_remove.add(i)
+                            to_remove.append(i)
                             if not (isinstance(e, IOError) and e.errno == errno.ENOENT):
                                 errors.append(e)
                 errors.reverse()
