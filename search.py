@@ -1,4 +1,4 @@
-import os, re
+import os, re, traceback
 from dirtree_node import get_file_info
 from util import is_text_file
 
@@ -20,6 +20,7 @@ class Search(object):
     def _search_file(self, filepath):
         if self.quit:
             raise SearchAborted()
+        self.output.begin_file(self, filepath)
         if not is_text_file(filepath):
             return
         with open(filepath, "r") as f:
@@ -73,6 +74,7 @@ class Search(object):
             self.output.abort_find(self)
         except Exception:
             self.output.end_find(self)
+            print traceback.format_exc()
         else:
             self.output.end_find(self)
 

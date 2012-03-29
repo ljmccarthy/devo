@@ -125,9 +125,11 @@ class SearchCtrl(wx.Panel):
         except wx.PyDeadObjectError:
             pass
 
+    def begin_file(self, finder, filepath):
+        wx.CallAfter(self.__set_status, finder, filepath)
+
     def add_file(self, finder, filepath):
         self.output.write(filepath + "\n")
-        wx.CallAfter(self.__set_status, finder, filepath)
 
     def add_line(self, finder, line_num, line):
         if len(line) > self.max_line_length:
