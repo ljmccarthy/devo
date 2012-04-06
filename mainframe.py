@@ -303,7 +303,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             self.settings = {}
             try:
                 backup_filename = self.settings_filename + ".bak"
-                if not os.path.exists(backup_filename):
+                if os.path.exists(self.settings_filename) and not os.path.exists(backup_filename):
                     shutil.copy2(self.settings_filename, backup_filename)
             except OSError:
                 pass
