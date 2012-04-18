@@ -149,7 +149,7 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
             if not self.GetLine(line).strip():
                 self.SetLineIndentation(line, indent)
             s = self.GetLineRaw(line)[:-1]
-            pos = self.PositionFromLine(line) + (len(s) - len(s.lstrip()))
+            pos = self.PositionFromLine(line) + indent
             self.SetRangeText(pos, pos, self.syntax.comment_token)
         self.EndUndoAction()
 
