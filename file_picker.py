@@ -31,7 +31,7 @@ class FilePicker(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self.__OnBrowse, id=ID_BROWSE)
 
     def __OnBrowse(self, evt):
-        path = self.path_ctrl.GetValue()
+        path = os.path.expanduser(self.path_ctrl.GetValue())
         while path and not os.path.isdir(path):
             path = os.path.dirname(path)
         path = self.browse_func(self, path=path)
