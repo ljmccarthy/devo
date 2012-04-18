@@ -38,7 +38,7 @@ def make_top_level():
                 label = win32api.GetVolumeInformation(drive)[0]
             except pywintypes.error:
                 label = ""
-            return "%s (%s)" % (label, drive.rstrip("\\")) if label else drive
+            return "%s (%s)" % (label, drive[:2]) if label else drive
 
         drives = [FSNode(drive, 'd', get_volume_label(drive))
                   for drive in win32api.GetLogicalDriveStrings().strip("\0").split("\0")]
