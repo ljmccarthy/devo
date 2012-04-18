@@ -21,14 +21,24 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
         self.SetSyntax(plain)
         self.SetScrollWidth(1)
 
-        self.Bind(wx.EVT_CONTEXT_MENU, self.OnContextMenu)
-        self.Bind(wx.stc.EVT_STC_CHANGE, self.OnChange)
+        self.Bind(wx.EVT_KEY_DOWN, self.__OnKeyDown)
+        self.Bind(wx.EVT_CONTEXT_MENU, self.__OnContextMenu)
+        self.Bind(wx.stc.EVT_STC_CHANGE, self.__OnChange)
 
-    def OnContextMenu(self, evt):
+    def ShouldFilterKeyEvent(self, evt):
+        key = evt.GetKeyCode()
+        mod = evt.GetModifiers()
+        return (mod & (wx.MOD_ALT | wx.MOD_CONTROL)) or (wx.WXK_F1 <= key <= wx.WXK_F24)
+
+    def __OnKeyDown(self, evt):
+        if not self.ShouldFilterKeyEvent(evt):
+            evt.Skip()
+
+    def __OnContextMenu(self, evt):
         self.SetFocus()
         self.PopupMenu(edit_menu.Create())
 
-    def OnChange(self, evt):
+    def __OnChange(self, evt):
         # Assumes that all styles use the same fixed-width font.
         max_len = max(self.LineLength(line) for line in xrange(self.GetLineCount()))
         self.SetScrollWidth((max_len + 1) * self.TextWidth(wx.stc.STC_STYLE_DEFAULT, "_"))
