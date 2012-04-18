@@ -25,14 +25,27 @@ context_menu = Menu("", [
     MenuItem(ID_DIRTREE_COLLAPSE_ALL, "&Collapse All"),
 ])
 
+def split_path(path):
+    return os.path.normpath(path).split(os.path.sep)
+
 def make_top_level():
     if sys.platform == "win32":
-        import win32api
+        import win32api, pywintypes
         from win32com.shell import shell, shellcon
-        drives = [FSNode(drive, 'd') for drive in
-                  win32api.GetLogicalDriveStrings().strip("\0").split("\0")]
+
+        def get_volume_label(drive):
+            try:
+                label = win32api.GetVolumeInformation(drive)[0]
+            except pywintypes.error:
+                label = ""
+            return "%s (%s)" % (label, drive.rstrip("\\")) if label else drive
+
+        drives = [FSNode(drive, 'd', get_volume_label(drive))
+                  for drive in win32api.GetLogicalDriveStrings().strip("\0").split("\0")]
+
         mydocs = shell.SHGetFolderPath(None, shellcon.CSIDL_PERSONAL, None, 0)
         desktop = shell.SHGetFolderPath(None, shellcon.CSIDL_DESKTOP, None, 0)
+
         return drives + [FSNode(mydocs, 'd'), FSNode(desktop, 'd')]
     else:
         return [FSNode("/", 'd')]
@@ -352,11 +365,13 @@ class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
         sub_paths = [path[1:] for path in paths if len(path) > 1]
         yield self.ExpandNode(self.GetPyData(item))
         for child_item in iter_tree_children(self, item):
-            if self.GetItemText(child_item) in expanded:
+            node = self.GetPyData(child_item)
+            name = os.path.basename(node.path) or node.path.strip(os.path.sep)
+            if name in expanded:
                 yield self._ExpandPaths(child_item, sub_paths)
 
     def ExpandPaths(self, paths):
-        paths = [path.strip("/").split("/") for path in paths]
+        paths = [split_path(path) for path in paths]
         return self._ExpandPaths(self.GetRootItem(), paths)
 
     def ExpandPath(self, path):
@@ -379,7 +394,7 @@ class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
     @managed("cm")
     @queued_coroutine("cq")
     def SelectPath(self, path):
-        yield self._SelectPath(path)
+        yield self._SelectPath(os.path.normpath(path))
 
     def SavePerspective(self):
         p = {}
