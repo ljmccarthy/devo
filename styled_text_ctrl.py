@@ -31,8 +31,7 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
         return (mod & (wx.MOD_ALT | wx.MOD_CONTROL)) or (wx.WXK_F1 <= key <= wx.WXK_F24)
 
     def __OnKeyDown(self, evt):
-        if not self.ShouldFilterKeyEvent(evt):
-            evt.Skip()
+        evt.Skip(not self.ShouldFilterKeyEvent(evt))
 
     def __OnContextMenu(self, evt):
         self.SetFocus()
