@@ -65,10 +65,7 @@ class App(wx.App):
 
     def Shutdown(self):
         if hasattr(sys, "frozen"):
-            sys.stdout = self.stdout
-            sys.stderr = self.stderr
-            f, self.log_file = self.log_file, None
-            f.close()
+            self.log_file.flush()
 
 def main():
     if wx.VERSION < (2,9):
