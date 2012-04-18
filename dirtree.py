@@ -26,7 +26,7 @@ context_menu = Menu("", [
 ])
 
 def split_path(path):
-    return os.path.normpath(path).split(os.path.sep)
+    return os.path.normpath(path).strip(os.path.sep).split(os.path.sep)
 
 def make_top_level():
     if sys.platform == "win32":
