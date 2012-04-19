@@ -43,6 +43,10 @@ class LogFileWrapper(object):
                 self.file = file
         self.file.write(s)
 
+    def flush(self):
+        if self.file:
+            self.file.flush()
+
     def close(self):
         if self.file:
             self.file.close()
