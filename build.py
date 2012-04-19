@@ -154,7 +154,7 @@ def build_cxfreeze():
 
 def build():
     os.chdir(project_root)
-    shutil.rmtree(dist_dir, True)
+    shutil.rmtree(target_dir, True)
 
     from get_aui import get_aui
     try:
