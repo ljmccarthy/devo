@@ -212,7 +212,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                   id=self.project_command_first_id, id2=self.project_command_last_id)
 
         self.Bind(wx.EVT_MENU, self.OnReportBug, id=ID.REPORT_BUG)
-        self.Bind(wx.EVT_MENU, self.OnAboutBox, id=ID.ABOUT_BOX)
+        self.Bind(wx.EVT_MENU, self.OnAboutBox, id=ID.ABOUT)
 
         self.Bind(wx.EVT_UPDATE_UI, self.EditorUpdateUI("GetModify"), id=ID.SAVE)
         self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasMethod("SaveAs"), id=ID.SAVEAS)

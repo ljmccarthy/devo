@@ -59,6 +59,6 @@ menubar = MenuBar([
     Menu("&Help", [
         MenuItem(ID.REPORT_BUG, "Report Bug"),
         MenuSeparator,
-        MenuItem(ID.ABOUT_BOX, "&About %s..." % app_info.name),
+        MenuItem(ID.ABOUT, "&About %s..." % app_info.name),
     ]),
 ])
