@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Devo
+GenericName=Text Editor
+Comment=Programmer's Text Editor
+Categories=Development;IDE;TextEditor;
+Type=Application
+Icon=devo
+MimeType=text/plain;
+Exec=devo %F
+StartupNotify=true
+Terminal=false
