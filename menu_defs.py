@@ -19,8 +19,9 @@ edit_menu = Menu("&Edit", [
     MenuSeparator,
     MenuItem(ID.INDENT, "In&dent", "Ctrl+I"),
     MenuItem(ID.UNINDENT, "Unin&dent", "Ctrl+U"),
-    MenuItem(ID.COMMENT, "Comment", "Ctrl+E"),
-    MenuItem(ID.UNCOMMENT, "Uncomment", "Ctrl+R"),
+    MenuSeparator,
+    MenuItem(ID.COMMENT, "Comment", "Ctrl+R"),
+    MenuItem(ID.UNCOMMENT, "Uncomment", "Ctrl+E"),
 ])
 
 menubar = MenuBar([
