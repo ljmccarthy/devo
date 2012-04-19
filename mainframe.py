@@ -227,7 +227,10 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.Bind(wx.EVT_UPDATE_UI, self.EditorUpdateUI("CanFindNext"), id=ID.FIND_NEXT)
         self.Bind(wx.EVT_UPDATE_UI, self.EditorUpdateUI("CanFindPrev"), id=ID.FIND_PREV)
         self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasMethod("GoToLine"), id=ID.GO_TO_LINE)
+        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasMethod("Indent"), id=ID.INDENT)
         self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasMethod("Unindent"), id=ID.UNINDENT)
+        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasMethod("Comment"), id=ID.COMMENT)
+        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasMethod("Uncomment"), id=ID.UNCOMMENT)
 
         self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_ProjectIsOpen, id=ID.CLOSE_PROJECT)
         self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_ProjectIsOpen, id=ID.EDIT_PROJECT)
