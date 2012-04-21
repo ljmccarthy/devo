@@ -17,6 +17,7 @@ class DevoAppHandler(object):
     @coroutine
     def process_args(self, args):
         try:
+            self.app.mainframe.Raise()
             args = DevoArgs(args)
             if args.project:
                 yield self.app.mainframe.OpenProject(args.project)
@@ -107,6 +108,10 @@ class DevoApp(wx.App):
             self.log_file.flush()
 
 def main():
+    if sys.platform != "win32":
+        if os.fork() != 0:
+            os._exit(0)
+
     if wx.VERSION < (2,9):
         wx.InitAllImageHandlers()
 
