@@ -1,4 +1,4 @@
-import os, string, traceback, errno, shutil
+import os, string, traceback, errno, shutil, webbrowser
 import wx
 from functools import wraps
 from wx.lib.utils import AdjustRectToScreen
@@ -893,7 +893,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             self.OpenProject(self.projects_sorted[index][0])
 
     def OnReportBug(self, evt):
-        wx.LaunchDefaultBrowser("https://github.com/shaurz/devo/issues/new")
+        webbrower.open_new_tab("https://github.com/shaurz/devo/issues/new")
 
     def OnAboutBox(self, evt):
         dlg = AboutDialog(self, self.env)
