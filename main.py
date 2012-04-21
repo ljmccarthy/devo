@@ -8,19 +8,23 @@ if not hasattr(sys, "frozen"):
     sys.path.append(os.path.join(module_dir, "..", "fsmonitor"))
 
 import wx
+from async import coroutine
 
 class DevoAppHandler(object):
     def __init__(self, app):
         self.app = app
 
+    @coroutine
     def process_args(self, args):
         try:
             args = DevoArgs(args)
+            if args.project:
+                yield self.app.mainframe.OpenProject(args.project)
             for filename in args.filenames:
-                self.app.mainframe.OpenEditor(filename)
+                yield self.app.mainframe.OpenEditor(filename)
         except Exception:
             pass
-        return True
+        yield True
 
 class DevoArgs(object):
     def __init__(self, args):

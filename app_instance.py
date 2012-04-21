@@ -72,7 +72,10 @@ class AppListener(object):
         future = Future()
         scheduler = get_scheduler()
         scheduler.post_call(future.call, method, *args, **kwargs)
-        return future.wait()
+        result = future.wait()
+        if isinstance(result, Future):
+            result = result.wait()
+        return result
 
     def call_loop(self, conn):
         while True:
