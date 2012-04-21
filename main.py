@@ -108,7 +108,7 @@ class DevoApp(wx.App):
             self.log_file.flush()
 
 def main():
-    if sys.platform != "win32":
+    if sys.platform not in ("win32", "darwin"):
         if os.fork() != 0:
             os._exit(0)
 
