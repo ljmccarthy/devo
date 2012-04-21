@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 
-import sys, os, getopt, tempfile, traceback
+import sys, os, getopt, traceback
 
 if not hasattr(sys, "frozen"):
     module_dir = os.path.dirname(os.path.realpath(__file__))
@@ -8,7 +8,6 @@ if not hasattr(sys, "frozen"):
     sys.path.append(os.path.join(module_dir, "..", "fsmonitor"))
 
 import wx
-from app_instance import AppListener, get_app_instance
 
 class DevoAppHandler(object):
     def __init__(self, app):
@@ -47,7 +46,11 @@ class DevoApp(wx.App):
 
     def Startup(self, args):
         try:
-            import async_wx, log_file
+            import async_wx
+            from app_instance import AppListener, get_app_instance
+            from fileutil import get_user_config_dir
+            from log_file import get_log_file
+
             async_wx.set_wx_scheduler()
 
             instance = get_app_instance("devo")
@@ -61,8 +64,8 @@ class DevoApp(wx.App):
             self.listener = AppListener("devo", DevoAppHandler(self))
 
             if hasattr(sys, "frozen"):
-                log_filename = os.path.join(tempfile.gettempdir(), "devo-errors.log")
-                self.log_file = log_file.get_log_file(log_filename)
+                log_filename = os.path.join(get_user_config_dir("devo"), "errors.log")
+                self.log_file = get_log_file(log_filename)
                 sys.stdout, self.stdout = self.log_file, sys.stdout
                 sys.stderr, self.stderr = self.log_file, sys.stderr
 
