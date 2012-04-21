@@ -8,8 +8,34 @@ if not hasattr(sys, "frozen"):
     sys.path.append(os.path.join(module_dir, "..", "fsmonitor"))
 
 import wx
+from app_instance import AppListener, get_app_instance
 
-class App(wx.App):
+class DevoAppHandler(object):
+    def __init__(self, app):
+        self.app = app
+
+    def process_args(self, args):
+        try:
+            args = DevoArgs(args)
+            for filename in args.filenames:
+                self.app.mainframe.OpenEditor(filename)
+        except Exception:
+            pass
+        return True
+
+class DevoArgs(object):
+    def __init__(self, args):
+        opts, args = getopt.gnu_getopt(args, "", ["project="])
+
+        project = None
+        for opt, arg in opts:
+            if opt == "--project":
+                project = arg
+
+        self.filenames = args
+        self.project = project
+
+class DevoApp(wx.App):
     def __init__(self):
         wx.App.__init__(self, redirect=False)
         self.SetAppName("Devo")
@@ -24,6 +50,16 @@ class App(wx.App):
             import async_wx, log_file
             async_wx.set_wx_scheduler()
 
+            instance = get_app_instance("devo")
+            if instance:
+                try:
+                    if instance.call("process_args", args):
+                        return False
+                except Exception:
+                    pass
+
+            self.listener = AppListener("devo", DevoAppHandler(self))
+
             if hasattr(sys, "frozen"):
                 log_filename = os.path.join(tempfile.gettempdir(), "devo-errors.log")
                 self.log_file = log_file.get_log_file(log_filename)
@@ -31,22 +67,17 @@ class App(wx.App):
                 sys.stderr, self.stderr = self.log_file, sys.stderr
 
             try:
-                opts, args = getopt.gnu_getopt(args, "", ["project="])
+                args = DevoArgs(args)
             except getopt.GetoptError, e:
                 sys.stderr.write("devo: error: %s\n" % e)
                 return False
 
-            project = None
-            for opt, arg in opts:
-                if opt == "--project":
-                    project = arg
-
             from mainframe import MainFrame
-            self.mainframe = MainFrame(project)
+            self.mainframe = MainFrame(args.project)
             self.SetTopWindow(self.mainframe)
 
-            for arg in args:
-                self.mainframe.OpenEditor(arg)
+            for filename in args.filenames:
+                self.mainframe.OpenEditor(filename)
 
             return True
 
@@ -64,6 +95,7 @@ class App(wx.App):
         self.first_drop = False
 
     def Shutdown(self):
+        self.listener.shutdown()
         if hasattr(sys, "frozen"):
             self.log_file.flush()
 
@@ -76,7 +108,7 @@ def main():
     else:
         args = sys.argv[1:]
 
-    app = App()
+    app = DevoApp()
     if app.Startup(args):
         app.MainLoop()
         app.Shutdown()

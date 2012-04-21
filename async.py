@@ -72,6 +72,10 @@ class Scheduler(object):
 
 _global_scheduler = None
 
+def get_scheduler():
+    global _global_scheduler
+    return _global_scheduler
+
 def set_scheduler(scheduler):
     global _global_scheduler
     if _global_scheduler:

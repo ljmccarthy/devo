@@ -16,7 +16,7 @@ def shell_open(path, workdir=None):
     return win32api.ShellExecute(None, "open", path, None, workdir, win32con.SW_SHOW) > 32
 
 def get_user_config_dir(name=""):
-    path = os.environ["APPDATA"]
+    path = os.environ.get("APPDATA", "")
     if name:
         path = os.path.join(path, name)
     return path
