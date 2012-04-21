@@ -29,6 +29,8 @@ class DevoAppHandler(object):
 
 class DevoArgs(object):
     def __init__(self, args):
+        self.raw_args = args
+
         opts, args = getopt.gnu_getopt(args, "", ["project="])
 
         project = None
@@ -61,7 +63,7 @@ class DevoApp(wx.App):
             instance = get_app_instance("devo")
             if instance:
                 try:
-                    if instance.call("process_args", args):
+                    if instance.call("process_args", args.raw_args):
                         return False
                 except Exception:
                     pass
@@ -73,12 +75,6 @@ class DevoApp(wx.App):
                 self.log_file = get_log_file(log_filename)
                 sys.stdout, self.stdout = self.log_file, sys.stdout
                 sys.stderr, self.stderr = self.log_file, sys.stderr
-
-            try:
-                args = DevoArgs(args)
-            except getopt.GetoptError, e:
-                sys.stderr.write("devo: error: %s\n" % e)
-                return False
 
             from mainframe import MainFrame
             self.mainframe = MainFrame(args.project)
@@ -108,17 +104,23 @@ class DevoApp(wx.App):
             self.log_file.flush()
 
 def main():
+    if sys.platform == "darwin" and hasattr(sys, "frozen"):
+        args = []
+    else:
+        args = sys.argv[1:]
+
+    try:
+        args = DevoArgs(args)
+    except getopt.GetoptError, e:
+        sys.stderr.write("devo: error: %s\n" % e)
+        sys.exit(1)
+
     if sys.platform not in ("win32", "darwin"):
         if os.fork() != 0:
             os._exit(0)
 
     if wx.VERSION < (2,9):
         wx.InitAllImageHandlers()
-
-    if sys.platform == "darwin" and hasattr(sys, "frozen"):
-        args = []
-    else:
-        args = sys.argv[1:]
 
     app = DevoApp()
     if app.Startup(args):
