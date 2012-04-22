@@ -86,15 +86,18 @@ class SearchFileOutput(object):
         self.file = file
         self.max_line_length = 100
 
-    def add_file(self, filepath):
+    def add_file(self, finder, filepath):
         self.file.write(filepath + "\n")
 
-    def add_line(self, line_num, line):
+    def add_line(self, finder, line_num, line):
         if len(line) > self.max_line_length:
             line = line[:self.max_line_length] + "..."
         self.file.write(" %d: %s\n" % (line_num, line))
 
-    def end_file(self):
+    def begin_file(self, finder, filepath):
+        pass
+
+    def end_file(self, finder):
         self.file.write("\n")
 
     def end_find(self, finder):
