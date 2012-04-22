@@ -31,15 +31,19 @@ class DevoArgs(object):
     def __init__(self, args):
         self.raw_args = args
 
-        opts, args = getopt.gnu_getopt(args, "", ["project="])
+        opts, args = getopt.gnu_getopt(args, "", ["project=", "new-instance"])
 
         project = None
+        new_instance = False
         for opt, arg in opts:
             if opt == "--project":
                 project = arg
+            elif opt == "--new-instance":
+                new_instance = True
 
         self.filenames = args
         self.project = project
+        self.new_instance = new_instance
 
 class DevoApp(wx.App):
     def __init__(self):
@@ -47,6 +51,7 @@ class DevoApp(wx.App):
         self.SetAppName("Devo")
         self.first_drop = True
         self.mainframe = None
+        self.listener = None
 
     def OnInit(self):
         return True
@@ -60,15 +65,16 @@ class DevoApp(wx.App):
 
             async_wx.set_wx_scheduler()
 
-            instance = get_app_instance("devo")
-            if instance:
-                try:
-                    if instance.call("process_args", args.raw_args):
-                        return False
-                except Exception:
-                    pass
+            if not args.new_instance:
+                instance = get_app_instance("devo")
+                if instance:
+                    try:
+                        if instance.call("process_args", args.raw_args):
+                            return False
+                    except Exception:
+                        pass
 
-            self.listener = AppListener("devo", DevoAppHandler(self))
+                self.listener = AppListener("devo", DevoAppHandler(self))
 
             if hasattr(sys, "frozen"):
                 log_filename = os.path.join(get_user_config_dir("devo"), "errors.log")
@@ -99,7 +105,8 @@ class DevoApp(wx.App):
         self.first_drop = False
 
     def Shutdown(self):
-        self.listener.shutdown()
+        if self.listener:
+            self.listener.shutdown()
         if hasattr(sys, "frozen"):
             self.log_file.flush()
 
