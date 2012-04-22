@@ -115,7 +115,7 @@ class TerminalCtrl(wx.Panel):
         self.thread.start()
 
         self.cmdline = cmdline
-        self.set_status(shorten_text(cmdline, 60) + "\nRunning")
+        self.set_status(shorten_text(cmdline, 60) + "\nRunning (pid %d)" % self.process.pid)
         self.Clear()
         self.output.start()
 
