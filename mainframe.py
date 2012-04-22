@@ -88,7 +88,7 @@ NB_STYLE = (aui.AUI_NB_CLOSE_ON_ALL_TABS  | aui.AUI_NB_TOP | aui.AUI_NB_TAB_SPLI
            | wx.BORDER_NONE)
 
 class MainFrame(wx.Frame, wx.FileDropTarget):
-    def __init__(self, project_root=None):
+    def __init__(self, args):
         display_rect = wx.Display(wx.Display.GetFromPoint((0, 0))).GetClientArea()
         width = min(display_rect.width, 1050)
         rect = wx.Rect(display_rect.width - width, display_rect.y, width, display_rect.height)
@@ -153,7 +153,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             aui.AuiPaneInfo().Hide().Top().BestSize((width, 250)).Caption("Search"))
         self.manager.Update()
 
-        self.Startup(project_root)
+        self.Startup(args)
 
         self.Bind(wx.EVT_CLOSE, self.OnClose)
         self.Bind(wx.EVT_END_SESSION, self.OnClose)
@@ -300,7 +300,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
 
     @managed("cm")
     @queued_coroutine("cq")
-    def Startup(self, project_root=None):
+    def Startup(self, args):
         try:
             self.settings = (yield async_call(read_settings, self.settings_filename))
         except Exception:
@@ -326,8 +326,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             dialogs.load_state(self.settings["dialogs"])
 
         success = True
-        if project_root:
-            success = (yield self.OpenProject(project_root))
+        if args.project:
+            success = (yield self.OpenProject(args.project))
         else:
             last_project = self.settings.get("last_project")
             if last_project:
@@ -337,6 +337,9 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
 
         if not success:
             yield self.OpenDefaultProject()
+
+        for filename in args.filenames:
+            self.OpenEditor(filename)
 
         yield self.SaveSettings()
 

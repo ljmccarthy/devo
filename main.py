@@ -83,11 +83,8 @@ class DevoApp(wx.App):
                 sys.stderr, self.stderr = self.log_file, sys.stderr
 
             from mainframe import MainFrame
-            self.mainframe = MainFrame(args.project)
+            self.mainframe = MainFrame(args)
             self.SetTopWindow(self.mainframe)
-
-            for filename in args.filenames:
-                self.mainframe.OpenEditor(filename)
 
             return True
 
