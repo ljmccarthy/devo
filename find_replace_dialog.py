@@ -189,8 +189,8 @@ class FindReplaceDialog(wx.Dialog):
         self.Bind(wx.EVT_BUTTON, self.OnReplace, id=wx.ID_REPLACE)
         self.Bind(wx.EVT_BUTTON, self.OnReplaceAll, id=wx.ID_REPLACE_ALL)
         self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateFind, id=wx.ID_FIND)
-        self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateReplace, id=wx.ID_REPLACE)
-        self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateReplace, id=wx.ID_REPLACE_ALL)
+        self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateFind, id=wx.ID_REPLACE)
+        self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateFind, id=wx.ID_REPLACE_ALL)
         bind_escape_key(self)
 
     def OnGoToStart(self, evt):
@@ -222,9 +222,6 @@ class FindReplaceDialog(wx.Dialog):
 
     def OnUpdateFind(self, evt):
         evt.Enable(bool(self.combo_find.GetValue()))
-
-    def OnUpdateReplace(self, evt):
-        evt.Enable(bool(self.combo_find.GetValue() and self.combo_replace.GetValue()))
 
     def GetFindDetails(self, show_error=False):
         try:
