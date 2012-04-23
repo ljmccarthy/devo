@@ -68,6 +68,9 @@ class DevoApp(wx.App):
 
             async_wx.set_wx_scheduler()
 
+            config_dir = get_user_config_dir("devo")
+            mkpath(config_dir)
+
             if not args.new_instance:
                 instance = get_app_instance("devo")
                 if instance:
@@ -78,9 +81,6 @@ class DevoApp(wx.App):
                         pass
 
                 self.listener = AppListener("devo", DevoAppHandler(self))
-
-            config_dir = get_user_config_dir("devo")
-            mkpath(config_dir)
 
             if hasattr(sys, "frozen"):
                 log_filename = os.path.join(config_dir, "errors.log")
