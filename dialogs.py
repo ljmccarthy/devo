@@ -1,9 +1,6 @@
 import os
 import wx
 
-from save_changes_dialog import SaveChangesDialog
-from text_input_dialog import TextInputDialog
-
 class Dialogs(object):
     def __init__(self, prefix=""):
         self._prefix = prefix
@@ -67,6 +64,7 @@ class Dialogs(object):
             dlg.Destroy()
 
     def ask_save_changes(self, parent, path=""):
+        from save_changes_dialog import SaveChangesDialog
         path = os.path.basename(path)
         if path:
             message = "File '%s' has been modified. Save changes?" % path
@@ -109,6 +107,7 @@ class Dialogs(object):
             wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION) == wx.ID_YES
 
     def get_text_input(self, *args, **kwargs):
+        from text_input_dialog import TextInputDialog
         dlg = TextInputDialog(*args, **kwargs)
         try:
             if dlg.ShowModal() == wx.ID_OK:

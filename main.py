@@ -60,6 +60,7 @@ class DevoApp(wx.App):
         return True
 
     def Startup(self, args):
+        from dialogs import dialogs
         try:
             import async_wx
             from app_instance import AppListener, get_app_instance
@@ -69,7 +70,12 @@ class DevoApp(wx.App):
             async_wx.set_wx_scheduler()
 
             config_dir = get_user_config_dir("devo")
-            mkpath(config_dir)
+            try:
+                mkpath(config_dir)
+            except OSError, e:
+                message = "Failed to create Devo configuration directory:\n\n" + str(e)
+                dialogs.error(None, message, "Initialization Error")
+                return False
 
             if not args.new_instance:
                 instance = get_app_instance("devo")
@@ -96,10 +102,7 @@ class DevoApp(wx.App):
 
         except Exception:
             message = "Devo failed to initialize due to the following error:\n\n" + traceback.format_exc()
-            dlg = wx.MessageDialog(None, message, "Devo Initialization Error", wx.OK | wx.ICON_ERROR)
-            dlg.ShowModal()
-            dlg.Destroy()
-
+            dialogs.error(None, message, "Initialization Error")
             return False
 
     def MacOpenFile(self, filename):
