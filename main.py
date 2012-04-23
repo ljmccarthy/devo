@@ -17,12 +17,15 @@ class DevoAppHandler(object):
     @coroutine
     def process_args(self, args):
         try:
-            self.app.mainframe.Raise()
+            mainframe = self.app.mainframe
+            if mainframe.IsIconized():
+                mainframe.Iconize(False)
+            mainframe.Raise()
             args = DevoArgs(args)
             if args.project:
-                yield self.app.mainframe.OpenProject(args.project)
+                yield mainframe.OpenProject(args.project)
             for filename in args.filenames:
-                yield self.app.mainframe.OpenEditor(filename)
+                yield mainframe.OpenEditor(filename)
         except Exception:
             pass
         yield True
@@ -60,7 +63,7 @@ class DevoApp(wx.App):
         try:
             import async_wx
             from app_instance import AppListener, get_app_instance
-            from fileutil import get_user_config_dir
+            from fileutil import get_user_config_dir, mkpath
             from log_file import get_log_file
 
             async_wx.set_wx_scheduler()
@@ -76,8 +79,11 @@ class DevoApp(wx.App):
 
                 self.listener = AppListener("devo", DevoAppHandler(self))
 
+            config_dir = get_user_config_dir("devo")
+            mkpath(config_dir)
+
             if hasattr(sys, "frozen"):
-                log_filename = os.path.join(get_user_config_dir("devo"), "errors.log")
+                log_filename = os.path.join(config_dir, "errors.log")
                 self.log_file = get_log_file(log_filename)
                 sys.stdout, self.stdout = self.log_file, sys.stdout
                 sys.stderr, self.stderr = self.log_file, sys.stderr
