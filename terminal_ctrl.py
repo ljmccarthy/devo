@@ -137,7 +137,10 @@ class TerminalCtrl(wx.Panel):
                 self.output.write(line.decode("utf-8", "replace"))
             rc = process.wait()
         finally:
-            wx.CallAfter(self.__thread_exit, process, rc)
+            try:
+                wx.CallAfter(self.__thread_exit, process, rc)
+            except wx.PyDeadObjectError:
+                pass
 
     def __thread_exit(self, process, rc):
         self.set_status("%s\nProcess terminated%s" % (
