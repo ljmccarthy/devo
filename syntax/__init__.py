@@ -1,7 +1,7 @@
 import re
-import plain, cpp, makefile, python
+import plain, cpp, makefile, python, java
 
-syntax_list = [cpp, makefile, python, plain]
+syntax_list = [cpp, makefile, python, java, plain]
 syntax_dict = dict((syntax.ident, syntax) for syntax in syntax_list)
 
 def filename_syntax_re():

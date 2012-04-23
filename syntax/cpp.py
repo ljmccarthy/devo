@@ -30,7 +30,6 @@ stylespecs = (
     (wx.stc.STC_C_STRING,                 "fore:#7F007F"),
     (wx.stc.STC_C_STRINGEOL,              "fore:#000000,back:#E0C0E0,eol"),
     (wx.stc.STC_C_UUID,                   "fore:#000000"),
-    (wx.stc.STC_C_UUID,                   "fore:#000000"),
     (wx.stc.STC_C_VERBATIM,               "fore:#000000"),
     (wx.stc.STC_C_WORD,                   "fore:#00007F,bold"),
     (wx.stc.STC_C_WORD2,                  "fore:#00007F,bold"),
