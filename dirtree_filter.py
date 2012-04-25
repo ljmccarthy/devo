@@ -1,7 +1,7 @@
 import re
 
 def compile_file_patterns(patterns):
-    return re.compile("$%s^" % "|".join("(%s)" % re.escape(p).replace("\\*", ".*") for p in patterns))
+    return re.compile("^%s$" % "|".join("(%s)" % re.escape(p).replace("\\*", ".*") for p in patterns))
 
 hidden_files = [".*", "*~", "*.swp", "*.pyc", "*.pyo", "*.o", "*.a", "*.obj", "*.lib", "*.class"]
 hidden_dirs = ["CVS", "__pycache__"]
