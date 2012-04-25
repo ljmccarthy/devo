@@ -8,6 +8,7 @@ if not hasattr(sys, "frozen"):
     sys.path.append(os.path.join(module_dir, "..", "fsmonitor"))
 
 import wx
+import wx_patches
 from async import coroutine
 
 class DevoAppHandler(object):

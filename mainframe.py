@@ -946,7 +946,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     def TryNotifyUpdatedPaths(self):
         if (self.updated_paths or self.deleted_paths) and not self.reloading:
             mouse = wx.GetMouseState()
-            if mouse.LeftDown() or mouse.MiddleDown() or mouse.RightDown():
+            if mouse.LeftIsDown() or mouse.MiddleIsDown() or mouse.RightIsDown():
                 wx.CallLater(500, self.TryNotifyUpdatedPaths)
             else:
                 self.NotifyUpdatedPaths()
