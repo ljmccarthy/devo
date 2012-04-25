@@ -2,12 +2,15 @@ import os
 import errno
 import wx
 from contextlib import contextmanager
+from util import get_top_level_focus
 
 class FileMonitor(wx.EvtHandler):
-    def __init__(self, callback):
+    def __init__(self, callback, top_level_focus=None):
         wx.EvtHandler.__init__(self)
         self.callback = callback
+        self.top_level_focus = top_level_focus
         self.path_mtime = {}
+        self.running_refcount = 0
 
         self.timer = wx.Timer(self)
         self.Bind(wx.EVT_TIMER, self.OnTimer, self.timer)
@@ -37,26 +40,24 @@ class FileMonitor(wx.EvtHandler):
     @contextmanager
     def updating_path(self, path):
         path = os.path.realpath(path)
-        was_running = self.timer.IsRunning()
-        if was_running:
-            self.stop()
+        self.stop()
         if path not in self.path_mtime:
             try:
                 yield
             finally:
                 self.update_path(path)
-                if was_running:
-                    self.start()
+                self.start()
         else:
             try:
                 self.remove_path(path)
                 yield
             finally:
                 self._update_or_add_path(path)
-                if was_running:
-                    self.start()
+                self.start()
 
     def OnTimer(self, evt):
+        if self.top_level_focus and get_top_level_focus() is not self.top_level_focus:
+            return
         updated_paths = []
         deleted_paths = []
         for path, old_mtime in sorted(self.path_mtime.iteritems()):
@@ -75,11 +76,27 @@ class FileMonitor(wx.EvtHandler):
         if updated_paths or deleted_paths:
             self.callback(updated_paths, deleted_paths)
 
-    def start(self):
-        if not self.timer.IsRunning():
-            for path in self.path_mtime:
-                self.update_path(path)
+    @property
+    def is_running(self):
+        return self.running_refcount > 0
+
+    def start(self, update_paths=True):
+        if self.running_refcount <= 0:
+            if update_paths:
+                for path in self.path_mtime:
+                    self.update_path(path)
             self.timer.Start(200)
+            self.running_refcount += 1
 
     def stop(self):
-        self.timer.Stop()
+        if self.running_refcount > 0:
+            self.timer.Stop()
+            self.running_refcount -= 1
+
+    @contextmanager
+    def stopped_context(self):
+        self.stop()
+        try:
+            yield
+        finally:
+            self.start(update_paths=False)

@@ -1,6 +1,5 @@
 import os, string, traceback, errno, shutil, webbrowser
 import wx
-from functools import wraps
 from wx.lib.utils import AdjustRectToScreen
 
 import aui
@@ -70,6 +69,9 @@ class AppEnv(object):
     def remove_monitor_path(self, path):
         self._mainframe.fmon.remove_path(path)
 
+    def stopped_file_monitor(self):
+        return self._mainframe.fmon.stopped_context()
+
     def updating_path(self, path):
         return self._mainframe.fmon.updating_path(path)
 
@@ -124,7 +126,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.cm = CoroutineManager()
         self.cq = CoroutineQueue()
         self.env = AppEnv(self)
-        self.fmon = FileMonitor(self.OnFilesChanged)
+        self.fmon = FileMonitor(self.OnFilesChanged, self)
         self.updated_paths = set()
         self.deleted_paths = set()
         self.reloading = False
@@ -289,7 +291,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                 wx.CallAfter(self._DoShutdown)
                 return
         self.Show()
-        self.fmon.Start()
+        self.fmon.start(update_paths=False)
 
     def _DoShutdown(self):
         self.fmon.stop()
@@ -394,7 +396,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                 yield False
             yield True
         finally:
-            self.fmon.start()
+            self.fmon.start(update_paths=False)
 
     @managed("cm")
     @coroutine

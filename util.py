@@ -61,6 +61,13 @@ def is_focused(win):
         focus = focus.Parent
     return False
 
+def get_top_level_focus():
+    focus = wx.Window.FindFocus()
+    while focus:
+        if isinstance(focus, wx.TopLevelWindow):
+            return focus
+        focus = wx.GetTopLevelParent(focus)
+
 def new_id_range(n):
     first = wx.NewId()
     last = first + n
