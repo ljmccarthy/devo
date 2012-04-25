@@ -285,7 +285,10 @@ class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
     @coroutine
     def ExpandNode(self, node):
         if node.state == NODE_UNPOPULATED:
-            yield self.PopulateNode(node)
+            try:
+                yield self.PopulateNode(node)
+            except OSError:
+                return
         if node.state != NODE_POPULATING:
             self.Expand(node.item)
 
