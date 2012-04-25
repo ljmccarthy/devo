@@ -19,7 +19,7 @@ def get_user_config_dir(name=""):
     path = os.environ.get("APPDATA", "")
     if name:
         path = os.path.join(path, name)
-    return path
+    return os.path.realpath(path)
 
 def is_hidden_file(path):
     return (win32file.GetFileAttributes(path) & win32file.FILE_ATTRIBUTE_HIDDEN) != 0

@@ -13,10 +13,10 @@ def shell_open(path, workdir=None):
     return run([shell_open_command, path], workdir=workdir) == 0
 
 def get_user_config_dir(name=""):
-    path = os.environ["HOME"]
+    path = os.environ.get("HOME", "")
     if name:
         path = os.path.join(path, "." + name)
-    return path
+    return os.path.realpath(path)
 
 __all__ = (
     "shell_open",
