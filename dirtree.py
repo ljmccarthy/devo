@@ -94,22 +94,13 @@ class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
         self.Bind(wx.EVT_MENU, self.OnExpandAll, id=ID_DIRTREE_EXPAND_ALL)
         self.Bind(wx.EVT_MENU, self.OnCollapseAll, id=ID_DIRTREE_COLLAPSE_ALL)
 
-        self.monitor = FSMonitorThread()
-        self.monitor_timer = wx.Timer(self)
-        self.Bind(wx.EVT_TIMER, self.OnMonitorTimer, self.monitor_timer)
-        self.monitor_timer.Start(100)
+        self.monitor = FSMonitorThread(callback=lambda event: wx.CallAfter(self.OnFSEvent, event))
 
     def Destroy(self):
-        self.monitor_timer.Stop()
         self.monitor.remove_all_watches()
         self.monitor.read_events()
         self.cm.cancel()
         wx.TreeCtrl.Destroy(self)
-
-    def OnMonitorTimer(self, evt):
-        events = self.monitor.read_events()
-        if events:
-            self.OnFileSystemChanged(events)
 
     def SelectLater(self, parent, name, timeout=1):
         self.select_later_parent = parent
@@ -118,20 +109,19 @@ class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
 
     @managed("cm")
     @queued_coroutine("cq")
-    def OnFileSystemChanged(self, events):
-        for evt in events:
-            if evt.action in (FSEvent.Create, FSEvent.MoveTo):
-                item = (yield evt.user.add(evt.name, self, self.monitor, self.filter))
-                if item:
-                    if evt.name == self.select_later_name \
-                    and self.GetItemParent(item) == self.select_later_parent:
-                        if time.time() < self.select_later_time:
-                            self.SelectItem(item)
-                        self.select_later_name = None
-                        self.select_later_parent = None
-                        self.select_later_time = 0
-            elif evt.action in (FSEvent.Delete, FSEvent.MoveFrom):
-                evt.user.remove(evt.name, self, self.monitor)
+    def OnFSEvent(self, evt):
+        if evt.action in (FSEvent.Create, FSEvent.MoveTo):
+            item = (yield evt.user.add(evt.name, self, self.monitor, self.filter))
+            if item:
+                if evt.name == self.select_later_name \
+                and self.GetItemParent(item) == self.select_later_parent:
+                    if time.time() < self.select_later_time:
+                        self.SelectItem(item)
+                    self.select_later_name = None
+                    self.select_later_parent = None
+                    self.select_later_time = 0
+        elif evt.action in (FSEvent.Delete, FSEvent.MoveFrom):
+            evt.user.remove(evt.name, self, self.monitor)
 
     def OnItemExpanding(self, evt):
         node = self.GetEventNode(evt)
