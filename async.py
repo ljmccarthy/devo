@@ -402,14 +402,17 @@ class CoroutineQueue(object):
         self.__running = None
         self.__queue = []
 
-    def run(self, func, args, kwargs):
-        co = Coroutine(func(*args, **kwargs), func.__name__, "".join(traceback.format_stack()))
+    def add(self, co):
         if self.__running is not None:
             self.__queue.append(co)
         else:
             self.__running = weakref.ref(co)
             co.bind(finished=self.__next)
             co.start()
+
+    def run(self, func, args, kwargs):
+        co = Coroutine(func(*args, **kwargs), func.__name__, "".join(traceback.format_stack()))
+        self.add(co)
         return co
 
     def __next(self):
