@@ -4,7 +4,7 @@ def compile_file_patterns(patterns):
     return re.compile("^%s$" % "|".join("(%s)" % re.escape(p).replace("\\*", ".*") for p in patterns))
 
 hidden_files = [".*", "*~", "*.swp", "*.pyc", "*.pyo", "*.o", "*.a", "*.obj", "*.lib", "*.class"]
-hidden_dirs = ["CVS", "__pycache__"]
+hidden_dirs = [".*", "CVS", "__pycache__"]
 
 class DirTreeFilter(object):
     def __init__(self, show_hidden=False, show_files=True, show_dirs=True,
