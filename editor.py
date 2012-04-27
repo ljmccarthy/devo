@@ -2,7 +2,7 @@ import os
 import wx, wx.stc
 from async import async_call, coroutine
 from dialogs import dialogs
-from fileutil import atomic_write_file, read_file
+from fileutil import atomic_write_file, read_file, mkpath
 from signal_wx import Signal
 from styled_text_ctrl import StyledTextCtrl
 
@@ -156,6 +156,7 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
         text, self.file_encoding = encode_text(self.GetText(), self.file_encoding)
         if not text.endswith("\n"):
             text += "\n"
+        yield async_call(mkpath, os.path.dirname(path))
         yield async_call(atomic_write_file, path, text)
         self.modified_externally = False
         self.SetSavePoint()
