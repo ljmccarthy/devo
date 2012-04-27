@@ -627,44 +627,46 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.recent_files.add(self.GetFullPath(path))
         self.UpdateMenuBar()
 
+    def SetEditorLineAndMarker(self, editor, line, marker_type):
+        if line is not None:
+            editor.SetCurrentLine(line - 1)
+            if marker_type is not None:
+                self.SetHighlightedEditor(editor, line, marker_type)
+
     @managed("cm")
     @queued_coroutine("cq")
     def OpenEditor(self, path, line=None, marker_type=None):
         path = self.GetFullPath(path)
         editor = self.FindEditor(path)
         if editor:
+            self.SetEditorLineAndMarker(editor, line, marker_type)
             i = self.notebook.GetPageIndex(editor)
             if i != wx.NOT_FOUND:
                 self.notebook.SetSelection(i)
-            if line is not None:
-                editor.SetCurrentLine(line - 1)
-                if marker_type is not None:
-                    self.SetHighlightedEditor(editor, line, marker_type)
             editor.SetFocus()
-        else:
-            try:
-                if not (yield async_call(is_text_file, path)):
-                    if not dialogs.ask_open_binary(self, path):
-                        yield False
-            except IOError:
-                pass
+            yield True
 
+        try:
+            if not (yield async_call(is_text_file, path)):
+                if not dialogs.ask_open_binary(self, path):
+                    yield False
             if not os.path.exists(path):
                 dialogs.error(self, "File does not exist:\n\n%s" % path)
                 yield False
+        except IOError:
+            pass
 
-            editor = Editor(self.notebook, self.env, path)
-            if not (yield editor.TryLoadFile(path)):
-                editor.Destroy()
-            else:
-                with frozen_window(self.notebook):
-                    self.AddPage(editor)
-                    self.AddRecentFile(path)
-                    if line is not None:
-                        editor.SetCurrentLine(line - 1)
-                        if marker_type is not None:
-                            self.SetHighlightedEditor(editor, line, marker_type)
-                    editor.SetFocus()
+        editor = Editor(self.notebook, self.env, path)
+        if not (yield editor.TryLoadFile(path)):
+            editor.Destroy()
+            yield False
+
+        with frozen_window(self.notebook):
+            self.AddPage(editor)
+            self.AddRecentFile(path)
+            self.SetEditorLineAndMarker(editor, line, marker_type)
+            editor.SetFocus()
+        yield True
 
     def OpenEditorWithText(self, text):
         editor = self.NewEditor()
@@ -690,11 +692,13 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         if editor:
             self.ClosePage(editor)
 
+    @coroutine
     def OnRecentFile(self, evt):
         index = evt.GetId() - self.recent_file_first_id
         if 0 <= index < len(self.recent_files):
             path = self.recent_files.access(index)
-            self.OpenEditor(path)
+            if not (yield self.OpenEditor(path)):
+                self.recent_files.remove(0)
             self.UpdateMenuBar()
 
     def OnDropFiles(self, x, y, filenames):

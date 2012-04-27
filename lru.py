@@ -20,3 +20,6 @@ class LruQueue(object):
         del self.deque[index]
         self.deque.appendleft(item)
         return item
+
+    def remove(self, index):
+        del self.deque[index]
