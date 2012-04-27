@@ -100,12 +100,6 @@ class Dialogs(object):
             "Open Binary File",
             wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION) == wx.ID_YES
 
-    def ask_kill_process(self, parent):
-        return self.message_dialog(parent,
-            "Are you sure you want to force kill the process?",
-            "Force Kill Process",
-            wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION) == wx.ID_YES
-
     def get_text_input(self, *args, **kwargs):
         from text_input_dialog import TextInputDialog
         dlg = TextInputDialog(*args, **kwargs)

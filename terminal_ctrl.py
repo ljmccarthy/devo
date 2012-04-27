@@ -72,8 +72,7 @@ class TerminalCtrl(wx.Panel):
         self.stop()
 
     def OnKill(self, evt):
-        if dialogs.ask_kill_process(self):
-            self.kill()
+        self.kill()
 
     def OnUpdateStop(self, evt):
         evt.Enable(self.process is not None)
