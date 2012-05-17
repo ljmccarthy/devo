@@ -134,6 +134,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.search_details = None
         self.editor_focus = None
         self.editor_highlight = [None, None]
+        self.menu_open = False
 
         agwFlags = aui.AUI_MGR_TRANSPARENT_HINT \
                  | aui.AUI_MGR_HINT_FADE \
@@ -160,6 +161,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.Bind(wx.EVT_CLOSE, self.OnClose)
         self.Bind(wx.EVT_ACTIVATE, self.OnActivate)
         self.Bind(wx.EVT_CHILD_FOCUS, self.OnChildFocus)
+        self.Bind(wx.EVT_MENU_OPEN, self.OnMenuOpen)
+        self.Bind(wx.EVT_MENU_CLOSE, self.OnMenuClose)
         self.Bind(aui.EVT_AUI_PANE_CLOSE, self.OnPaneClose)
         self.Bind(aui.EVT_AUINOTEBOOK_TAB_MIDDLE_UP, self.OnPageClose)
         self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CLOSE, self.OnPageClose)
@@ -968,6 +971,12 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                 return
             focus = focus.Parent
         self.editor_focus = None
+
+    def OnMenuOpen(self, evt):
+        self.menu_open = True
+
+    def OnMenuClose(self, evt):
+        self.menu_open = False
 
     def OnFilesChanged(self, updated_paths, deleted_paths):
         for path in updated_paths:

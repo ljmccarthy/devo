@@ -56,8 +56,12 @@ class FileMonitor(wx.EvtHandler):
                 self.start()
 
     def OnTimer(self, evt):
-        if self.top_level_focus and get_top_level_focus() is not self.top_level_focus:
-            return
+        if self.top_level_focus:
+            if get_top_level_focus() is not self.top_level_focus:
+                return
+            if self.top_level_focus.menu_open:
+                return
+
         updated_paths = []
         deleted_paths = []
         for path, old_mtime in sorted(self.path_mtime.iteritems()):
