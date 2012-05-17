@@ -25,8 +25,11 @@ context_menu = Menu("", [
     MenuItem(ID_DIRTREE_COLLAPSE_ALL, "&Collapse All"),
 ])
 
-def split_path(path):
-    return os.path.normpath(path).strip(os.path.sep).split(os.path.sep)
+def split_path(path, relative_to=""):
+    path = os.path.normpath(path)
+    if relative_to:
+        path = os.path.relpath(path, relative_to)
+    return path.strip(os.path.sep).split(os.path.sep)
 
 def make_top_level():
     if sys.platform == "win32":
@@ -337,7 +340,7 @@ class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
         if self.IsExpanded(item):
             node = self.GetPyData(item)
             if node.type == 'd':
-                subpath = (path and path + "/") + self.GetItemText(item)
+                subpath = os.path.join(path, os.path.basename(node.path)) if path else node.path
                 len_expanded = len(expanded)
                 for child_item in iter_tree_children(self, item):
                     self._FindExpandedPaths(child_item, subpath, expanded)
@@ -364,7 +367,8 @@ class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
                 yield self._ExpandPaths(child_item, sub_paths)
 
     def ExpandPaths(self, paths):
-        paths = [split_path(path) for path in paths]
+        rootpath = self.GetPyData(self.GetRootItem()).path
+        paths = [split_path(path, rootpath) for path in paths]
         return self._ExpandPaths(self.GetRootItem(), paths)
 
     def ExpandPath(self, path):
