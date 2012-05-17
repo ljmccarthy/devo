@@ -7,6 +7,7 @@ from find_replace_dialog import FindReplaceDetails, FindReplaceDialog
 from go_to_line_dialog import GoToLineDialog
 from menu_defs import edit_menu
 from syntax import filename_syntax_re, syntax_dict, plain
+from util import clean_text
 
 MARKER_FIND = 0
 MARKER_ERROR = 1
@@ -89,6 +90,16 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
         return bool(self.env.find_details and self.env.find_details.find)
 
     CanFindPrev = CanFindNext
+
+    def Paste(self):
+        wx.TheClipboard.Open()
+        try:
+            text_data = wx.TextDataObject()
+            if wx.TheClipboard.GetData(text_data):
+                text = clean_text(text_data.GetText())
+                self.ReplaceSelection(text)
+        finally:
+            wx.TheClipboard.Close()
 
     def IsEmpty(self):
         return self.GetTextLength() == 0

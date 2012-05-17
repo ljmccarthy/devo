@@ -1,4 +1,4 @@
-import os.path
+import os.path, re
 import wx
 
 class frozen_window(object):
@@ -87,13 +87,13 @@ def CallLater(timer, func, *args, **kwargs):
     else:
         wx.CallAfter(_TryCallLater, timer, func, args, kwargs)
 
-non_printable_chars = "\x00\x01\x02\x03\x04\x05\x06\x07\x0E\x0F" + \
-    "\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F\x7F"
+non_printable_re = re.compile(r"[\0-\x07\x0E-\x1F\x7F]")
+line_end_re = re.compile(r"\r\n|\r|\n")
 
 def count_non_printable(s):
     count = 0
     for c in s:
-        if c in non_printable_chars:
+        if non_printable_re.match(c):
             count += 1
     return count
 
@@ -103,6 +103,12 @@ def is_text_file(path):
     with open(path, "rb") as f:
         data = f.read(1024)
     return not ("\0" in data or count_non_printable(data) > len(data) // 6)
+
+def clean_text(text):
+    text = non_printable_re.sub("", text)
+    lines = line_end_re.split(text)
+    print lines
+    return "\n".join(lines)
 
 def shorten_text(text, max_length):
     return text[:max_length - 2] + "..." if len(text) > max_length else text
