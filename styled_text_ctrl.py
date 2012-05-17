@@ -28,7 +28,7 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
     def ShouldFilterKeyEvent(self, evt):
         key = evt.GetKeyCode()
         mod = evt.GetModifiers()
-        return (mod & (wx.MOD_ALT | wx.MOD_CONTROL)) or (wx.WXK_F1 <= key <= wx.WXK_F24)
+        return (mod & ~(wx.MOD_ALT | wx.MOD_SHIFT)) != 0 or (wx.WXK_F1 <= key <= wx.WXK_F24)
 
     def __OnKeyDown(self, evt):
         evt.Skip(not self.ShouldFilterKeyEvent(evt))
