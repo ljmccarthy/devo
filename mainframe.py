@@ -158,7 +158,6 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.Startup(args)
 
         self.Bind(wx.EVT_CLOSE, self.OnClose)
-        self.Bind(wx.EVT_END_SESSION, self.OnClose)
         self.Bind(wx.EVT_ACTIVATE, self.OnActivate)
         self.Bind(wx.EVT_CHILD_FOCUS, self.OnChildFocus)
         self.Bind(aui.EVT_AUI_PANE_CLOSE, self.OnPaneClose)

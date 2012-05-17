@@ -99,6 +99,8 @@ class DevoApp(wx.App):
             self.mainframe = MainFrame(args)
             self.SetTopWindow(self.mainframe)
 
+            self.Bind(wx.EVT_END_SESSION, self.OnEndSession)
+
             return True
 
         except Exception:
@@ -110,6 +112,10 @@ class DevoApp(wx.App):
         if not self.first_drop or hasattr(sys, "frozen"):
             self.mainframe.OpenEditor(filename)
         self.first_drop = False
+
+    def OnEndSession(self, evt):
+        if self.mainframe:
+            self.mainframe.DoClose()
 
     def Shutdown(self):
         if self.listener:
