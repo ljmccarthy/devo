@@ -6,7 +6,7 @@ from editor_fonts import font_face, font_size
 from find_replace_dialog import FindReplaceDetails, FindReplaceDialog
 from go_to_line_dialog import GoToLineDialog
 from menu_defs import edit_menu
-from syntax import filename_syntax_re, syntax_dict, plain
+from syntax import syntax_from_filename, plain
 from util import clean_text
 
 MARKER_FIND = 0
@@ -62,11 +62,7 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
         self.Colourise(0, -1)
 
     def SetSyntaxFromFilename(self, path):
-        m = filename_syntax_re.match(os.path.basename(path))
-        if m:
-            self.SetSyntax(syntax_dict[m.lastgroup])
-        else:
-            self.SetSyntax(plain)
+        self.SetSyntax(syntax_from_filename(path))
 
     def ClearHighlight(self, marker_type):
         self.MarkerDeleteAll(marker_type)
