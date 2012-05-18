@@ -1,0 +1,3 @@
+#!/bin/bash
+
+icotool --create ../res/icons/devo-icon-{128,64,48,32,24,16}.png --output=devo.ico

@@ -1,0 +1,10 @@
+#!/bin/bash
+
+rm -f /usr/bin/devo
+ln -s /devel/devo/dist/linux2/devo /usr/bin/devo
+cp devo.desktop /usr/share/applications/
+
+for SIZE in 16 24 32 48 64 128 256; do
+    cp ../res/icons/devo-icon-${SIZE}.png /usr/share/icons/hicolor/${SIZE}x${SIZE}/apps/devo.png
+done
+update-desktop-database
