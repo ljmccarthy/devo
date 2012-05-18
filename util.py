@@ -107,7 +107,6 @@ def is_text_file(path):
 def clean_text(text):
     text = non_printable_re.sub("", text)
     lines = line_end_re.split(text)
-    print lines
     return "\n".join(lines)
 
 def shorten_text(text, max_length):
