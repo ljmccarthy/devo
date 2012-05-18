@@ -128,8 +128,8 @@ class FindReplaceDialog(wx.Dialog):
         wx.Dialog.__init__(self, editor, title=title)
         self.editor = editor
 
-        self.combo_find = wx.ComboBox(self, size=(300, -1))
-        self.combo_replace = wx.ComboBox(self, size=(300, -1))
+        self.combo_find = wx.ComboBox(self, size=(300, -1), style=wx.TE_PROCESS_ENTER)
+        self.combo_replace = wx.ComboBox(self, size=(300, -1), style=wx.TE_PROCESS_ENTER)
         grid = wx.FlexGridSizer(cols=2, vgap=5, hgap=5)
         grid.AddGrowableCol(1, 1)
         grid.Add(wx.StaticText(self, label="Find"), 0, wx.ALIGN_CENTRE_VERTICAL)
@@ -184,6 +184,7 @@ class FindReplaceDialog(wx.Dialog):
         self.combo_find.SetFocus()
         self.combo_find.SetMark(0, len(self.combo_find.GetValue()))
 
+        self.Bind(wx.EVT_TEXT_ENTER, self.OnFind)
         self.Bind(wx.EVT_BUTTON, self.OnGoToStart, btn_goto_start)
         self.Bind(wx.EVT_BUTTON, self.OnFind, id=wx.ID_FIND)
         self.Bind(wx.EVT_BUTTON, self.OnReplace, id=wx.ID_REPLACE)
