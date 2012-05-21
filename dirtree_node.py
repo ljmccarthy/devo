@@ -126,10 +126,14 @@ class FSNode(object):
 
     @coroutine
     def expand(self, tree, monitor, filter):
-        if self.state == NODE_UNPOPULATED:
+        if self.type == 'd' and self.state == NODE_UNPOPULATED:
             self.state = NODE_POPULATING
-            yield self._do_expand(tree, monitor, filter)
-            self.state = NODE_POPULATED
+            try:
+                yield self._do_expand(tree, monitor, filter)
+            except Exception:
+                self.state = NODE_UNPOPULATED
+            else:
+                self.state = NODE_POPULATED
 
     def collapse(self, tree, monitor):
         pass
