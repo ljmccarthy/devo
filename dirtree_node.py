@@ -1,6 +1,7 @@
 import collections
 import os, os.path
 import stat
+import traceback
 import wx
 
 import fileutil
@@ -132,6 +133,7 @@ class FSNode(object):
                 yield self._do_expand(tree, monitor, filter)
             except Exception:
                 self.state = NODE_UNPOPULATED
+                print traceback.format_exc()
             else:
                 self.state = NODE_POPULATED
 

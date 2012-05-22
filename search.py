@@ -72,9 +72,10 @@ class Search(object):
             self._search(*os.path.split(self.path))
         except SearchAborted:
             self.output.abort_find(self)
-        except Exception:
+        except Exception, e:
             self.output.end_find(self)
-            print traceback.format_exc()
+            if not isinstance(e, (OSError, IOError)):
+                print traceback.format_exc()
         else:
             self.output.end_find(self)
 
