@@ -18,7 +18,7 @@ class SearchDialog(wx.Dialog):
         style = wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
         wx.Dialog.__init__(self, parent, title="Search", style=style)
 
-        self.combo_find = wx.ComboBox(self, size=(300, -1))
+        self.combo_find = wx.ComboBox(self, size=(300, -1), style=wx.TE_PROCESS_ENTER)
         self.dir_picker = DirPicker(self, size=(300, -1), combo=True)
         self.check_case = wx.CheckBox(self, wx.ID_ANY, "&Case sensitive")
         self.check_regexp = wx.CheckBox(self, label="Regular e&xpression")
@@ -35,12 +35,12 @@ class SearchDialog(wx.Dialog):
         chksizer.Add(self.check_regexp, 0, wx.ALL, 2)
         grid.Add(chksizer)
 
-        btn_find = wx.Button(self, wx.ID_OK, label="&Search")
-        btn_find.SetDefault()
+        btn_search = wx.Button(self, wx.ID_OK, label="&Search")
+        btn_search.SetDefault()
         btn_cancel = wx.Button(self, wx.ID_CANCEL)
 
         btnsizer = wx.StdDialogButtonSizer()
-        btnsizer.AddButton(btn_find)
+        btnsizer.AddButton(btn_search)
         btnsizer.AddButton(btn_cancel)
         btnsizer.Realize()
 
@@ -64,6 +64,7 @@ class SearchDialog(wx.Dialog):
         self.combo_find.SetFocus()
         self.combo_find.SetMark(0, len(self.combo_find.GetValue()))
 
+        self.Bind(wx.EVT_TEXT_ENTER, self.OnFind)
         self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateFind, btn_find)
 
     @property
@@ -87,6 +88,9 @@ class SearchDialog(wx.Dialog):
             case = self.check_case.GetValue(), regexp = self.check_regexp.GetValue(),
             find = self.find, find_history = get_combo_history(self.combo_find),
             path = self.path, path_history = self.dir_picker.GetHistory())
+
+    def OnFind(self, evt):
+        self.EndModal(wx.ID_OK)
 
     def OnUpdateFind(self, evt):
         find = self.find
