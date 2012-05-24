@@ -65,7 +65,7 @@ class SearchDialog(wx.Dialog):
         self.combo_find.SetMark(0, len(self.combo_find.GetValue()))
 
         self.Bind(wx.EVT_TEXT_ENTER, self.OnFind)
-        self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateFind, btn_find)
+        self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateFind, btn_search)
 
     @property
     def find(self):
