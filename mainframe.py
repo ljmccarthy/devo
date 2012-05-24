@@ -752,10 +752,14 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     def OnOrganiseProjects(self, evt):
         pass
 
-    def ShowPane(self, window):
+    def ShowPane(self, window, title=None):
         pane = self.manager.GetPane(window)
+        if title is not None:
+            pane.Caption(title)
         if not pane.IsShown():
             pane.Show()
+            self.manager.Update()
+        elif title is not None:
             self.manager.Update()
 
     def GetCurrentSelection(self):
@@ -800,7 +804,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             if dlg.ShowModal() == wx.ID_OK:
                 self.search_details = dlg.GetDetails()
                 self.search.find(self.search_details, filter=self.filter)
-                self.ShowPane(self.search)
+                self.ShowPane(self.search,
+                    title = "Search for '%s' in %s" % (self.search_details.find, self.search_details.path))
         finally:
             dlg.Destroy()
 
