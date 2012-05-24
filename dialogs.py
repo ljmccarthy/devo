@@ -28,6 +28,10 @@ class Dialogs(object):
     def info(self, parent, message, caption=""):
         self.message_dialog(parent, message, caption, wx.OK | wx.ICON_INFORMATION)
 
+    def yes_no(self, parent, message, caption=""):
+        return self.message_dialog(parent, message, caption,
+            wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION) == wx.ID_YES
+
     def _get_file_dialog(self, parent, message, path, wildcard, context, style):
         if wx.Platform == "__WXMAC__":
             message = ""
@@ -77,28 +81,24 @@ class Dialogs(object):
             dlg.Destroy()
 
     def ask_overwrite(self, parent, path):
-        return self.message_dialog(parent, 
+        return self.yes_no(parent, 
             "A file named '%s' already exists. Overwrite?" % path,
-            "Confirm Overwrite",
-            wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION) == wx.ID_YES
+            "Confirm Overwrite")
 
     def ask_reload(self, parent, path):
-        return self.message_dialog(parent,
+        return self.yes_no(parent,
             "The file '%s' has been modified by another program. Do you want to reload?" % path,
-            "Modified File",
-            wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION) == wx.ID_YES
+            "Modified File")
 
     def ask_unload(self, parent, path):
-        return self.message_dialog(parent,
+        return not self.yes_no(parent,
             "The file '%s' has been deleted by another program. Do you want to keep the file open?" % path,
-            "Deleted File",
-            wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION) != wx.ID_YES
+            "Deleted File")
 
     def ask_open_binary(self, parent, path):
-        return self.message_dialog(parent,
+        return self.yes_no(parent,
             "The file '%s' is not a text file. Open anyway?" % path,
-            "Open Binary File",
-            wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION) == wx.ID_YES
+            "Open Binary File")
 
     def get_text_input(self, *args, **kwargs):
         from text_input_dialog import TextInputDialog
