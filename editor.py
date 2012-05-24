@@ -5,6 +5,7 @@ from dialogs import dialogs
 from fileutil import atomic_write_file, read_file, mkpath
 from signal_wx import Signal
 from styled_text_ctrl import StyledTextCtrl
+from util import clean_text
 
 def decode_text(text):
     try:
@@ -116,6 +117,7 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
         try:
             text = (yield async_call(read_file, path, "r"))
             text, self.file_encoding = decode_text(text)
+            text = clean_text(text)
 
             self.modified_externally = False
             self.SetReadOnly(False)
