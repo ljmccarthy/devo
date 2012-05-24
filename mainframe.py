@@ -492,12 +492,18 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                 yield self.SaveProject()
                 yield self.SaveSettings()
 
-    def _ShowLoadProjectError(self, exn, filename):
+    def _ShowLoadProjectError(self, exn, filename, ask_remove=True):
         self.Show()
         if isinstance(exn, IOError) and exn.errno == errno.ENOENT:
-            dialogs.error(self, "Project file not found:\n\n" + filename)
+            if ask_remove:
+                return dialogs.yes_no(self,
+                    "Project file not found:\n\n%s\n\nDo you want to remove this project from the project list?" % filename)
+            else:
+                dialogs.error(self, "Project file not found:\n\n%s" % filename)
+                return False
         else:
             dialogs.error(self, "Error loading project:\n\n%s" % traceback.format_exc())
+            return False
 
     @managed("cm")
     @coroutine
@@ -518,11 +524,13 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                 self.Show()
                 yield True
             except Exception, e:
-                self._ShowLoadProjectError(e, project_root)
                 if project_root in self.project_info:
-                    del self.project_info[project_root]
-                    yield self.SaveSettings()
-                    self.UpdateMenuBar()
+                    if self._ShowLoadProjectError(e, project_root):
+                        del self.project_info[project_root]
+                        yield self.SaveSettings()
+                        self.UpdateMenuBar()
+                else:
+                    self._ShowLoadProjectError(e, project_root, ask_remove=False)
                 yield False
             finally:
                 self.StartFileMonitor()
