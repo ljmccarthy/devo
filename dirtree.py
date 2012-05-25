@@ -385,7 +385,7 @@ class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
     @managed("cm")
     @coroutine
     def _SelectPath(self, path):
-        yield self.ExpandPath(path)
+        yield self.ExpandPath(os.path.dirname(path))
         self._SelectExpandedPath(self.GetRootItem(), path)
 
     @managed("cm")
