@@ -22,7 +22,7 @@ def atomic_write_file(path, data, mode="wb"):
     else:
         try:
             rename(temp, path)
-        except Exception, e:
+        except Exception:
             try:
                 os.remove(temp)
             except Exception:
