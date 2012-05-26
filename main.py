@@ -16,7 +16,7 @@ class DevoAppHandler(object):
         self.app = app
 
     @coroutine
-    def process_args(self, args):
+    def process_args(self, cwd, args):
         try:
             mainframe = self.app.mainframe
             if mainframe.IsIconized():
@@ -26,7 +26,7 @@ class DevoAppHandler(object):
             if args.project:
                 yield mainframe.OpenProject(args.project)
             for filename in args.filenames:
-                yield mainframe.OpenEditor(filename)
+                yield mainframe.OpenEditor(os.path.join(cwd, filename))
         except Exception:
             pass
         yield True
@@ -82,7 +82,7 @@ class DevoApp(wx.App):
                 instance = get_app_instance("devo")
                 if instance:
                     try:
-                        if instance.call("process_args", args.raw_args):
+                        if instance.call("process_args", os.getcwd(), args.raw_args):
                             return False
                     except Exception:
                         pass
