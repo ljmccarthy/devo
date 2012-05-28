@@ -67,6 +67,26 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
     def status_text(self):
         return "Line %d, Column %d" % (
             self.GetCurrentLine() + 1, self.GetColumn(self.GetCurrentPos()) + 1)
+            
+    @coroutine
+    def OnModifiedExternally(self):
+        if dialogs.ask_reload(self, os.path.basename(self.path)):
+            yield self.Reload()
+        else:
+            self.SetModified()
+
+    @coroutine
+    def OnUnloadedExternally(self):
+        if os.path.exists(self.path):
+            if dialogs.ask_reload(self, os.path.basename(self.path)):
+                yield self.Reload()                        
+            else:
+                self.SetModified()
+        else:
+            if dialogs.ask_unload(self, os.path.basename(self.path)):
+                yield self.env.close_view(self)
+            else:
+                self.SetModified()
 
     @property
     def status_text_path(self):
@@ -249,6 +269,7 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
         p = {
             "line"      : self.GetFirstVisibleLine(),
             "selection" : self.GetSelection(),
+            "view_type" : "editor",
         }
         if self.path:
             p["path"] = self.path
