@@ -983,7 +983,6 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                 self.editor_focus = focus
                 return
             focus = focus.Parent
-        self.editor_focus = None
 
     def OnMenuOpen(self, evt):
         self.menu_open = True
