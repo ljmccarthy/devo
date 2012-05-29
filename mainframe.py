@@ -844,7 +844,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         else:
             try:
                 self.terminal.run(cmdline, cwd=workdir)
-                self.ShowPane(self.terminal)
+                self.ShowPane(self.terminal, title=cmdline)
             except Exception, e:
                 dialogs.error(self, "Error executing command:\n\n%s" % e)
 

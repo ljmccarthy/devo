@@ -5,7 +5,7 @@ from dialogs import dialogs
 from shell import run_shell_command, kill_shell_process
 from styled_text_ctrl import MARKER_ERROR
 from thread_output_ctrl import ThreadOutputCtrl
-from util import get_text_extent, shorten_text
+from util import get_text_extent
 
 file_line_patterns = [
     re.compile(ur"^\s*File \"(?P<file>.*)\", line (?P<line>\d+)", re.UNICODE),
@@ -114,7 +114,7 @@ class TerminalCtrl(wx.Panel):
         self.thread.start()
 
         self.cmdline = cmdline
-        self.set_status(shorten_text(cmdline, 60) + "\nRunning (pid %d)" % self.process.pid)
+        self.set_status("Running (pid %d)" % self.process.pid)
         self.Clear()
         self.output.start()
 
@@ -142,8 +142,7 @@ class TerminalCtrl(wx.Panel):
                 pass
 
     def __thread_exit(self, process, rc):
-        self.set_status("%s\nProcess terminated%s" % (
-            shorten_text(self.cmdline, 60),
+        self.set_status("Process terminated%s" % (
             " with return code %d" % rc if rc is not None else ""))
         if self.process is process:
             self.thread = None
