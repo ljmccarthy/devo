@@ -985,9 +985,11 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             focus = focus.Parent
 
     def OnMenuOpen(self, evt):
+        evt.Skip()
         self.menu_open = True
 
     def OnMenuClose(self, evt):
+        evt.Skip()
         self.menu_open = False
 
     def OnFilesChanged(self, updated_paths, deleted_paths):
