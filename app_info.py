@@ -14,4 +14,4 @@ developer = "Developed by Luke McCarthy <luke@iogopro.co.uk>"
 
 company_name = "Iogopro Software"
 
-url = "https://github.com/shaurz/devo"
+url = "http://iogopro.com/devo"

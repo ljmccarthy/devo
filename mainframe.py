@@ -921,7 +921,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             self.OpenProject(self.projects_sorted[index][0])
 
     def OnReportBug(self, evt):
-        webbrowser.open_new_tab("https://github.com/shaurz/devo/issues/new")
+        webbrowser.open_new_tab("http://iogopro.com/devo/bugs")
 
     def OnAboutBox(self, evt):
         dlg = AboutDialog(self, self.env)
