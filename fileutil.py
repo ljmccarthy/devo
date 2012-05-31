@@ -53,15 +53,18 @@ def mkdir(path):
 def mkpath(path):
     dirpath = path
     parts = []
-    while True:
+    while dirpath != os.path.dirname(dirpath):
         try:
             os.mkdir(dirpath)
             break
         except OSError, e:
             if e.errno == errno.EEXIST:
                 break
-            parts.append(os.path.basename(dirpath))
-            dirpath = os.path.dirname(dirpath)
+            elif e.errno == errno.ENOENT or (sys.platform == "win32" and e.winerror == 3):
+                parts.append(os.path.basename(dirpath))
+                dirpath = os.path.dirname(dirpath)
+            else:
+                raise
     for part in reversed(parts):
         dirpath = os.path.join(dirpath, part)
         os.mkdir(dirpath)
