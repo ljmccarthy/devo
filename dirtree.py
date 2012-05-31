@@ -28,7 +28,10 @@ context_menu = Menu("", [
 def split_path(path, relative_to=""):
     path = os.path.normpath(path)
     if relative_to:
-        path = os.path.relpath(path, relative_to)
+        try:
+            path = os.path.relpath(path, relative_to)
+        except ValueError:
+            pass
     return path.strip(os.path.sep).split(os.path.sep)
 
 def make_top_level():
