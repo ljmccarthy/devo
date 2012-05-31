@@ -83,6 +83,10 @@ class AppEnv(object):
     def find_details(self, find_details):
         self._mainframe.find_details = find_details
 
+    @property
+    def project_root(self):
+        return self._mainframe.project_root
+
 MAX_RECENT_FILES = 20
 
 NB_STYLE = (aui.AUI_NB_CLOSE_ON_ALL_TABS  | aui.AUI_NB_TOP | aui.AUI_NB_TAB_SPLIT

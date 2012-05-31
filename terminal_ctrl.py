@@ -1,4 +1,4 @@
-import re, threading
+import os, re, threading
 import wx
 
 from dialogs import dialogs
@@ -18,6 +18,7 @@ class TerminalCtrl(wx.Panel):
 
         self.thread = None
         self.process = None
+        self.cwd = None
         self.output = ThreadOutputCtrl(self, env, auto_scroll=True)
 
         text_width, text_height = get_text_extent(self.GetFont(), "Copy to Editor")
@@ -82,7 +83,7 @@ class TerminalCtrl(wx.Panel):
         for pattern in file_line_patterns:
             m = pattern.match(s)
             if m:
-                path = m.group("file")
+                path = os.path.join(self.cwd or self.env.project_root, m.group("file"))
                 line = int(m.group("line"))
                 self.env.open_file(path, line, MARKER_ERROR)
                 self.output.SetHighlightedLine(highlight_line, MARKER_ERROR)
@@ -114,6 +115,7 @@ class TerminalCtrl(wx.Panel):
         self.thread.start()
 
         self.cmdline = cmdline
+        self.cwd = cwd
         self.set_status("Running (pid %d)" % self.process.pid)
         self.Clear()
         self.output.start()
