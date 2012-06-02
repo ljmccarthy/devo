@@ -1,5 +1,7 @@
 import sys
+import webbrowser
 import wx
+
 import app_info
 
 license = app_info.copyright + u"""
@@ -20,6 +22,14 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
 
+class HyperlinkCtrl(wx.HyperlinkCtrl):
+    def __init__(self, *args, **kwargs):
+        wx.HyperlinkCtrl.__init__(self, *args, **kwargs)
+        self.Bind(wx.EVT_HYPERLINK, self.__OnHyperlink)
+
+    def __OnHyperlink(self, evt):
+        webbrowser.open_new_tab(self.GetURL())
+
 class AboutDialog(wx.Dialog):
     def __init__(self, parent, env):
         wx.Dialog.__init__(self, parent, title="About " + app_info.name)
@@ -37,7 +47,7 @@ class AboutDialog(wx.Dialog):
         label_version = wx.StaticText(self, label="Version " + app_info.version_string)
 
         label_developer = wx.StaticText(self, label=app_info.developer)
-        link_website = wx.HyperlinkCtrl(self, wx.ID_ANY, label=app_info.url, url=app_info.url)
+        link_website = HyperlinkCtrl(self, wx.ID_ANY, label=app_info.url, url=app_info.url)
 
         btn_sizer = wx.BoxSizer(wx.HORIZONTAL)
         btn_license = wx.Button(self, label="License")
