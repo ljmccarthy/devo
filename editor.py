@@ -66,7 +66,7 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
     @property
     def status_text(self):
         return "Line %d, Column %d" % (
-            self.GetCurrentLine() + 1, self.GetColumn(self.GetCurrentPos()) + 1)
+            self.GetCurrentLine() + 1, self.GetColumn(self.GetCurrentPos()))
 
     @property
     def status_text_path(self):
