@@ -44,3 +44,4 @@ class ThreadOutputCtrl(StyledTextCtrl):
     def ClearAll(self):
         with self.ModifyReadOnly():
             StyledTextCtrl.ClearAll(self)
+            self.EmptyUndoBuffer()
