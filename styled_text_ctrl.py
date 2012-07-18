@@ -1,4 +1,4 @@
-import os.path
+import os.path, string
 from contextlib import contextmanager
 import wx, wx.stc
 
@@ -11,6 +11,8 @@ from util import clean_text
 
 MARKER_FIND = 0
 MARKER_ERROR = 1
+
+MOD_CONTROL = wx.MOD_CONTROL if wx.VERSION < (2,9) else wx.MOD_RAW_CONTROL
 
 class StyledTextCtrl(wx.stc.StyledTextCtrl):
     name = ""
@@ -29,7 +31,9 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
     def ShouldFilterKeyEvent(self, evt):
         key = evt.GetKeyCode()
         mod = evt.GetModifiers()
-        return (mod & ~(wx.MOD_ALT | wx.MOD_SHIFT)) != 0 or (wx.WXK_F1 <= key <= wx.WXK_F24)
+        return (mod & ~(wx.MOD_ALT | wx.MOD_SHIFT)) != 0 \
+            or ((mod & MOD_CONTROL) and unichr(key) not in string.ascii_letters) \
+            or (wx.WXK_F1 <= key <= wx.WXK_F24)
 
     def __OnKeyDown(self, evt):
         evt.Skip(not self.ShouldFilterKeyEvent(evt))
