@@ -213,6 +213,7 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
         dlg = GoToLineDialog(self, self.name)
         try:
             if dlg.ShowModal() == wx.ID_OK:
+                self.CentreLine(dlg.GetLineNumber())
                 self.GotoLine(dlg.GetLineNumber())
         finally:
             dlg.Destroy()
