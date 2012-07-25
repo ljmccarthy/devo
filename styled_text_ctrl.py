@@ -7,7 +7,7 @@ from find_replace_dialog import FindReplaceDetails, FindReplaceDialog
 from go_to_line_dialog import GoToLineDialog
 from menu_defs import edit_menu
 from syntax import syntax_from_filename, plain
-from util import clean_text
+from util import clean_text, clean_strip_text
 
 MARKER_FIND = 0
 MARKER_ERROR = 1
@@ -96,7 +96,7 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
         try:
             text_data = wx.TextDataObject()
             if wx.TheClipboard.GetData(text_data):
-                text = clean_text(text_data.GetText())
+                text = clean_strip_text(text_data.GetText())
                 self.ReplaceSelection(text)
         finally:
             wx.TheClipboard.Close()

@@ -104,10 +104,15 @@ def is_text_file(path):
         data = f.read(1024)
     return not ("\0" in data or count_non_printable(data) > len(data) // 6)
 
-def clean_text(text):
+def clear_text_lines(text):
     text = non_printable_re.sub("", text)
-    lines = line_end_re.split(text)
-    return "\n".join(line.rstrip() for line in lines)
+    return line_end_re.split(text)
+
+def clean_text(text):
+    return "\n".join(clear_text_lines(text))
+
+def clean_strip_text(text):
+    return "\n".join(line.rstrip() for line in clear_text_lines(text))
 
 def shorten_text(text, max_length):
     return text[:max_length - 2] + "..." if len(text) > max_length else text
