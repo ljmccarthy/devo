@@ -17,7 +17,7 @@ edit_menu = Menu("&Edit", [
     MenuItem(ID.FIND_PREV, "Find Pre&vious", "Shift+F3"),
     MenuItem(ID.GO_TO_LINE, "&Go To Line...", "Ctrl+G"),
     MenuSeparator,
-    MenuItem(ID.INDENT, "In&dent", "Ctrl+I"),
+    MenuItem(ID.INDENT, "&Indent", "Ctrl+I"),
     MenuItem(ID.UNINDENT, "Unin&dent", "Ctrl+U"),
     MenuSeparator,
     MenuItem(ID.COMMENT, "Comment", "Ctrl+R"),
