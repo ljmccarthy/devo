@@ -164,6 +164,7 @@ CreateProcess = CreateProcessProto(("CreateProcessW", windll.kernel32),
                                    CreateProcessFlags)
 CreateProcess.errcheck = ErrCheckCreateProcess
 
+SW_HIDE = 0
 CREATE_BREAKAWAY_FROM_JOB = 0x01000000
 CREATE_DEFAULT_ERROR_MODE = 0x04000000
 CREATE_NEW_CONSOLE = 0x00000010

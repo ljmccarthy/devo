@@ -9,6 +9,9 @@
 # <benjamin@smedbergs.us> are Copyright (c) 2006 by the Mozilla Foundation
 # <http://www.mozilla.org/>
 #
+# Additions and modifications written by Luke McCarthy <luke@iogopro.co.uk>
+# are Copyright (c) 2012 by Luke McCarthy
+#
 # By obtaining, using, and/or copying this software and/or its
 # associated documentation, you agree that you have read, understood,
 # and will comply with the following terms and conditions:
@@ -46,6 +49,7 @@ Python 2.5+ or available from http://python.net/crew/theller/ctypes/
 import subprocess
 import sys
 import os
+import signal
 import time
 import types
 
@@ -67,8 +71,6 @@ mswindows = (sys.platform == "win32")
 
 if mswindows:
     import winprocess
-else:
-    import signal
 
 def call(*args, **kwargs):
     waitargs = {}
@@ -164,20 +166,27 @@ class Popen(subprocess.Popen):
             if errwrite is not None:
                 errwrite.Close()
 
-    def kill(self, group=True):
-        """Kill the process. If group=True, all sub-processes will also be killed."""
+    def send_signal(self, sig, group=True):
         if mswindows:
             if group:
-                winprocess.TerminateJobObject(self._job, 127)
+                winprocess.TerminateJobObject(self._job, sig)
             else:
-                winprocess.TerminateProcess(self._handle, 127)
-            self.returncode = 127    
+                winprocess.TerminateProcess(self._handle, sig)
         else:
             if group:
-                os.killpg(self.pid, signal.SIGKILL)
+                os.killpg(self.pid, sig)
             else:
-                os.kill(self.pid, signal.SIGKILL)
-            self.returncode = -9
+                os.kill(self.pid, sig)
+
+    def kill(self, group=True):
+        """Kill the process. If group=True, all sub-processes will also be killed."""
+        sig = signal.CTRL_BREAK_EVENT if mswindows else signal.SIGKILL
+        self.send_signal(sig, group)
+
+    def terminate(self, group=True):
+        """Terminate the process. If group=True, all sub-processes will also be killed."""
+        sig = signal.CTRL_C_EVENT if mswindows else signal.SIGTERM
+        self.send_signal(sig, group)
 
     def wait(self, timeout=-1, group=True):
         """Wait for the process to terminate. Returns returncode attribute.

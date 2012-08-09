@@ -2,7 +2,7 @@ import os, re, threading
 import wx
 
 from dialogs import dialogs
-from shell import run_shell_command, kill_shell_process
+from shell import run_shell_command
 from styled_text_ctrl import MARKER_ERROR
 from thread_output_ctrl import ThreadOutputCtrl
 from util import get_text_extent
@@ -122,11 +122,11 @@ class TerminalCtrl(wx.Panel):
 
     def stop(self):
         if self.process:
-            kill_shell_process(self.process)
+            self.process.terminate()
 
     def kill(self):
         if self.process:
-            kill_shell_process(self.process, force=True)
+            self.process.kill()
 
     def __thread(self, process):
         rc = None

@@ -1,4 +1,5 @@
 import sys, os, subprocess, signal
+from killableprocess import Popen
 
 remove_vars = (
     "PYTHONHOME", "PYTHONPATH", "VERSIONER_PYTHON_PREFER_32_BIT",
@@ -22,27 +23,18 @@ def make_environment(env=None, cwd=None):
     else:
         try:
             env["PWD"] = os.path.realpath(cwd).encode(sys.getfilesystemencoding())
-        except LookupError:
+        except (LookupError, UnicodeEncodeError):
             env["PWD"] = os.path.realpath(cwd).encode("utf-8")
 
     return env
 
-setsid = None
-setsid = getattr(os, "setsid", None)
-if not setsid:
-    setsid = getattr(os, "setpgrp", None)
-
 def run_shell_command(cmdline, pipe_output=True, env=None, cwd=None, **kwargs):
     if sys.platform == "win32":
         args = cmdline
-        creationflags = subprocess.CREATE_NEW_PROCESS_GROUP
-        preexec_fn = None
     else:
         args = [os.environ.get("SHELL", "/bin/sh")]
-        creationflags = 0
-        preexec_fn = setsid
 
-    process = subprocess.Popen(args,
+    process = Popen(args,
         stdin = subprocess.PIPE if sys.platform != "win32" else None,
         stdout = subprocess.PIPE if pipe_output else None,
         stderr = subprocess.STDOUT if pipe_output else None,
@@ -51,8 +43,6 @@ def run_shell_command(cmdline, pipe_output=True, env=None, cwd=None, **kwargs):
         shell = (sys.platform == "win32"),
         cwd = cwd,
         env = make_environment(env, cwd),
-        preexec_fn = preexec_fn,
-        creationflags = creationflags,
         **kwargs)
 
     if sys.platform != "win32":
@@ -64,16 +54,3 @@ def run_shell_command(cmdline, pipe_output=True, env=None, cwd=None, **kwargs):
         process.stdin.close()
 
     return process
-
-def kill_shell_process(process, force=False):
-    if sys.platform == "win32":
-        signum = signal.CTRL_BREAK_EVENT
-    else:
-        signum = signal.SIGKILL if force else signal.SIGTERM
-    try:
-        if setsid:
-            os.killpg(os.getpgid(process.pid), signum)
-        else:
-            os.kill(process.pid, signum)
-    except OSError:
-        pass
