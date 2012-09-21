@@ -125,11 +125,11 @@ class FindReplaceDialog(wx.Dialog):
         if filename:
             title += " [%s]" % filename
 
-        wx.Dialog.__init__(self, editor, title=title)
+        wx.Dialog.__init__(self, editor, title=title, style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
         self.editor = editor
 
-        self.combo_find = wx.ComboBox(self, size=(300, -1), style=wx.TE_PROCESS_ENTER)
-        self.combo_replace = wx.ComboBox(self, size=(300, -1), style=wx.TE_PROCESS_ENTER)
+        self.combo_find = wx.ComboBox(self, size=(300, -1))
+        self.combo_replace = wx.ComboBox(self, size=(300, -1))
         grid = wx.FlexGridSizer(cols=2, vgap=5, hgap=5)
         grid.AddGrowableCol(1, 1)
         grid.Add(wx.StaticText(self, label="Find"), 0, wx.ALIGN_CENTRE_VERTICAL)
@@ -165,6 +165,8 @@ class FindReplaceDialog(wx.Dialog):
         sizer.Add(btnsizer, 0, wx.EXPAND | wx.ALL, spacer)
         self.SetSizer(sizer)
         self.Fit()
+        self.SetMinSize(self.Size)
+        self.SetMaxSize((-1, self.Size.height))
 
         # Position in bottom-right corner
         pos = editor.Parent.ClientToScreen(editor.Position)
@@ -184,7 +186,8 @@ class FindReplaceDialog(wx.Dialog):
         self.combo_find.SetFocus()
         self.combo_find.SetMark(0, len(self.combo_find.GetValue()))
 
-        self.Bind(wx.EVT_TEXT_ENTER, self.OnFind)
+        self.combo_find.Bind(wx.EVT_KEY_DOWN, self.OnComboKeyDown)
+        self.combo_replace.Bind(wx.EVT_KEY_DOWN, self.OnComboKeyDown)
         self.Bind(wx.EVT_BUTTON, self.OnGoToStart, btn_goto_start)
         self.Bind(wx.EVT_BUTTON, self.OnFind, id=wx.ID_FIND)
         self.Bind(wx.EVT_BUTTON, self.OnReplace, id=wx.ID_REPLACE)
@@ -196,6 +199,12 @@ class FindReplaceDialog(wx.Dialog):
 
     def OnGoToStart(self, evt):
         self.editor.SetSelection(0, 0)
+
+    def OnComboKeyDown(self, evt):
+        if evt.KeyCode in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER):
+            self.OnFind(None)
+        else:
+            evt.Skip()
 
     def OnFind(self, evt):
         details = self.GetFindDetails(True)
