@@ -199,6 +199,7 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
             self.env.find_details = dlg.GetFindDetails()
         finally:
             dlg.Destroy()
+            self.SetFocus()
 
     def FindNext(self):
         if self.CanFindNext():
