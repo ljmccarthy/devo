@@ -18,7 +18,7 @@ class SearchDialog(wx.Dialog):
         style = wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
         wx.Dialog.__init__(self, parent, title="Search", style=style)
 
-        self.combo_find = wx.ComboBox(self, size=(300, -1), style=wx.TE_PROCESS_ENTER)
+        self.combo_find = wx.ComboBox(self, size=(300, -1))
         self.dir_picker = DirPicker(self, size=(300, -1), combo=True)
         self.check_case = wx.CheckBox(self, wx.ID_ANY, "&Case sensitive")
         self.check_regexp = wx.CheckBox(self, label="Regular e&xpression")
@@ -64,6 +64,7 @@ class SearchDialog(wx.Dialog):
         self.combo_find.SetFocus()
         self.combo_find.SetMark(0, len(self.combo_find.GetValue()))
 
+        self.combo_find.Bind(wx.EVT_KEY_DOWN, self.OnComboKeyDown)
         self.Bind(wx.EVT_TEXT_ENTER, self.OnFind)
         self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateFind, btn_search)
 
@@ -88,6 +89,12 @@ class SearchDialog(wx.Dialog):
             case = self.check_case.GetValue(), regexp = self.check_regexp.GetValue(),
             find = self.find, find_history = get_combo_history(self.combo_find),
             path = self.path, path_history = self.dir_picker.GetHistory())
+
+    def OnComboKeyDown(self, evt):
+        if evt.KeyCode in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER):
+            self.OnFind(None)
+        else:
+            evt.Skip()
 
     def OnFind(self, evt):
         self.EndModal(wx.ID_OK)
