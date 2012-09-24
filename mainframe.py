@@ -54,9 +54,11 @@ class AppEnv(object):
     def set_highlighted_file(self, path, line, marker_type):
         self._mainframe.SetHighlightedFile(path, line, marker_type)
 
-    def get_file_to_save(self):
-        if self._mainframe.project_root:
-            return dialogs.get_file_to_save(self._mainframe, path=self._mainframe.project_root)
+    def get_file_to_save(self, path=""):
+        if not path:
+            path = self._mainframe.project_root
+        if path:
+            return dialogs.get_file_to_save(self._mainframe, path=path)
         else:
             return dialogs.get_file_to_save(self._mainframe, context="open")
 

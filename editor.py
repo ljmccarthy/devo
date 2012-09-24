@@ -166,7 +166,7 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
 
     @coroutine
     def SaveAs(self):
-        path = self.env.get_file_to_save()
+        path = self.env.get_file_to_save(path=os.path.dirname(self.path))
         if path:
             path = os.path.realpath(path)
             try:
