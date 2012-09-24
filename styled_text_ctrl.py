@@ -217,6 +217,7 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
                 self.GotoLine(dlg.GetLineNumber())
         finally:
             dlg.Destroy()
+            self.SetFocus()
 
     @contextmanager
     def ModifyReadOnly(self):
