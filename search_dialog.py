@@ -18,7 +18,8 @@ class SearchDialog(wx.Dialog):
         style = wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
         wx.Dialog.__init__(self, parent, title="Search", style=style)
 
-        self.combo_find = wx.ComboBox(self, size=(300, -1))
+        combo_style = wx.TE_PROCESS_ENTER if wx.Platform == "__WXMAC__" else 0
+        self.combo_find = wx.ComboBox(self, size=(300, -1), style=combo_style)
         self.dir_picker = DirPicker(self, size=(300, -1), combo=True)
         self.check_case = wx.CheckBox(self, wx.ID_ANY, "&Case sensitive")
         self.check_regexp = wx.CheckBox(self, label="Regular e&xpression")
