@@ -16,23 +16,23 @@ class DevoAppHandler(object):
         self.app = app
 
     @coroutine
-    def process_args(self, cwd, args):
+    def process_args(self, args, cwd):
         try:
             mainframe = self.app.mainframe
             if mainframe.IsIconized():
                 mainframe.Iconize(False)
             mainframe.Raise()
-            args = DevoArgs(args)
+            args = DevoArgs(args, cwd)
             if args.project:
                 yield mainframe.OpenProject(args.project)
             for filename in args.filenames:
-                yield mainframe.OpenEditor(os.path.join(cwd, filename))
+                yield mainframe.OpenEditor(filename)
         except Exception:
             pass
         yield True
 
 class DevoArgs(object):
-    def __init__(self, args):
+    def __init__(self, args, cwd):
         self.raw_args = args
 
         opts, args = getopt.gnu_getopt(args, "", ["project=", "new-instance"])
@@ -45,7 +45,7 @@ class DevoArgs(object):
             elif opt == "--new-instance":
                 new_instance = True
 
-        self.filenames = args
+        self.filenames = [os.path.join(cwd, filename) for filename in args]
         self.project = project
         self.new_instance = new_instance
 
@@ -82,7 +82,7 @@ class DevoApp(wx.App):
                 instance = get_app_instance("devo")
                 if instance:
                     try:
-                        if instance.call("process_args", os.getcwd(), args.raw_args):
+                        if instance.call("process_args", args.raw_args, os.getcwd()):
                             return False
                     except Exception:
                         pass
@@ -130,7 +130,7 @@ def main():
         args = sys.argv[1:]
 
     try:
-        args = DevoArgs(args)
+        args = DevoArgs(args, os.getcwd())
     except getopt.GetoptError, e:
         sys.stderr.write("devo: error: %s\n" % e)
         sys.exit(1)
