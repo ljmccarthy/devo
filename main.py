@@ -115,7 +115,7 @@ class DevoApp(wx.App):
 
     def OnEndSession(self, evt):
         if self.mainframe:
-            self.mainframe.DoClose()
+            self.mainframe.OnClose(evt)
 
     def Shutdown(self):
         if self.listener:

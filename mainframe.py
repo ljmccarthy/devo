@@ -141,6 +141,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.editor_focus = None
         self.editor_highlight = [None, None]
         self.menu_open = False
+        self.closing = False
+        self.closed = False
 
         agwFlags = aui.AUI_MGR_TRANSPARENT_HINT \
                  | aui.AUI_MGR_HINT_FADE \
@@ -287,19 +289,27 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                 old_menubar.Destroy()
 
     def OnClose(self, evt):
-        self.DoClose()
+        if not self.closed:
+            evt.Veto()
+            if not self.closing:
+                self.DoClose()
 
     @managed("cm")
     @coroutine
     def DoClose(self):
-        if (yield self.SaveProject()):
-            self.fmon.stop()
-            if (yield self.SaveSettings()):
-                self.Hide()
-                wx.CallAfter(self._DoShutdown)
-                return
-        self.Show()
-        self.fmon.start(update_paths=False)
+        self.closing = True
+        try:
+            if (yield self.SaveProject()):
+                self.fmon.stop()
+                if (yield self.SaveSettings()):
+                    self.Hide()
+                    self.closed = True
+                    wx.CallAfter(self._DoShutdown)
+                    return
+            self.Show()
+            self.fmon.start(update_paths=False)
+        finally:
+            self.closing = False
 
     def _DoShutdown(self):
         self.fmon.stop()
