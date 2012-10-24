@@ -290,7 +290,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
 
     def OnClose(self, evt):
         if not self.closed:
-            evt.Veto()
+            if hasattr(evt, "Veto"):
+                evt.Veto()
             if not self.closing:
                 self.DoClose()
 
