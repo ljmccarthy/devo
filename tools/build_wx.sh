@@ -1,5 +1,9 @@
 #!/bin/bash
-WXVER=2.8.12.1
+WXVER=2.9.4.0
+BUILD_DIR=/tmp/wxbuild
+rm -rf "${BUILD_DIR}/wxPython-src-${WXVER}" "${BUILD_DIR}/wx"
+mkdir -p "${BUILD_DIR}"
+cd "${BUILD_DIR}"
 set -o errexit
 if [ ! -e wxPython-src-${WXVER}.tar.bz2 ]; then
     wget http://downloads.sourceforge.net/project/wxpython/wxPython/${WXVER}/wxPython-src-${WXVER}.tar.bz2
@@ -9,9 +13,9 @@ tar xvjf wxPython-src-${WXVER}.tar.bz2
 cd wxPython-src-${WXVER}
 export WXWIN="$PWD"
 cd build
-"$WXWIN/configure" \
+"${WXWIN}/configure" \
     --disable-rpath \
-    --enable-debug=0 \
+    --enable-debug=no \
     --enable-optimise \
     --enable-monolithic \
     --enable-unicode \
@@ -22,19 +26,17 @@ cd build
     --with-libtiff=builtin \
     --with-zlib=no \
     --with-regex=no
-make
-make -C contrib/src/stc
-make -C contrib/src/gizmos
-cd "$WXWIN/wxPython"
+make -j 8
+cd "${WXWIN}/wxPython"
 export LDFLAGS=-Wl,-rpath=\\\$ORIGIN
 python2.7 setup.py build_ext --inplace \
     UNICODE=1 \
     MONOLITHIC=1 \
-    WX_CONFIG="$WXWIN/build/wx-config" \
+    WX_CONFIG="${WXWIN}/build/wx-config" \
     BUILD_GLCANVAS=0
-cd "$WXWIN"
+cd "${WXWIN}"
 mv wxPython/wx ../
-cp build/lib/libwx_gtk2u*-2.8.so.0 ../wx/
+cp build/lib/libwx_gtk2u*.so.4 ../wx/
 cd ..
 strip -s -R .comment wx/*.so*
 rm -rf wxPython-src-${WXVER}
