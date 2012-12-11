@@ -4,6 +4,15 @@ from dialogs import dialogs
 from dialog_util import bind_escape_key
 from util import get_combo_history
 
+def _get_selected_or_target_range(editor, target=False):
+    if target:
+        return editor.GetTargetStart(), editor.GetTargetEnd()
+    else:
+        return editor.GetSelection()
+
+def _get_selected_or_target_text(editor, target=False):
+    return editor.GetTextRange(*_get_selected_or_target_range(editor, target))
+
 class FindReplaceDetails(object):
     def __init__(self, find="", replace="", case=False, reverse=False, regexp=False,
                  find_history=(), replace_history=()):
@@ -65,18 +74,21 @@ class FindReplaceDetails(object):
 
             yield init_pos, editor.GetTextRangeRaw(init_pos, line_end)
 
-    def _ReplaceSelected(self, editor):
-        text = editor.GetSelectedText()
+    def _Replace(self, editor, target=False):
+        text = _get_selected_or_target_text(editor, target)
         if text:
             if self.regexp:
                 try:
-                    repl = self.rx_find.sub(self.replace, editor.GetSelectedText(), 1)
-                    editor.ReplaceSelection(repl)
+                    repl = self.rx_find.sub(self.replace, text, 1)
                 except re.error, e:
                     dialogs.error(editor, "Replace error:\n\n" + str(e).capitalize())
                     return False
             else:
-                editor.ReplaceSelection(self.replace)
+                repl = self.replace
+            if target:
+                editor.ReplaceTarget(repl)
+            else:
+                editor.ReplaceSelection(repl)
 
     def Find(self, editor, wrap=True, reverse=False):
         reverse = reverse ^ self.reverse
@@ -92,13 +104,14 @@ class FindReplaceDetails(object):
                     m = m2
             if m and m.start() != m.end():
                 editor.CentreLine(editor.LineFromPosition(pos))
+                editor.GotoPos(pos + m.start())
                 editor.SetSelection(pos + m.start(), pos + m.end())
                 return True
         return False
 
     def Replace(self, editor):
         if self.rx_find.match(editor.GetSelectedText()):
-            self._ReplaceSelected(editor)
+            self._Replace(editor)
         return self.Find(editor)
 
     def ReplaceAll(self, editor):
@@ -111,8 +124,9 @@ class FindReplaceDetails(object):
                 for pos, line in self._IterFindLines(editor, wrap=False):
                     m = self.rx_find.search(line)
                     if m and m.start() != m.end():
-                        editor.SetSelection(pos + m.start(), pos + m.end())
-                        self._ReplaceSelected(editor)
+                        editor.SetTargetStart(pos + m.start())
+                        editor.SetTargetEnd(pos + m.end())
+                        self._Replace(editor, target=True)
                         count += 1
                         break
             return count
