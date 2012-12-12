@@ -15,3 +15,4 @@ git clone git://github.com/shaurz/devo.git
 cd /tmp
 tar czf "$DEST_DIR/devo-$VERSION.tar.gz" devo-$VERSION
 rm -rf devo-$VERSION
+md5sum "$DEST_DIR/devo-$VERSION.tar.gz"

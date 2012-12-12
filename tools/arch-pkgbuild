@@ -22,11 +22,11 @@ noextract=()
 source=(http://iogopro.com/$pkgname/releases/$pkgname-$pkgver.tar.gz
         devo.install)
 md5sums=(
-         46a0eb07686a7d96206499e94c0452ba) #generate with 'makepkg -g'
+         46a0eb07686a7d96206499e94c0452ba)
 
 build() {
     cd "$srcdir/$pkgname-$pkgver/devo"
-    ./tools/build-wx
+    sh tools/build-wx
     mv /tmp/wxbuild/wx .
     rm -rf /tmp/wxbuild
     python2 build.py
