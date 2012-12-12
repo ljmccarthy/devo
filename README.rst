@@ -23,13 +23,13 @@ Key Features
 Known Bugs
 ----------
 
-* The 'Kill' and 'Terminate' buttons in the terminal pane don't work on Windows.
+* Occasionally files may disappear from the tree view in Windows when running CVS update.
 
 Known Limitations
 -----------------
 
-* Syntax colouring is only supported for Python and C/C++ at the moment. More
-  languages will be added in the future.
+* Syntax colouring is only supported for Python, C, C++ and Java.
+  More languages will be added in the future.
 
 Bug Reporting
 -------------
