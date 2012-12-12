@@ -104,6 +104,7 @@ class FindReplaceDetails(object):
                     m = m2
             if m and m.start() != m.end():
                 editor.CentreLine(editor.LineFromPosition(pos))
+                editor.GotoPos(pos + m.end())
                 editor.GotoPos(pos + m.start())
                 editor.SetSelection(pos + m.start(), pos + m.end())
                 return True
