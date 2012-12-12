@@ -1,0 +1,17 @@
+#!/bin/bash
+
+if [ -z "$1" ]; then
+    echo "usage: $0 VERSION"
+    exit 1
+fi
+
+VERSION=$1
+DEST_DIR="$PWD"
+
+mkdir -p /tmp/devo-$VERSION
+cd /tmp/devo-$VERSION
+git clone git://github.com/shaurz/fsmonitor.git
+git clone git://github.com/shaurz/devo.git
+cd /tmp
+tar czf "$DEST_DIR/devo-$VERSION.tar.gz" devo-$VERSION
+rm -rf devo-$VERSION
