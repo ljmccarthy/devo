@@ -1,6 +1,10 @@
 # coding=UTF8
 
+import datetime
+
 name = "Devo"
+
+release_date = datetime.date(2012, 12, 13)
 
 version = (1, 0, 0)
 
@@ -10,7 +14,7 @@ identifier = "com.iogopro.devo"
 
 copyright = u"Copyright © 2010-2012 Luke McCarthy"
 
-developer = "Developed by Luke McCarthy <luke@iogopro.co.uk>"
+developer = "Developer: Luke McCarthy <luke@iogopro.co.uk>"
 
 company_name = "Iogopro Software"
 

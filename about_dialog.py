@@ -1,8 +1,8 @@
 import sys
-import webbrowser
 import wx
 
 import app_info
+from hyper_link_ctrl import HyperLinkCtrl
 
 license = app_info.copyright + u"""
 
@@ -22,14 +22,6 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
 
-class HyperlinkCtrl(wx.HyperlinkCtrl):
-    def __init__(self, *args, **kwargs):
-        wx.HyperlinkCtrl.__init__(self, *args, **kwargs)
-        self.Bind(wx.EVT_HYPERLINK, self.__OnHyperlink)
-
-    def __OnHyperlink(self, evt):
-        webbrowser.open_new_tab(self.GetURL())
-
 class AboutDialog(wx.Dialog):
     def __init__(self, parent, env):
         wx.Dialog.__init__(self, parent, title="About " + app_info.name)
@@ -38,16 +30,18 @@ class AboutDialog(wx.Dialog):
         logo_font_size = 25 if sys.platform == "__WXMAC__" else 20
         subtitle_font_size = 24 if sys.platform == "__WXMAC__" else 10
 
+        version_text = "Version %s (Released %s)" % (app_info.version_string, app_info.release_date.strftime("%Y-%m-%d"))
+
         fontsize = self.GetFont().PointSize
         label_devo = wx.StaticText(self, label=app_info.name)
         label_devo.SetForegroundColour(wx.RED)
         label_devo.SetFont(wx.Font(fontsize * 2, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
         label_devolved = wx.StaticText(self, label="      Text Editing Devolved")
         label_devolved.SetFont(wx.Font(fontsize, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_ITALIC, wx.FONTWEIGHT_BOLD))
-        label_version = wx.StaticText(self, label="Version " + app_info.version_string)
+        label_version = wx.StaticText(self, label=version_text)
 
         label_developer = wx.StaticText(self, label=app_info.developer)
-        link_website = HyperlinkCtrl(self, wx.ID_ANY, label=app_info.url, url=app_info.url)
+        link_website = HyperLinkCtrl(self, wx.ID_ANY, label=app_info.url, url=app_info.url)
 
         btn_sizer = wx.BoxSizer(wx.HORIZONTAL)
         btn_license = wx.Button(self, label="License")
