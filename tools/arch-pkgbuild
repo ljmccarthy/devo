@@ -19,7 +19,7 @@ options=(!strip)
 install=devo.install
 changelog=
 noextract=()
-source=(http://iogopro.com/$pkgname/releases/$pkgname-$pkgver.tar.gz
+source=(http://iogopro.com/devo/releases/$pkgname-$pkgver.tar.gz
         devo.install)
 md5sums=(
          46a0eb07686a7d96206499e94c0452ba)
