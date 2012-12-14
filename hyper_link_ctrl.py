@@ -7,17 +7,26 @@ class HyperLinkCtrl(wx.Panel):
         self.url = url
         self.normal_cursor = self.GetCursor()
 
-        self.label = wx.StaticText(self, label=url)
+        if wx.Platform == "__WXMSW__":
+            self.SetCursor(wx.StockCursor(wx.CURSOR_HAND))
+
+        self.label = wx.StaticText(self, label=label)
         self.label.SetForegroundColour(wx.BLUE)
-        fontsize = self.label.GetFont().PointSize
-        self.label.SetFont(wx.Font(fontsize, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, underline=True))
+        font = self.GetFont()
+        font.SetUnderlined(True)
+        self.label.SetFont(font)
 
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.label, 1, wx.EXPAND)
         self.SetSizer(sizer)
 
-        self.Bind(wx.EVT_ENTER_WINDOW, self.__OnEnterWindow)
-        self.Bind(wx.EVT_LEAVE_WINDOW, self.__OnLeaveWindow)
+        if wx.Platform != "__WXMSW__":
+            self.Bind(wx.EVT_ENTER_WINDOW, self.__OnEnterWindow)
+            self.Bind(wx.EVT_LEAVE_WINDOW, self.__OnLeaveWindow)
+        else:
+            self.label.Bind(wx.EVT_ENTER_WINDOW, self.__OnEnterWindow)
+            self.label.Bind(wx.EVT_LEAVE_WINDOW, self.__OnLeaveWindow)
+
         self.label.Bind(wx.EVT_LEFT_UP, self.__OnLeftUp)
 
     def __OnEnterWindow(self, evt):
