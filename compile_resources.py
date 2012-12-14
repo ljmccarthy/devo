@@ -1,5 +1,4 @@
 import sys, os, os.path
-from fileutil import read_file
 
 def compile_resource_dict(resdir):
     resdict = {}
@@ -8,7 +7,8 @@ def compile_resource_dict(resdir):
             filepath = os.path.join(dirpath, filename)
             respath = os.path.relpath(filepath, resdir)
             sys.stdout.write("Compiling resource: %r\n" % respath)
-            resdict[respath] = read_file(filepath)
+            with open(filepath, "rb") as f:
+                resdict[respath] = f.read()
     return resdict
 
 def compile_resources(resdir="res", resfile="res_compiled.py"):
