@@ -1,5 +1,4 @@
 import sys, os, errno, shutil
-import wx
 from async import async_call, coroutine
 from dialogs import dialogs
 from fileutil_common import *
