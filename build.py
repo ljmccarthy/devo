@@ -14,7 +14,8 @@ project_syspath = [
 target_name = "devo"
 main_script = "main.py"
 dist_dir = "dist"
-target_dir = os.path.join(dist_dir, sys.platform)
+platform_dir = os.path.join(dist_dir, sys.platform)
+target_dir = os.path.join(platform_dir, "%s-%s" % (target_name, app_info.version_string))
 
 includes = []
 
@@ -98,6 +99,11 @@ def build_py2exe():
         windows = [target],
     )
 
+    run(os.environ["PROGRAMFILES"] + r"\7-Zip\7z.exe", "a", "-tzip", "-y",
+        "%s-%s.zip" % (target_name, app_info.version_string),
+        "%s-%s" % (target_name, app_info.version_string),
+        cwd = platform_dir)
+
 def build_py2app():
     from distutils.core import setup
     import py2app
@@ -132,7 +138,7 @@ def build_py2app():
     )
 
     run("hdiutil", "create", "-srcfolder", target_dir, "-volname", app_info.name,
-        "-format", "UDBZ", "-ov", os.path.join(dist_dir, app_info.name + ".dmg"))
+        "-format", "UDBZ", "-ov", os.path.join(dist_dir, "%s-%s.dmg" % (target_name, app_info.version_string)))
 
 def build_cxfreeze():
     import cx_Freeze
@@ -151,6 +157,11 @@ def build_cxfreeze():
         compress = True,
         silent = False
     ).Freeze()
+
+    run("tar", "cvjf",
+        "%s-%s.tar.bz2" % (target_name, app_info.version_string),
+        "%s-%s" % (target_name, app_info.version_string),
+        cwd = platform_dir)
 
 def build():
     os.chdir(project_root)

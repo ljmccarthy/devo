@@ -36,7 +36,7 @@ package() {
     cd "$srcdir/$pkgname-$pkgver/devo"
     install -d -m 755 "$pkgdir/usr/bin"
     install -d -m 755 "$pkgdir/usr/lib"
-    mv dist/linux2 "$pkgdir/usr/lib/$pkgname"
+    mv dist/linux2/$pkgname-$pkgver "$pkgdir/usr/lib/$pkgname"
     ln -s /usr/lib/$pkgname/devo "$pkgdir/usr/bin/$pkgname"
 
     install -D -m 644 icons/devo.desktop "$pkgdir/usr/share/applications/devo.desktop"
