@@ -245,10 +245,31 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
             self.env.open_file(filename)
         return True
 
+    @coroutine
+    def OnModifiedExternally(self):
+        if dialogs.ask_reload(self, os.path.basename(self.path)):
+            yield self.Reload()
+        else:
+            self.SetModified()
+
+    @coroutine
+    def OnUnloadedExternally(self):
+        if os.path.exists(self.path):
+            if dialogs.ask_reload(self, os.path.basename(self.path)):
+                yield self.Reload()
+            else:
+                self.SetModified()
+        else:
+            if dialogs.ask_unload(self, os.path.basename(self.path)):
+                yield self.env.close_view(self)
+            else:
+                self.SetModified()
+
     def SavePerspective(self):
         p = {
             "line"      : self.GetFirstVisibleLine(),
             "selection" : self.GetSelection(),
+            "view_type" : "editor",
         }
         if self.path:
             p["path"] = self.path

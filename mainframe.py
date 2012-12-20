@@ -17,6 +17,7 @@ from lru import LruQueue
 from menu import MenuItem
 from menu_defs import menubar
 from new_project_dialog import NewProjectDialog
+from preview import Preview
 from resources import load_icon_bundle
 from search_ctrl import SearchCtrl
 from search_dialog import SearchDetails, SearchDialog
@@ -41,6 +42,9 @@ class AppEnv(object):
 
     def open_text(self, text):
         return self._mainframe.OpenEditorWithText(text)
+
+    def open_preview(self, path):
+        self._mainframe.OpenPreview(path)
 
     def open_static_text(self, title, text):
         return self._mainframe.OpenStaticEditor(title, text)
@@ -76,6 +80,9 @@ class AppEnv(object):
 
     def updating_path(self, path):
         return self._mainframe.fmon.updating_path(path)
+
+    def close_view(self, view):
+        self._mainframe.ClosePage(view)
 
     @property
     def find_details(self):
@@ -248,9 +255,21 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_ProjectIsOpen, id=ID.EDIT_PROJECT)
 
     @property
-    def editors(self):
+    def views(self):
         for i in xrange(self.notebook.GetPageCount()):
             yield self.notebook.GetPage(i)
+
+    @property
+    def editors(self):
+        for x in self.views:
+            if isinstance(x, Editor):
+                yield x
+
+    @property
+    def previews(self):
+        for x in self.views:
+            if isinstance(x, Preview):
+                yield x
 
     @property
     def projects_sorted(self):
@@ -385,13 +404,13 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         session["dirtree"] = self.tree.SavePerspective()
         if self.notebook.GetPageCount() > 0:
             session["notebook"] = self.notebook.SavePerspective()
-            session["editors"] = editors = []
+            session["editors"] = views = []
             session["selection"] = self.notebook.GetSelection()
-            for editor in self.editors:
-                if editor.path and editor.modified:
-                    if not (yield editor.TryClose()):
+            for view in self.views:
+                if view.path and view.modified:
+                    if not (yield view.TryClose()):
                         yield False
-                editors.append(editor.SavePerspective())
+                views.append(view.SavePerspective())
         yield async_call(write_settings, self.session_filename, session)
         yield True
 
@@ -425,25 +444,27 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         with frozen_or_hidden_window(self.notebook):
             errors = []
             try:
-                editors = []
+                views = []
                 seen_paths = set()
 
                 for p in session.get("editors", ()):
-                    editor = self.NewEditor()
-                    if "path" in p:
+                    view_type = p.get("view_type")
+                    view_types = dict(editor=self.NewEditor, preview=self.NewPreview)
+                    view = view_types.get(view_type, self.NewEditor)()
+                    if "path" in p and view_type == "editor":
                         path = p["path"] = self.GetFullPath(p["path"])
                         if path in seen_paths:
-                            editors.append((editor, None))
+                            views.append((view, None))
                             continue
                         seen_paths.add(path)
-                    future = editor.LoadPerspective(p)
-                    editors.append((editor, future))
+                    future = view.LoadPerspective(p)
+                    views.append((view, future))
 
                 if "dirtree" in session:
                     self.tree.LoadPerspective(session["dirtree"])
 
                 to_remove = []
-                for i, (editor, future) in reversed(list(enumerate(editors))):
+                for i, (view, future) in reversed(list(enumerate(views))):
                     if future is None:
                         to_remove.append(i)
                     else:
@@ -637,10 +658,22 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             self.AddPage(editor, index=index)
             return editor
 
+    def NewPreview(self, index=None):
+        with frozen_window(self.notebook):
+            preview = Preview(self.notebook, self.env)
+            self.AddPage(preview, index=index)
+            return preview
+
+    def _FindPath(self, path, views):
+        for view in views:
+            if view.path == path:
+                return view
+
     def FindEditor(self, path):
-        for editor in self.editors:
-            if editor.path == path:
-                return editor
+        return self._FindPath(path, self.editors)
+
+    def FindPreview(self, path):
+        return self._FindPath(path, self.previews)
 
     def GetCurrentEditorTab(self):
         sel = self.notebook.GetSelection()
@@ -660,6 +693,21 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             if marker_type is not None:
                 self.SetHighlightedEditor(editor, line, marker_type)
 
+    def ActivateView(self, view):
+        i = self.notebook.GetPageIndex(view)
+        if i != wx.NOT_FOUND:
+            self.notebook.SetSelection(i)
+        view.SetFocus()
+
+    def OpenPreview(self, path):
+        path = self.GetFullPath(path)
+        preview = self.FindPreview(path)
+        if preview:
+            self.ActivateView(preview)
+        else:
+            preview = self.NewPreview()
+            preview.path = path
+
     @managed("cm")
     @queued_coroutine("cq")
     def OpenEditor(self, path, line=None, marker_type=None):
@@ -667,10 +715,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         editor = self.FindEditor(path)
         if editor:
             self.SetEditorLineAndMarker(editor, line, marker_type)
-            i = self.notebook.GetPageIndex(editor)
-            if i != wx.NOT_FOUND:
-                self.notebook.SetSelection(i)
-            editor.SetFocus()
+            self.ActivateView(editor)
             yield True
 
         try:
@@ -951,29 +996,17 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                 self.reloading = True
                 to_reload = []
                 to_unload = []
-                for editor in self.editors:
-                    if editor.path in self.updated_paths:
-                        to_reload.append(editor)
-                    elif editor.path in self.deleted_paths:
-                        to_unload.append(editor)
+                for view in self.views:
+                    if view.path in self.updated_paths:
+                        to_reload.append(view)
+                    elif view.path in self.deleted_paths:
+                        to_unload.append(view)
                 self.updated_paths.clear()
                 self.deleted_paths.clear()
-                for editor in to_reload:
-                    if dialogs.ask_reload(self, os.path.basename(editor.path)):
-                        yield editor.Reload()
-                    else:
-                        editor.SetModified()
-                for editor in reversed(to_unload):
-                    if os.path.exists(editor.path):
-                        if dialogs.ask_reload(self, os.path.basename(editor.path)):
-                            yield editor.Reload()                        
-                        else:
-                            editor.SetModified()
-                    else:
-                        if dialogs.ask_unload(self, os.path.basename(editor.path)):
-                            yield self.ClosePage(editor)
-                        else:
-                            editor.SetModified()
+                for view in to_reload:
+                    yield view.OnModifiedExternally()
+                for view in reversed(to_unload):
+                    yield view.OnUnloadedExternally()
             finally:
                 self.reloading = False
             if self.updated_paths or self.deleted_paths:

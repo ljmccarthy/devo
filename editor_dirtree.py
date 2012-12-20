@@ -14,6 +14,7 @@ ID_DIRTREE_SEARCH_FOLDER = wx.NewId()
 context_menu_file = Menu("", [
     MenuItem(ID_DIRTREE_OPEN, "&Open"),
     MenuItem(ID_DIRTREE_EDIT, "&Edit with Devo"),
+    MenuItem(ID_DIRTREE_PREVIEW, "&Preview"),
     MenuItem(ID_DIRTREE_RENAME, "&Rename"),
     MenuItem(ID_DIRTREE_DELETE, "&Delete"),
     MenuSeparator,
@@ -49,6 +50,7 @@ class EditorDirTreeCtrl(DirTreeCtrl):
         self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.OnItemActivated)
         self.Bind(wx.EVT_MENU, self.OnItemOpen, id=ID_DIRTREE_OPEN)
         self.Bind(wx.EVT_MENU, self.OnItemEdit, id=ID_DIRTREE_EDIT)
+        self.Bind(wx.EVT_MENU, self.OnItemPreview, id=ID_DIRTREE_PREVIEW)
         self.Bind(wx.EVT_MENU, self.OnItemOpenFolder, id=ID_DIRTREE_OPEN_FOLDER)
         self.Bind(wx.EVT_MENU, self.OnSearch, id=ID_DIRTREE_SEARCH)
         self.Bind(wx.EVT_MENU, self.OnSearchFolder, id=ID_DIRTREE_SEARCH_FOLDER)
@@ -76,6 +78,11 @@ class EditorDirTreeCtrl(DirTreeCtrl):
         node = self.GetSelectedNode()
         if node and node.type == 'f':
             self.env.open_file(node.path)
+
+    def OnItemPreview(self, evt):
+        node = self.GetSelectedNode()
+        if node and node.type == 'f':
+            self.env.open_preview(node.path)
 
     def _shell_open(self, path):
         try:
