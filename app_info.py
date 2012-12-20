@@ -4,7 +4,7 @@ import datetime
 
 name = "Devo"
 
-release_date = datetime.date(2012, 12, 13)
+release_date = datetime.date(2012, 12, 21)
 
 version = (1, 0, 0)
 
