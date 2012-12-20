@@ -12,6 +12,8 @@ mkdir -p /tmp/devo-$VERSION
 cd /tmp/devo-$VERSION
 git clone git://github.com/shaurz/fsmonitor.git
 git clone git://github.com/shaurz/devo.git
+svn export http://svn.wxwidgets.org/svn/wx/wxPython/3rdParty/AGW/agw/aui devo/aui
+rm -rf {devo,fsmonitor}/.git*
 cd /tmp
 tar czf "$DEST_DIR/devo-$VERSION.tar.gz" devo-$VERSION
 rm -rf devo-$VERSION
