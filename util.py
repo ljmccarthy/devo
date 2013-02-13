@@ -112,7 +112,10 @@ def clean_text(text):
     return "\n".join(clear_text_lines(text))
 
 def clean_strip_text(text):
-    return "\n".join(line.rstrip() for line in clear_text_lines(text))
+    lines = clear_text_lines(text)
+    if lines:
+        lines = [line.rstrip() for line in lines[:-1]] + [lines[-1]]
+    return "\n".join(lines)
 
 def shorten_text(text, max_length):
     return text[:max_length - 2] + "..." if len(text) > max_length else text
