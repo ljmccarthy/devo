@@ -157,8 +157,6 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
     def SaveFile(self, path):
         text, self.file_encoding = encode_text(self.GetText(), self.file_encoding)
         text = clean_text(text)
-        if not text.endswith("\n"):
-            text += "\n"
         yield async_call(mkpath, os.path.dirname(path))
         yield async_call(atomic_write_file, path, text)
         self.modified_externally = False
