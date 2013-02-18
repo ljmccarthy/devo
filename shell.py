@@ -1,5 +1,6 @@
 import sys, os, subprocess, signal
-from killableprocess import Popen
+from subprocess import Popen
+from killableprocess import Popen as KillablePopen
 
 remove_vars = (
     "PYTHONHOME", "PYTHONPATH", "VERSIONER_PYTHON_PREFER_32_BIT",
@@ -28,13 +29,13 @@ def make_environment(env=None, cwd=None):
 
     return env
 
-def run_shell_command(cmdline, pipe_output=True, env=None, cwd=None, **kwargs):
+def run_shell_command(cmdline, pipe_output=True, env=None, cwd=None, killable=True, **kwargs):
     if sys.platform == "win32":
         args = cmdline
     else:
         args = [os.environ.get("SHELL", "/bin/sh")]
 
-    process = Popen(args,
+    process = (KillablePopen if killable else Popen)(args,
         stdin = subprocess.PIPE if sys.platform != "win32" else None,
         stdout = subprocess.PIPE if pipe_output else None,
         stderr = subprocess.STDOUT if pipe_output else None,

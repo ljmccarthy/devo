@@ -50,6 +50,9 @@ class EditCommandDialog(wx.Dialog):
         self.field_detach = wx.CheckBox(self, label="Detach Process")
         self.field_detach.SetValue(command.get("detach", False))
 
+        self.field_killable = wx.CheckBox(self, label="Killable Process")
+        self.field_killable.SetValue(command.get("killable", True))
+
         grid = wx.FlexGridSizer(cols=2, vgap=5, hgap=5)
         grid.AddGrowableCol(1, 1)
         grid.Add(wx.StaticText(self, label="Name in Menu"), 0, wx.ALIGN_CENTER_VERTICAL)
@@ -65,6 +68,8 @@ class EditCommandDialog(wx.Dialog):
         grid.AddSpacer(0)
         flag_sizer = wx.BoxSizer(wx.VERTICAL)
         flag_sizer.Add(self.field_detach, 1, wx.EXPAND)
+        flag_sizer.AddSpacer(5)
+        flag_sizer.Add(self.field_killable, 1, wx.EXPAND)
         grid.Add(flag_sizer, 0, wx.EXPAND)
 
         btn_sizer = wx.StdDialogButtonSizer()
@@ -91,6 +96,7 @@ class EditCommandDialog(wx.Dialog):
 
         self.Bind(wx.EVT_BUTTON, self.OnOK, id=wx.ID_OK)
         self.Bind(wx.EVT_BUTTON, self.OnHelp, id=wx.ID_HELP)
+        self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateKillable, self.field_killable)
 
     def _GetValue(self, ctrl):
         return ctrl.Value
@@ -120,6 +126,7 @@ class EditCommandDialog(wx.Dialog):
         ("workdir", _GetWorkDir),
         ("before", _GetStringSelection),
         ("detach", _GetValue),
+        ("killable", _GetValue),
     )
 
     def OnOK(self, evt):
@@ -150,6 +157,9 @@ class EditCommandDialog(wx.Dialog):
         if self.help_frame:
             frame, self.help_frame = self.help_frame, None
             frame.Destroy()
+
+    def OnUpdateKillable(self, evt):
+        evt.Enable(not self.field_detach.Value)
 
 class CommandsDialog(wx.Dialog):
     def __init__(self, parent, commands=[], title="Configure Commands"):

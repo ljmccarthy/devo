@@ -899,16 +899,16 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     def OnUpdate_ConfigureProjectCommands(self, evt):
         evt.Enable(bool(self.project_filename))
 
-    def RunCommand(self, cmdline, workdir=None, detach=False):
+    def RunCommand(self, cmdline, workdir=None, detach=False, killable=True):
         workdir = workdir or None
         if detach:
-            run_shell_command(cmdline, pipe_output=False, cwd=workdir)
+            run_shell_command(cmdline, pipe_output=False, cwd=workdir, killable=False)
         else:
             try:
-                self.terminal.run(cmdline, cwd=workdir)
+                self.terminal.run(cmdline, cwd=workdir, killable=killable)
                 self.ShowPane(self.terminal, title=cmdline)
             except Exception, e:
-                dialogs.error(self, "Error executing command:\n\n%s" % e)
+                dialogs.error(self, "Error executing command:\n\n%s" % traceback.format_exc())
 
     @managed("cm")
     @coroutine    
@@ -937,7 +937,9 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                     yield False
 
         detach = command.get("detach", False)
-        self.RunCommand(cmdline, workdir, detach)
+        killable = command.get("killable", True)
+
+        self.RunCommand(cmdline, workdir, detach, killable)
         yield True
 
     def GetSharedCommandById(self, id):

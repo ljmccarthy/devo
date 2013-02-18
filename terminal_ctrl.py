@@ -2,6 +2,7 @@ import os, re, threading
 import wx
 
 from dialogs import dialogs
+from killableprocess import Popen as KillablePopen
 from shell import run_shell_command
 from styled_text_ctrl import MARKER_ERROR
 from thread_output_ctrl import ThreadOutputCtrl
@@ -76,7 +77,7 @@ class TerminalCtrl(wx.Panel):
         self.kill()
 
     def OnUpdateStop(self, evt):
-        evt.Enable(self.process is not None)
+        evt.Enable(self.process is not None and isinstance(self.process, KillablePopen))
 
     def OpenFileOnLine(self, output_line, highlight_line):
         s = self.output.GetLine(output_line)
@@ -106,11 +107,11 @@ class TerminalCtrl(wx.Panel):
     def is_running(self):
         return bool(self.process)
 
-    def run(self, cmdline, env=None, cwd=None):
+    def run(self, cmdline, env=None, cwd=None, killable=True):
         if self.process:
             return
 
-        self.process = run_shell_command(cmdline, env=env, cwd=cwd)
+        self.process = run_shell_command(cmdline, env=env, cwd=cwd, killable=killable)
         self.thread = threading.Thread(target=self.__thread, args=(self.process,))
         self.thread.start()
 
