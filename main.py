@@ -113,6 +113,10 @@ class DevoApp(wx.App):
             self.mainframe.OpenEditor(filename)
         self.first_drop = False
 
+    def MacReopenApp(self):
+        if self.mainframe.IsIconized():
+            self.mainframe.Restore()
+
     def OnEndSession(self, evt):
         if self.mainframe:
             self.mainframe.OnClose(evt)
