@@ -4,18 +4,18 @@ import datetime
 
 name = "Devo"
 
-release_date = datetime.date(2012, 12, 21)
+release_date = datetime.date(2014, 7, 23)
 
-version = (1, 0, 0)
+version = (1, 1, 0)
 
-version_string = ".".join(str(x) for x in (version if version[2] != 0 else version[:2]))
+version_string = ".".join(str(x) for x in version)
 
 identifier = "com.iogopro.devo"
 
-copyright = u"Copyright © 2010-2012 Luke McCarthy"
+copyright = u"Copyright © 2010-2014 Luke McCarthy"
 
 developer = "Developer: Luke McCarthy <luke@iogopro.co.uk>"
 
 company_name = "Iogopro Software"
 
-url = "http://iogopro.com/devo"
+url = "https://github.com/shaurz/devo"
