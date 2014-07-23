@@ -6,7 +6,7 @@ mkdir -p "${BUILD_DIR}"
 cd "${BUILD_DIR}"
 set -o errexit
 if [ ! -e wxPython-src-${WXVER}.tar.bz2 ]; then
-    wget http://downloads.sourceforge.net/project/wxpython/wxPython/${WXVER}/wxPython-src-${WXVER}.tar.bz2
+    curl -O http://downloads.sourceforge.net/project/wxpython/wxPython/${WXVER}/wxPython-src-${WXVER}.tar.bz2
 fi
 rm -rf wxPython-src-${WXVER}
 tar xvjf wxPython-src-${WXVER}.tar.bz2
@@ -19,6 +19,8 @@ cd build
     --enable-optimise \
     --enable-monolithic \
     --enable-unicode \
+    --enable-webview \
+    --enable-webview-webkit \
     --with-gtk \
     --with-expat=builtin \
     --with-libpng=builtin \
