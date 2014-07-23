@@ -14,7 +14,7 @@ ID_DIRTREE_SEARCH_FOLDER = wx.NewId()
 context_menu_file = Menu("", [
     MenuItem(ID_DIRTREE_OPEN, "&Open"),
     MenuItem(ID_DIRTREE_EDIT, "&Edit with Devo"),
-    MenuItem(ID_DIRTREE_PREVIEW, "&Preview"),
+    #MenuItem(ID_DIRTREE_PREVIEW, "&Preview"),
     MenuItem(ID_DIRTREE_RENAME, "&Rename"),
     MenuItem(ID_DIRTREE_DELETE, "&Delete"),
     MenuSeparator,

@@ -1,5 +1,4 @@
 import wx
-import wx.html2 as webview
 from async import coroutine
 from signal_wx import Signal
 
@@ -12,6 +11,7 @@ class Preview(wx.Panel):
 
         sizer = wx.BoxSizer(wx.VERTICAL)
         btnSizer = wx.BoxSizer(wx.HORIZONTAL)
+        import wx.html2 as webview
         self.wv = webview.WebView.New(self)
         self.Bind(webview.EVT_WEB_VIEW_NAVIGATING, self.OnWebViewNavigating, self.wv)
         self.Bind(webview.EVT_WEB_VIEW_LOADED, self.OnWebViewLoaded, self.wv)
@@ -152,6 +152,9 @@ class Preview(wx.Panel):
 
     def OnRefreshPageButton(self, evt):
         self.wv.Reload()
+
+class Preview(wx.Panel):
+    """Dummy Preview class."""
 
 if __name__ == "__main__":
     app = wx.App()
