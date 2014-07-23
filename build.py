@@ -8,7 +8,7 @@ project_root = os.path.dirname(os.path.realpath(__file__))
 
 project_syspath = [
     project_root,
-    os.path.join(project_root, "..", "fsmonitor")
+    os.path.join(project_root, "fsmonitor")
 ] + sys.path
 
 target_name = "devo"
@@ -158,6 +158,7 @@ def build_cxfreeze():
         silent = False
     ).Freeze()
 
+def make_tar_archive():
     run("tar", "cvjf",
         "%s-%s.tar.bz2" % (target_name, app_info.version_string),
         "%s-%s" % (target_name, app_info.version_string),
@@ -167,9 +168,9 @@ def build():
     os.chdir(project_root)
     shutil.rmtree(target_dir, True)
 
-    from get_aui import get_aui
+    from get_components import get_components
     try:
-        get_aui()
+        get_components()
     except OSError:
         pass
 
