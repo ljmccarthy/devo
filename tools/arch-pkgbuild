@@ -19,7 +19,7 @@ options=(!strip)
 install=devo.install
 changelog=
 noextract=()
-source=(https://github.com/shaurz/${pkgname}/archive/v${pkgver}.tar.gz
+source=(https://github.com/shaurz/${pkgname}/archive/${pkgver}.tar.gz
         ${pkgname}.install)
 md5sums=(25d4b096425fb36abedfabae0c4c3efd
          46a0eb07686a7d96206499e94c0452ba)
