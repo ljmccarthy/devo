@@ -163,7 +163,7 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
         self.SetSavePoint()
 
     @coroutine
-    def SaveAs(self):
+    def SaveAsInSameTab(self):
         path = self.env.get_file_to_save(path=os.path.dirname(self.path))
         if path:
             path = os.path.realpath(path)
@@ -183,6 +183,13 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
                 yield True
         yield False
 
+    def SaveAs(self):
+        path = self.env.get_file_to_save(path=os.path.dirname(self.path))
+        if path:
+            editor = self.env.new_editor(path)
+            editor.SetText(self.GetText())
+            return editor.Save()
+
     @coroutine
     def Save(self):
         if self.path:
@@ -194,7 +201,7 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
                 dialogs.error(self, "Error saving file '%s'\n\n%s" % (self.path, exn))
                 raise
         else:
-            yield (yield self.SaveAs())
+            yield (yield self.SaveAsInSameTab())
 
     def OnReturnKeyDown(self, evt):
         start, end = self.GetSelection()

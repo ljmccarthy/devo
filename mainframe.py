@@ -37,6 +37,9 @@ class AppEnv(object):
     def __init__(self, mainframe):
         self._mainframe = mainframe
 
+    def new_editor(self, path=""):
+        return self._mainframe.NewEditor(path=path)
+
     def open_file(self, path, line=None, marker_type=None):
         return self._mainframe.OpenEditor(path, line, marker_type)
 
@@ -653,9 +656,13 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     def OnTabAreaDClick(self, evt):
         self.NewEditor(index=self.notebook.GetPageCount())
 
-    def NewEditor(self, index=None):
+    def NewEditor(self, index=None, path=""):
+        if path:
+            editor = self.FindEditor(path)
+            if editor:
+                return editor
         with frozen_window(self.notebook):
-            editor = Editor(self.notebook, self.env)
+            editor = Editor(self.notebook, self.env, path=path)
             self.AddPage(editor, index=index)
             return editor
 
@@ -744,6 +751,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     def OpenEditorWithText(self, text):
         editor = self.NewEditor()
         editor.SetText(text)
+        return editor
 
     def OpenStaticEditor(self, title, text):
         editor = self.NewEditor()
