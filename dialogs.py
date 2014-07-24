@@ -38,7 +38,7 @@ class Dialogs(object):
         else:
             message = self._make_caption(message)
 
-        if context:
+        if not path and context:
             path = self._paths.get(context, path)
 
         dlg = wx.FileDialog(parent, wildcard=wildcard, message=message, defaultDir=path, style=style)

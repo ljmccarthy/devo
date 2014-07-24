@@ -753,10 +753,11 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.NewEditor()
 
     def OnOpenFile(self, evt):
-        if self.project_root:
-            path = dialogs.get_file_to_open(self, path=self.project_root)
-        else:
-            path = dialogs.get_file_to_open(self, context="open")
+        dir_path = self.project_root
+        editor = self.GetCurrentEditorTab()
+        if editor:
+            dir_path = os.path.dirname(editor.path)
+        path = dialogs.get_file_to_open(self, path=dir_path, context="open")
         if path:
             self.OpenEditor(path)
 
