@@ -173,6 +173,9 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
 
         self.Startup(args)
 
+        accel_table = wx.AcceleratorTable(menubar.GetAccelerators())
+        self.SetAcceleratorTable(accel_table)
+
         self.Bind(wx.EVT_CLOSE, self.OnClose)
         self.Bind(wx.EVT_ACTIVATE, self.OnActivate)
         self.Bind(wx.EVT_CHILD_FOCUS, self.OnChildFocus)
