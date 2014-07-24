@@ -89,6 +89,8 @@ class FindReplaceDetails(object):
                 editor.ReplaceTarget(repl)
             else:
                 editor.ReplaceSelection(repl)
+            return repl
+        return ""
 
     def Find(self, editor, wrap=True, reverse=False):
         reverse = reverse ^ self.reverse
@@ -120,16 +122,19 @@ class FindReplaceDetails(object):
         editor.BeginUndoAction()
         try:
             editor.SetSelection(0, 0)
-            m = True
-            while m:
-                for pos, line in self._IterFindLines(editor, wrap=False):
-                    m = self.rx_find.search(line)
-                    if m and m.start() != m.end():
-                        editor.SetTargetStart(pos + m.start())
-                        editor.SetTargetEnd(pos + m.end())
-                        self._Replace(editor, target=True)
-                        count += 1
+            for pos, line in self._IterFindLines(editor, wrap=False):
+                line_num = editor.LineFromPosition(pos)
+                cur_pos = 0
+                while True:
+                    m = self.rx_find.search(line, pos=cur_pos)
+                    if not m or m.start() == m.end():
                         break
+                    editor.SetTargetStart(pos + m.start())
+                    editor.SetTargetEnd(pos + m.end())
+                    repl = self._Replace(editor, target=True)
+                    line = editor.GetLineRaw(line_num)
+                    cur_pos = m.start() + len(repl)
+                    count += 1
             return count
         finally:
             editor.EndUndoAction()
