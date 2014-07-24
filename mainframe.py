@@ -660,6 +660,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         if path:
             editor = self.FindEditor(path)
             if editor:
+                self.ActivateView(editor)
                 return editor
         with frozen_window(self.notebook):
             editor = Editor(self.notebook, self.env, path=path)

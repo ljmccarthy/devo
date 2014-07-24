@@ -154,13 +154,28 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
         self.ScrollToLine(line_num)
 
     @coroutine
-    def SaveFile(self, path):
+    def WriteFile(self, path):
+        def do_write_file(path, text):
+            mkpath(os.path.dirname(path))
+            atomic_write_file(path, text)
+
         text, self.file_encoding = encode_text(self.GetText(), self.file_encoding)
         text = clean_text(text)
-        yield async_call(mkpath, os.path.dirname(path))
-        yield async_call(atomic_write_file, path, text)
+        with self.env.updating_path(path):
+            yield async_call(do_write_file, path, text)
         self.modified_externally = False
         self.SetSavePoint()
+
+    def SetPath(self, path):
+        if self.path:
+            self.env.remove_monitor_path(path)
+        self.path = path
+        self.static_title = None
+        self.SetSyntaxFromFilename(self.path)
+        self.env.add_monitor_path(self.path)
+        self.env.add_recent_file(self.path)
+        self.sig_title_changed.signal(self)
+        self.sig_status_changed.signal(self)
 
     @coroutine
     def SaveAsInSameTab(self):
@@ -168,34 +183,30 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
         if path:
             path = os.path.realpath(path)
             try:
-                yield self.SaveFile(path)
+                yield self.WriteFile(path)
             except Exception, exn:
                 dialogs.error(self, "Error saving file '%s'\n\n%s" % (path, exn))
                 raise
             else:
-                self.SetSyntaxFromFilename(path)
-                self.path = path
-                self.static_title = None
-                self.env.add_monitor_path(path)
-                self.env.add_recent_file(path)
-                self.sig_title_changed.signal(self)
-                self.sig_status_changed.signal(self)
+                self.SetPath(path)
                 yield True
         yield False
 
+    @coroutine
     def SaveAs(self):
         path = self.env.get_file_to_save(path=os.path.dirname(self.path))
         if path:
+            path = os.path.realpath(path)
             editor = self.env.new_editor(path)
             editor.SetText(self.GetText())
-            return editor.Save()
+            yield editor.WriteFile(path)
+            editor.SetPath(path)
 
     @coroutine
     def Save(self):
         if self.path:
             try:
-                with self.env.updating_path(self.path):
-                    yield self.SaveFile(self.path)
+                yield self.WriteFile(self.path)
                 yield True
             except Exception, exn:
                 dialogs.error(self, "Error saving file '%s'\n\n%s" % (self.path, exn))
