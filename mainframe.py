@@ -105,7 +105,7 @@ NB_STYLE = (aui.AUI_NB_CLOSE_ON_ALL_TABS  | aui.AUI_NB_TOP | aui.AUI_NB_TAB_SPLI
 class MainFrame(wx.Frame, wx.FileDropTarget):
     def __init__(self, args):
         display_rect = wx.Display(wx.Display.GetFromPoint((0, 0))).GetClientArea()
-        width = min(display_rect.width, 1050)
+        width = min(display_rect.width, 1200)
         rect = wx.Rect(display_rect.width - width, display_rect.y, width, display_rect.height)
 
         wx.Frame.__init__(self, None, title="Devo", pos=rect.Position, size=rect.Size)
