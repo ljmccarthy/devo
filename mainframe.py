@@ -720,14 +720,14 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             yield True
 
         try:
-            if not (yield async_call(is_text_file, path)):
-                if not dialogs.ask_open_binary(self, path):
-                    yield False
             if not os.path.exists(path):
                 dialogs.error(self, "File does not exist:\n\n%s" % path)
                 yield False
-        except IOError:
-            pass
+            if not (yield async_call(is_text_file, path)):
+                if not dialogs.ask_open_binary(self, path):
+                    yield False
+        except EnvironmentError:
+            yield False
 
         editor = Editor(self.notebook, self.env, path)
         if not (yield editor.TryLoadFile(path)):
