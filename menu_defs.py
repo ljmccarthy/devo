@@ -51,12 +51,15 @@ menubar = MenuBar([
         MenuHook("projects"),
     ]),
     Menu("&Commands", [
-        MenuItem(ID.CONFIGURE_SHARED_COMMANDS, "Configure &Shared...", "Ctrl+Shift+F12"),
-        MenuItem(ID.CONFIGURE_PROJECT_COMMANDS, "Configure &Project...", "Ctrl+F12"),
+        MenuItem(ID.CONFIGURE_SHARED_COMMANDS, "Configure &Shared..."),
+        MenuItem(ID.CONFIGURE_PROJECT_COMMANDS, "Configure &Project..."),
         MenuSeparator,
         MenuHook("shared_commands"),
         MenuSeparator,
         MenuHook("project_commands"),
+    ]),
+    Menu("&View", [
+        MenuItem(ID.FULL_SCREEN, "&Full Screen", "Ctrl+Alt+F", kind=MenuItem.CHECK),
     ]),
     Menu("&Help", [
         MenuItem(ID.REPORT_BUG, "Report Bug"),
