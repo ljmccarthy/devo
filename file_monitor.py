@@ -20,7 +20,6 @@ class FileMonitor(wx.EvtHandler):
             self.path_mtime[path] = os.stat(path).st_mtime
         except OSError:
             self.path_mtime[path] = None
-            print "Warning:", e
 
     def add_path(self, path):
         path = os.path.realpath(path)
@@ -73,8 +72,6 @@ class FileMonitor(wx.EvtHandler):
             except OSError, e:
                 if e.errno == errno.ENOENT:
                     deleted_paths.append(path)
-                else:
-                    print "Warning:", e
         for path in deleted_paths:
             del self.path_mtime[path]
         if updated_paths or deleted_paths:
