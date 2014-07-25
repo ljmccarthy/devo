@@ -26,18 +26,18 @@ class Preview(wx.Panel):
         if show_browser_ui:
             btnSizer = wx.BoxSizer(wx.HORIZONTAL)
 
-            btn = wx.BitmapButton(self, bitmap=wx.ArtProvider.GetBitmap(wx.ART_GO_BACK))
+            btn = wx.BitmapButton(self, bitmap=wx.ArtProvider.GetBitmap(wx.ART_GO_BACK, wx.ART_TOOLBAR))
             self.Bind(wx.EVT_BUTTON, self.OnBack, btn)
             self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateUI_Back, btn)
             btnSizer.Add(btn, 0, wx.EXPAND|wx.ALL, 2)
 
-            btn = wx.BitmapButton(self, bitmap=wx.ArtProvider.GetBitmap(wx.ART_GO_FORWARD))
+            btn = wx.BitmapButton(self, bitmap=wx.ArtProvider.GetBitmap(wx.ART_GO_FORWARD, wx.ART_TOOLBAR))
             self.Bind(wx.EVT_BUTTON, self.OnForward, btn)
             self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateUI_Forward, btn)
             btnSizer.Add(btn, 0, wx.EXPAND|wx.ALL, 2)
 
             if wx.Platform == "__WXGTK__":
-                btn = wx.BitmapButton(self, bitmap=wx.ArtProvider.GetBitmap("gtk-stop"))
+                btn = wx.BitmapButton(self, bitmap=wx.ArtProvider.GetBitmap("gtk-stop", wx.ART_TOOLBAR))
             else:
                 btn = wx.Button(self, label="Stop", style=wx.BU_EXACTFIT)
             self.Bind(wx.EVT_BUTTON, self.OnStop, btn)
@@ -45,7 +45,7 @@ class Preview(wx.Panel):
             btnSizer.Add(btn, 0, wx.EXPAND|wx.ALL, 2)
 
             if wx.Platform == "__WXGTK__":
-                btn = wx.BitmapButton(self, bitmap=wx.ArtProvider.GetBitmap("gtk-refresh"))
+                btn = wx.BitmapButton(self, bitmap=wx.ArtProvider.GetBitmap("gtk-refresh", wx.ART_TOOLBAR))
             else:
                 btn = wx.Button(self, label="Refresh", style=wx.BU_EXACTFIT)
             self.Bind(wx.EVT_BUTTON, self.OnRefresh, btn)
