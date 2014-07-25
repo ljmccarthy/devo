@@ -27,31 +27,32 @@ class Preview(wx.Panel):
             btnSizer = wx.BoxSizer(wx.HORIZONTAL)
 
             btn = wx.BitmapButton(self, bitmap=wx.ArtProvider.GetBitmap(wx.ART_GO_BACK))
-            self.Bind(wx.EVT_BUTTON, self.OnPrevPageButton, btn)
+            self.Bind(wx.EVT_BUTTON, self.OnBack, btn)
+            self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateUI_Back, btn)
             btnSizer.Add(btn, 0, wx.EXPAND|wx.ALL, 2)
-            self.Bind(wx.EVT_UPDATE_UI, self.OnCheckCanGoBack, btn)
 
             btn = wx.BitmapButton(self, bitmap=wx.ArtProvider.GetBitmap(wx.ART_GO_FORWARD))
-            self.Bind(wx.EVT_BUTTON, self.OnNextPageButton, btn)
+            self.Bind(wx.EVT_BUTTON, self.OnForward, btn)
+            self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateUI_Forward, btn)
             btnSizer.Add(btn, 0, wx.EXPAND|wx.ALL, 2)
-            self.Bind(wx.EVT_UPDATE_UI, self.OnCheckCanGoForward, btn)
 
             if wx.Platform == "__WXGTK__":
                 btn = wx.BitmapButton(self, bitmap=wx.ArtProvider.GetBitmap("gtk-stop"))
             else:
                 btn = wx.Button(self, label="Stop", style=wx.BU_EXACTFIT)
-            self.Bind(wx.EVT_BUTTON, self.OnStopButton, btn)
+            self.Bind(wx.EVT_BUTTON, self.OnStop, btn)
+            self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateUI_Stop, btn)
             btnSizer.Add(btn, 0, wx.EXPAND|wx.ALL, 2)
 
             if wx.Platform == "__WXGTK__":
                 btn = wx.BitmapButton(self, bitmap=wx.ArtProvider.GetBitmap("gtk-refresh"))
             else:
                 btn = wx.Button(self, label="Refresh", style=wx.BU_EXACTFIT)
-            self.Bind(wx.EVT_BUTTON, self.OnRefreshPageButton, btn)
+            self.Bind(wx.EVT_BUTTON, self.OnRefresh, btn)
+            self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateUI_Refresh, btn)
             btnSizer.Add(btn, 0, wx.EXPAND|wx.ALL, 2)
 
-            self.location = wx.ComboBox(
-                self, -1, url, style=wx.CB_DROPDOWN|wx.TE_PROCESS_ENTER)
+            self.location = wx.ComboBox(self, value=url, style=wx.CB_DROPDOWN|wx.TE_PROCESS_ENTER)
             self.Bind(wx.EVT_COMBOBOX, self.OnLocationSelect, self.location)
             self.location.Bind(wx.EVT_TEXT_ENTER, self.OnLocationEnter)
             btnSizer.Add(self.location, 1, wx.EXPAND|wx.ALL, 2)
@@ -157,29 +158,35 @@ class Preview(wx.Panel):
         self.location.Append(url)
         self.wv.LoadURL(url)
 
-    def OnOpenButton(self, event):
+    def OnOpenButton(self, evt):
         url = dialogs.get_text_input(self, "Open Location", "Enter a full URL or local path", self.current)
         if url:
             self.current = url
             self.wv.LoadURL(self.current)
 
-    def OnPrevPageButton(self, event):
+    def OnBack(self, evt):
         self.wv.GoBack()
 
-    def OnNextPageButton(self, event):
+    def OnForward(self, evt):
         self.wv.GoForward()
 
-    def OnCheckCanGoBack(self, event):
-        event.Enable(self.wv.CanGoBack())
-
-    def OnCheckCanGoForward(self, event):
-        event.Enable(self.wv.CanGoForward())
-
-    def OnStopButton(self, evt):
+    def OnStop(self, evt):
         self.wv.Stop()
 
-    def OnRefreshPageButton(self, evt):
+    def OnRefresh(self, evt):
         self.wv.Reload()
+
+    def OnUpdateUI_Back(self, evt):
+        evt.Enable(self.wv.CanGoBack())
+
+    def OnUpdateUI_Forward(self, evt):
+        evt.Enable(self.wv.CanGoForward())
+
+    def OnUpdateUI_Stop(self, evt):
+        evt.Enable(self.wv.IsBusy())
+
+    def OnUpdateUI_Refresh(self, evt):
+        evt.Enable(not self.wv.IsBusy())
 
 if __name__ == "__main__":
     app = wx.App()
