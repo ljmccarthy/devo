@@ -1,4 +1,5 @@
 import wx
+import resources
 from async import coroutine
 from signal_wx import Signal
 
@@ -26,28 +27,22 @@ class Preview(wx.Panel):
         if show_browser_ui:
             btnSizer = wx.BoxSizer(wx.HORIZONTAL)
 
-            btn = wx.BitmapButton(self, bitmap=wx.ArtProvider.GetBitmap(wx.ART_GO_BACK, wx.ART_TOOLBAR))
+            btn = wx.BitmapButton(self, bitmap=resources.load_bitmap("icons/back.png"))
             self.Bind(wx.EVT_BUTTON, self.OnBack, btn)
             self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateUI_Back, btn)
             btnSizer.Add(btn, 0, wx.EXPAND|wx.ALL, 2)
 
-            btn = wx.BitmapButton(self, bitmap=wx.ArtProvider.GetBitmap(wx.ART_GO_FORWARD, wx.ART_TOOLBAR))
+            btn = wx.BitmapButton(self, bitmap=resources.load_bitmap("icons/forward.png"))
             self.Bind(wx.EVT_BUTTON, self.OnForward, btn)
             self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateUI_Forward, btn)
             btnSizer.Add(btn, 0, wx.EXPAND|wx.ALL, 2)
 
-            if wx.Platform == "__WXGTK__":
-                btn = wx.BitmapButton(self, bitmap=wx.ArtProvider.GetBitmap("gtk-stop", wx.ART_TOOLBAR))
-            else:
-                btn = wx.Button(self, label="Stop", style=wx.BU_EXACTFIT)
+            btn = wx.BitmapButton(self, bitmap=resources.load_bitmap("icons/stop.png"))
             self.Bind(wx.EVT_BUTTON, self.OnStop, btn)
             self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateUI_Stop, btn)
             btnSizer.Add(btn, 0, wx.EXPAND|wx.ALL, 2)
 
-            if wx.Platform == "__WXGTK__":
-                btn = wx.BitmapButton(self, bitmap=wx.ArtProvider.GetBitmap("gtk-refresh", wx.ART_TOOLBAR))
-            else:
-                btn = wx.Button(self, label="Refresh", style=wx.BU_EXACTFIT)
+            btn = wx.BitmapButton(self, bitmap=resources.load_bitmap("icons/refresh.png"))
             self.Bind(wx.EVT_BUTTON, self.OnRefresh, btn)
             self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateUI_Refresh, btn)
             btnSizer.Add(btn, 0, wx.EXPAND|wx.ALL, 2)
@@ -55,7 +50,7 @@ class Preview(wx.Panel):
             self.location = wx.ComboBox(self, value=url, style=wx.CB_DROPDOWN|wx.TE_PROCESS_ENTER)
             self.Bind(wx.EVT_COMBOBOX, self.OnLocationSelect, self.location)
             self.location.Bind(wx.EVT_TEXT_ENTER, self.OnLocationEnter)
-            btnSizer.Add(self.location, 1, wx.EXPAND|wx.ALL, 2)
+            btnSizer.Add(self.location, 1, wx.ALIGN_CENTRE_VERTICAL|wx.ALL, 2)
 
             sizer.Add(btnSizer, 0, wx.EXPAND)
 
@@ -77,15 +72,21 @@ class Preview(wx.Panel):
     @property
     def path(self):
         url = self.url
-        return url[len("file://"):] if url.startswith("file://") else ""
+        if url.startswith("file://"):
+            if wx.Platform == "__WXMSW__":
+                return url[len("file:///"):].replace("/", "\\")
+            else:
+                return url[len("file://"):]
+        else:
+            return ""
 
     @path.setter
-    def path(self, p):
+    def path(self, path):
         oldpath = self.path
         if oldpath:
             self.env.remove_monitor_path(oldpath)
-        self.env.add_monitor_path(p)
-        self.wv.LoadURL("file://" + p)
+        self.env.add_monitor_path(path)
+        self.wv.LoadURL("file://" + path)
 
     @property
     def modified(self):
@@ -125,6 +126,7 @@ class Preview(wx.Panel):
             self.path = p["path"]
         elif "url" in p:
             self.url = p["url"]
+        self.wv.ClearHistory()
         yield
 
     @coroutine
@@ -143,9 +145,8 @@ class Preview(wx.Panel):
         self.sig_title_changed.signal(self)
 
     def OnWebViewLoaded(self, evt):
-        self.current = evt.GetURL()
         if self.show_browser_ui:
-            self.location.SetValue(self.current)
+            self.location.SetValue(self.path or self.url)
         self.sig_title_changed.signal(self)
 
     def OnLocationSelect(self, evt):
@@ -159,10 +160,9 @@ class Preview(wx.Panel):
         self.wv.LoadURL(url)
 
     def OnOpenButton(self, evt):
-        url = dialogs.get_text_input(self, "Open Location", "Enter a full URL or local path", self.current)
+        url = dialogs.get_text_input(self, "Open Location", "Enter a full URL or local path", self.url)
         if url:
-            self.current = url
-            self.wv.LoadURL(self.current)
+            self.wv.LoadURL(url)
 
     def OnBack(self, evt):
         self.wv.GoBack()

@@ -3,7 +3,7 @@ import wx
 from wx.lib.utils import AdjustRectToScreen
 
 import aui
-import async, fileutil, ID
+import app_info, async, fileutil, ID
 from about_dialog import AboutDialog
 from async import async_call, coroutine, queued_coroutine, managed, CoroutineManager, CoroutineQueue
 from dialogs import dialogs
@@ -711,7 +711,9 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         view.SetFocus()
 
     def OpenPreview(self, path):
-        if not is_preview_available():
+        try:
+            import wx.html2
+        except Exception as e:
             dialogs.error(self, "Web View is not available:\n\n%s" % e)
         else:
             path = self.GetFullPath(path)
@@ -719,8 +721,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             if preview:
                 self.ActivateView(preview)
             else:
-                preview = self.NewPreview()
-                preview.path = path
+                self.NewPreview(url="file://" + path)
 
     @managed("cm")
     @queued_coroutine("cq")
@@ -998,6 +999,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
 
     def OnFullScreen(self, evt):
         self.ShowFullScreen(not self.IsFullScreen())
+        self.UpdateMenuBar()
 
     def OnUpdateUI_FullScreen(self, evt):
         evt.Enable(True)
@@ -1010,7 +1012,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             webbrowser.open_new_tab(url)
 
     def OnReportBug(self, evt):
-        self.OpenURL("https://github.com/shaurz/devo/issues")
+        self.OpenURL(app_info.bug_report_url)
 
     def OnAboutBox(self, evt):
         dlg = AboutDialog(self, self.env)
