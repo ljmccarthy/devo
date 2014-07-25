@@ -709,13 +709,18 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         view.SetFocus()
 
     def OpenPreview(self, path):
-        path = self.GetFullPath(path)
-        preview = self.FindPreview(path)
-        if preview:
-            self.ActivateView(preview)
+        try:
+            import wx.html2
+        except ImportError as e:
+            dialogs.error(self, "Web View is not available:\n\n%s" % e)
         else:
-            preview = self.NewPreview()
-            preview.path = path
+            path = self.GetFullPath(path)
+            preview = self.FindPreview(path)
+            if preview:
+                self.ActivateView(preview)
+            else:
+                preview = self.NewPreview()
+                preview.path = path
 
     @managed("cm")
     @queued_coroutine("cq")

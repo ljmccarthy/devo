@@ -48,10 +48,7 @@ class EditorDirTreeCtrl(DirTreeCtrl):
     def OnItemPreview(self, evt):
         node = self.GetSelectedNode()
         if node and node.type == 'f':
-            try:
-                self.env.open_preview(node.path)
-            except Exception as e:
-                dialogs.error(self, str(e))
+            self.env.open_preview(node.path)
 
     def _shell_open(self, path):
         try:

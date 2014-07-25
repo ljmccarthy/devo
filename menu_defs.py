@@ -68,7 +68,7 @@ menubar = MenuBar([
 file_context_menu = Menu("", [
     MenuItem(ID.DIRTREE_OPEN, "&Open"),
     MenuItem(ID.DIRTREE_EDIT, "&Edit with Devo"),
-    MenuItem(ID.DIRTREE_PREVIEW, "&Preview in WebKit"),
+    MenuItem(ID.DIRTREE_PREVIEW, "&Preview in Web View"),
     MenuItem(ID.DIRTREE_RENAME, "&Rename"),
     MenuItem(ID.DIRTREE_DELETE, "&Delete"),
     MenuSeparator,
