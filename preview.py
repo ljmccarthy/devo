@@ -45,9 +45,9 @@ class Preview(wx.Panel):
         sizer.Add(self.wv, 1, wx.EXPAND)
         self.SetSizer(sizer)
 
-        self.Bind(webview.EVT_WEB_VIEW_NAVIGATING, self.OnWebViewNavigating, self.wv)
-        self.Bind(webview.EVT_WEB_VIEW_LOADED, self.OnWebViewLoaded, self.wv)
-        self.Bind(webview.EVT_WEB_VIEW_TITLE_CHANGED, self.OnWebViewTitleChanged, self.wv)
+        self.Bind(webview.EVT_WEBVIEW_NAVIGATING, self.OnWebViewNavigating, self.wv)
+        self.Bind(webview.EVT_WEBVIEW_LOADED, self.OnWebViewLoaded, self.wv)
+        self.Bind(webview.EVT_WEBVIEW_TITLE_CHANGED, self.OnWebViewTitleChanged, self.wv)
 
     @property
     def path(self):
@@ -59,7 +59,7 @@ class Preview(wx.Panel):
 
     @property
     def title(self):
-        return self.wv.GetCurrentTitle()
+        return self.wv.GetCurrentTitle() or self.wv.GetCurrentURL()
 
     @property
     def status_text(self):
