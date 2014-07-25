@@ -26,21 +26,21 @@ class Preview(wx.Panel):
         if show_browser_ui:
             btnSizer = wx.BoxSizer(wx.HORIZONTAL)
 
-            btn = wx.Button(self, -1, "<--", style=wx.BU_EXACTFIT)
+            btn = wx.BitmapButton(self, bitmap=wx.ArtProvider.GetBitmap(wx.ART_GO_BACK))
             self.Bind(wx.EVT_BUTTON, self.OnPrevPageButton, btn)
             btnSizer.Add(btn, 0, wx.EXPAND|wx.ALL, 2)
             self.Bind(wx.EVT_UPDATE_UI, self.OnCheckCanGoBack, btn)
 
-            btn = wx.Button(self, -1, "-->", style=wx.BU_EXACTFIT)
+            btn = wx.BitmapButton(self, bitmap=wx.ArtProvider.GetBitmap(wx.ART_GO_FORWARD))
             self.Bind(wx.EVT_BUTTON, self.OnNextPageButton, btn)
             btnSizer.Add(btn, 0, wx.EXPAND|wx.ALL, 2)
             self.Bind(wx.EVT_UPDATE_UI, self.OnCheckCanGoForward, btn)
 
-            btn = wx.Button(self, -1, "Stop", style=wx.BU_EXACTFIT)
+            btn = wx.Button(self, label="Stop", style=wx.BU_EXACTFIT)
             self.Bind(wx.EVT_BUTTON, self.OnStopButton, btn)
             btnSizer.Add(btn, 0, wx.EXPAND|wx.ALL, 2)
 
-            btn = wx.Button(self, -1, "Refresh", style=wx.BU_EXACTFIT)
+            btn = wx.Button(self, label="Refresh", style=wx.BU_EXACTFIT)
             self.Bind(wx.EVT_BUTTON, self.OnRefreshPageButton, btn)
             btnSizer.Add(btn, 0, wx.EXPAND|wx.ALL, 2)
 
