@@ -6,7 +6,7 @@ name = "Devo"
 
 release_date = datetime.date(2014, 7, 24)
 
-version = (1, 1, 1)
+version = (1, 2, 0)
 
 version_string = ".".join(str(x) for x in version)
 
@@ -19,3 +19,5 @@ developer = "Developer: Luke McCarthy <luke@iogopro.co.uk>"
 company_name = "Iogopro Software"
 
 url = "https://github.com/shaurz/devo"
+
+bug_report_url = "https://github.com/shaurz/devo/issues"
