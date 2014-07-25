@@ -82,7 +82,9 @@ class Preview(wx.Panel):
 
     @property
     def title(self):
-        return self.wv.GetCurrentTitle() or self.wv.GetCurrentURL()
+        return self.wv.GetCurrentTitle() \
+            or self.wv.GetCurrentURL() \
+            or ("Loading..." if self.wv.IsBusy() else "...")
 
     @property
     def status_text(self):
