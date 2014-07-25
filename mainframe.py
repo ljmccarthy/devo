@@ -669,9 +669,9 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             self.AddPage(editor, index=index)
             return editor
 
-    def NewPreview(self, index=None, url=""):
+    def NewPreview(self, index=None, url="", show_browser_ui=True):
         with frozen_window(self.notebook):
-            preview = Preview(self.notebook, self.env, url=url)
+            preview = Preview(self.notebook, self.env, url=url, show_browser_ui=show_browser_ui)
             self.AddPage(preview, index=index)
             return preview
 
@@ -1003,9 +1003,9 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         evt.Enable(True)
         evt.Check(self.IsFullScreen())
 
-    def OpenURL(self, url):
+    def OpenURL(self, url, show_browser_ui=True):
         if is_preview_available():
-            preview = self.NewPreview(url=url)
+            preview = self.NewPreview(url=url, show_browser_ui=show_browser_ui)
         else:
             webbrowser.open_new_tab(url)
 

@@ -10,11 +10,11 @@ def is_preview_available():
         return False
 
 class Preview(wx.Panel):
-    def __init__(self, parent, env, url=""):
+    def __init__(self, parent, env, url="", show_browser_ui=True):
         wx.Panel.__init__(self, parent)
 
         self.env = env
-        self.current = ""
+        self.show_browser_ui = show_browser_ui
         self.sig_title_changed = Signal()
         self.sig_status_changed = Signal()
 
@@ -22,33 +22,36 @@ class Preview(wx.Panel):
         self.wv = webview.WebView.New(self, url=url)
 
         sizer = wx.BoxSizer(wx.VERTICAL)
-        btnSizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        btn = wx.Button(self, -1, "<--", style=wx.BU_EXACTFIT)
-        self.Bind(wx.EVT_BUTTON, self.OnPrevPageButton, btn)
-        btnSizer.Add(btn, 0, wx.EXPAND|wx.ALL, 2)
-        self.Bind(wx.EVT_UPDATE_UI, self.OnCheckCanGoBack, btn)
+        if show_browser_ui:
+            btnSizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        btn = wx.Button(self, -1, "-->", style=wx.BU_EXACTFIT)
-        self.Bind(wx.EVT_BUTTON, self.OnNextPageButton, btn)
-        btnSizer.Add(btn, 0, wx.EXPAND|wx.ALL, 2)
-        self.Bind(wx.EVT_UPDATE_UI, self.OnCheckCanGoForward, btn)
+            btn = wx.Button(self, -1, "<--", style=wx.BU_EXACTFIT)
+            self.Bind(wx.EVT_BUTTON, self.OnPrevPageButton, btn)
+            btnSizer.Add(btn, 0, wx.EXPAND|wx.ALL, 2)
+            self.Bind(wx.EVT_UPDATE_UI, self.OnCheckCanGoBack, btn)
 
-        btn = wx.Button(self, -1, "Stop", style=wx.BU_EXACTFIT)
-        self.Bind(wx.EVT_BUTTON, self.OnStopButton, btn)
-        btnSizer.Add(btn, 0, wx.EXPAND|wx.ALL, 2)
+            btn = wx.Button(self, -1, "-->", style=wx.BU_EXACTFIT)
+            self.Bind(wx.EVT_BUTTON, self.OnNextPageButton, btn)
+            btnSizer.Add(btn, 0, wx.EXPAND|wx.ALL, 2)
+            self.Bind(wx.EVT_UPDATE_UI, self.OnCheckCanGoForward, btn)
 
-        btn = wx.Button(self, -1, "Refresh", style=wx.BU_EXACTFIT)
-        self.Bind(wx.EVT_BUTTON, self.OnRefreshPageButton, btn)
-        btnSizer.Add(btn, 0, wx.EXPAND|wx.ALL, 2)
+            btn = wx.Button(self, -1, "Stop", style=wx.BU_EXACTFIT)
+            self.Bind(wx.EVT_BUTTON, self.OnStopButton, btn)
+            btnSizer.Add(btn, 0, wx.EXPAND|wx.ALL, 2)
 
-        self.location = wx.ComboBox(
-            self, -1, "", style=wx.CB_DROPDOWN|wx.TE_PROCESS_ENTER)
-        self.Bind(wx.EVT_COMBOBOX, self.OnLocationSelect, self.location)
-        self.location.Bind(wx.EVT_TEXT_ENTER, self.OnLocationEnter)
-        btnSizer.Add(self.location, 1, wx.EXPAND|wx.ALL, 2)
+            btn = wx.Button(self, -1, "Refresh", style=wx.BU_EXACTFIT)
+            self.Bind(wx.EVT_BUTTON, self.OnRefreshPageButton, btn)
+            btnSizer.Add(btn, 0, wx.EXPAND|wx.ALL, 2)
 
-        sizer.Add(btnSizer, 0, wx.EXPAND)
+            self.location = wx.ComboBox(
+                self, -1, url, style=wx.CB_DROPDOWN|wx.TE_PROCESS_ENTER)
+            self.Bind(wx.EVT_COMBOBOX, self.OnLocationSelect, self.location)
+            self.location.Bind(wx.EVT_TEXT_ENTER, self.OnLocationEnter)
+            btnSizer.Add(self.location, 1, wx.EXPAND|wx.ALL, 2)
+
+            sizer.Add(btnSizer, 0, wx.EXPAND)
+
         sizer.Add(self.wv, 1, wx.EXPAND)
         self.SetSizer(sizer)
 
@@ -57,7 +60,7 @@ class Preview(wx.Panel):
         self.Bind(webview.EVT_WEBVIEW_TITLE_CHANGED, self.OnWebViewTitleChanged, self.wv)
 
     @property
-    def url(self, url):
+    def url(self):
         return self.wv.GetCurrentURL()
 
     @url.setter
@@ -66,7 +69,8 @@ class Preview(wx.Panel):
 
     @property
     def path(self):
-        return self.current and self.current[len('file://'):]
+        url = self.url
+        return url[len("file://"):] if url.startswith("file://") else ""
 
     @path.setter
     def path(self, p):
@@ -74,7 +78,7 @@ class Preview(wx.Panel):
         if oldpath:
             self.env.remove_monitor_path(oldpath)
         self.env.add_monitor_path(p)
-        self.wv.LoadURL('file://' + p)
+        self.wv.LoadURL("file://" + p)
 
     @property
     def modified(self):
@@ -82,9 +86,10 @@ class Preview(wx.Panel):
 
     @property
     def title(self):
-        return self.wv.GetCurrentTitle() \
-            or self.wv.GetCurrentURL() \
-            or ("Loading..." if self.wv.IsBusy() else "...")
+        return (self.wv.GetCurrentTitle()
+                or self.path
+                or self.url
+                or ("Loading..." if self.wv.IsBusy() else "..."))
 
     @property
     def status_text(self):
@@ -99,16 +104,20 @@ class Preview(wx.Panel):
         yield True
 
     def SavePerspective(self):
-        return dict(
-            view_type = "preview",
-            path = self.path,
-        )
+        p = dict(view_type="preview")
+        path = self.path
+        if path:
+            p["path"] = path
+        else:
+            p["url"] = self.url
+        return p
 
     @coroutine
     def LoadPerspective(self, p):
-        path = p.get("path", "")
-        os.stat(path)  # check it exists
-        self.path = path
+        if "path" in p:
+            self.path = p["path"]
+        elif "url" in p:
+            self.url = p["url"]
         yield
 
     @coroutine
@@ -128,12 +137,13 @@ class Preview(wx.Panel):
 
     def OnWebViewLoaded(self, evt):
         self.current = evt.GetURL()
-        self.location.SetValue(self.current)
+        if self.show_browser_ui:
+            self.location.SetValue(self.current)
         self.sig_title_changed.signal(self)
 
     def OnLocationSelect(self, evt):
         url = self.location.GetStringSelection()
-        self.log.write('OnLocationSelect: %s\n' % url)
+        self.log.write("OnLocationSelect: %s\n" % url)
         self.wv.LoadURL(url)
 
     def OnLocationEnter(self, evt):
