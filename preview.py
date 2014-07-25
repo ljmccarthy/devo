@@ -2,8 +2,15 @@ import wx
 from async import coroutine
 from signal_wx import Signal
 
+def is_preview_available():
+    try:
+        import wx.html2
+        return True
+    except ImportError as e:
+        return False
+
 class Preview(wx.Panel):
-    def __init__(self, parent, env):
+    def __init__(self, parent, env, url=""):
         wx.Panel.__init__(self, parent)
 
         self.env = env
@@ -12,7 +19,7 @@ class Preview(wx.Panel):
         self.sig_status_changed = Signal()
 
         import wx.html2 as webview
-        self.wv = webview.WebView.New(self)
+        self.wv = webview.WebView.New(self, url=url)
 
         sizer = wx.BoxSizer(wx.VERTICAL)
         btnSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -50,8 +57,24 @@ class Preview(wx.Panel):
         self.Bind(webview.EVT_WEBVIEW_TITLE_CHANGED, self.OnWebViewTitleChanged, self.wv)
 
     @property
+    def url(self, url):
+        return self.wv.GetCurrentURL()
+
+    @url.setter
+    def url(self, url):
+        self.wv.LoadURL(url)
+
+    @property
     def path(self):
         return self.current and self.current[len('file://'):]
+
+    @path.setter
+    def path(self, p):
+        oldpath = self.path
+        if oldpath:
+            self.env.remove_monitor_path(oldpath)
+        self.env.add_monitor_path(p)
+        self.wv.LoadURL('file://' + p)
 
     @property
     def modified(self):
@@ -68,14 +91,6 @@ class Preview(wx.Panel):
     @property
     def status_text_path(self):
         return self.title
-
-    @path.setter
-    def path(self, p):
-        oldpath = self.path
-        if oldpath:
-            self.env.remove_monitor_path(oldpath)
-        self.env.add_monitor_path(p)
-        self.wv.LoadURL('file://' + p)
 
     @coroutine
     def TryClose(self):

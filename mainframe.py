@@ -17,7 +17,7 @@ from lru import LruQueue
 from menu import MenuItem
 from menu_defs import menubar
 from new_project_dialog import NewProjectDialog
-from preview import Preview
+from preview import Preview, is_preview_available
 from resources import load_icon_bundle
 from search_ctrl import SearchCtrl
 from search_dialog import SearchDetails, SearchDialog
@@ -669,9 +669,9 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             self.AddPage(editor, index=index)
             return editor
 
-    def NewPreview(self, index=None):
+    def NewPreview(self, index=None, url=""):
         with frozen_window(self.notebook):
-            preview = Preview(self.notebook, self.env)
+            preview = Preview(self.notebook, self.env, url=url)
             self.AddPage(preview, index=index)
             return preview
 
@@ -711,9 +711,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         view.SetFocus()
 
     def OpenPreview(self, path):
-        try:
-            import wx.html2
-        except ImportError as e:
+        if not is_preview_available():
             dialogs.error(self, "Web View is not available:\n\n%s" % e)
         else:
             path = self.GetFullPath(path)
@@ -1005,8 +1003,14 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         evt.Enable(True)
         evt.Check(self.IsFullScreen())
 
+    def OpenURL(self, url):
+        if is_preview_available():
+            preview = self.NewPreview(url=url)
+        else:
+            webbrowser.open_new_tab(url)
+
     def OnReportBug(self, evt):
-        webbrowser.open_new_tab("http://iogopro.com/devo/bugs")
+        self.OpenURL("https://github.com/shaurz/devo/issues")
 
     def OnAboutBox(self, evt):
         dlg = AboutDialog(self, self.env)
