@@ -13,6 +13,7 @@ Key Features
 * Tabbed interface for editing multiple files.
 * Scintilla-based editor with syntax colouring and automatic ident.
 * Fast directory browser with automatic instant refresh.
+* Web preview (using WebKit) for displaying HTML pages.
 * Multiple project sessions which can be quickly switched from the Project menu.
 * User-defined commands which output to a terminal pane.
 * Find and replace by string or regular expression
