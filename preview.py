@@ -36,11 +36,17 @@ class Preview(wx.Panel):
             btnSizer.Add(btn, 0, wx.EXPAND|wx.ALL, 2)
             self.Bind(wx.EVT_UPDATE_UI, self.OnCheckCanGoForward, btn)
 
-            btn = wx.Button(self, label="Stop", style=wx.BU_EXACTFIT)
+            if wx.Platform == "__WXGTK__":
+                btn = wx.BitmapButton(self, bitmap=wx.ArtProvider.GetBitmap("gtk-stop"))
+            else:
+                btn = wx.Button(self, label="Stop", style=wx.BU_EXACTFIT)
             self.Bind(wx.EVT_BUTTON, self.OnStopButton, btn)
             btnSizer.Add(btn, 0, wx.EXPAND|wx.ALL, 2)
 
-            btn = wx.Button(self, label="Refresh", style=wx.BU_EXACTFIT)
+            if wx.Platform == "__WXGTK__":
+                btn = wx.BitmapButton(self, bitmap=wx.ArtProvider.GetBitmap("gtk-refresh"))
+            else:
+                btn = wx.Button(self, label="Refresh", style=wx.BU_EXACTFIT)
             self.Bind(wx.EVT_BUTTON, self.OnRefreshPageButton, btn)
             btnSizer.Add(btn, 0, wx.EXPAND|wx.ALL, 2)
 
