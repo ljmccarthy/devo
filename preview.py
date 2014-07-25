@@ -4,18 +4,18 @@ from signal_wx import Signal
 
 class Preview(wx.Panel):
     def __init__(self, parent, env):
-        wx.Panel.__init__(self, parent, -1)
-        self.env = env
+        wx.Panel.__init__(self, parent)
 
+        self.env = env
         self.current = ""
+        self.sig_title_changed = Signal()
+        self.sig_status_changed = Signal()
+
+        import wx.html2 as webview
+        self.wv = webview.WebView.New(self)
 
         sizer = wx.BoxSizer(wx.VERTICAL)
         btnSizer = wx.BoxSizer(wx.HORIZONTAL)
-        import wx.html2 as webview
-        self.wv = webview.WebView.New(self)
-        self.Bind(webview.EVT_WEB_VIEW_NAVIGATING, self.OnWebViewNavigating, self.wv)
-        self.Bind(webview.EVT_WEB_VIEW_LOADED, self.OnWebViewLoaded, self.wv)
-        self.Bind(webview.EVT_WEB_VIEW_TITLE_CHANGED, self.OnWebViewTitleChanged, self.wv)
 
         btn = wx.Button(self, -1, "<--", style=wx.BU_EXACTFIT)
         self.Bind(wx.EVT_BUTTON, self.OnPrevPageButton, btn)
@@ -45,8 +45,9 @@ class Preview(wx.Panel):
         sizer.Add(self.wv, 1, wx.EXPAND)
         self.SetSizer(sizer)
 
-        self.sig_title_changed = Signal()
-        self.sig_status_changed = Signal()
+        self.Bind(webview.EVT_WEB_VIEW_NAVIGATING, self.OnWebViewNavigating, self.wv)
+        self.Bind(webview.EVT_WEB_VIEW_LOADED, self.OnWebViewLoaded, self.wv)
+        self.Bind(webview.EVT_WEB_VIEW_TITLE_CHANGED, self.OnWebViewTitleChanged, self.wv)
 
     @property
     def path(self):
@@ -124,16 +125,10 @@ class Preview(wx.Panel):
         self.wv.LoadURL(url)
 
     def OnOpenButton(self, event):
-        dlg = wx.TextEntryDialog(self, "Open Location",
-                                "Enter a full URL or local path",
-                                self.current, wx.OK|wx.CANCEL)
-        dlg.CentreOnParent()
-        try:
-            if dlg.ShowModal() == wx.ID_OK:
-                self.current = dlg.GetValue()
-                self.wv.LoadURL(self.current)
-        finally:
-            dlg.Destroy()
+        url = dialogs.get_text_input(self, "Open Location", "Enter a full URL or local path", self.current)
+        if url:
+            self.current = url
+            self.wv.LoadURL(self.current)
 
     def OnPrevPageButton(self, event):
         self.wv.GoBack()
@@ -152,9 +147,6 @@ class Preview(wx.Panel):
 
     def OnRefreshPageButton(self, evt):
         self.wv.Reload()
-
-class Preview(wx.Panel):
-    """Dummy Preview class."""
 
 if __name__ == "__main__":
     app = wx.App()
