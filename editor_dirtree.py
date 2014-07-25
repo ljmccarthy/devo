@@ -1,46 +1,12 @@
+import wx
 import os.path
 
 import fileutil
+import ID
 from async import async_call
+from dialogs import dialogs
 from dirtree import DirTreeCtrl
-from dirtree_constants import *
-from menu import Menu, MenuItem, MenuSeparator
-
-ID_DIRTREE_EDIT = wx.NewId()
-ID_DIRTREE_OPEN_FOLDER = wx.NewId()
-ID_DIRTREE_SEARCH = wx.NewId()
-ID_DIRTREE_SEARCH_FOLDER = wx.NewId()
-
-context_menu_file = Menu("", [
-    MenuItem(ID_DIRTREE_OPEN, "&Open"),
-    MenuItem(ID_DIRTREE_EDIT, "&Edit with Devo"),
-    #MenuItem(ID_DIRTREE_PREVIEW, "&Preview"),
-    MenuItem(ID_DIRTREE_RENAME, "&Rename"),
-    MenuItem(ID_DIRTREE_DELETE, "&Delete"),
-    MenuSeparator,
-    MenuItem(ID_DIRTREE_NEW_FOLDER, "&New Folder..."),
-    MenuItem(ID_DIRTREE_OPEN_FOLDER, "Open Containing &Folder"),
-    MenuSeparator,
-    MenuItem(ID_DIRTREE_SEARCH, "Searc&h..."),
-    MenuItem(ID_DIRTREE_SEARCH_FOLDER, "Search Containing Folder..."),
-    MenuSeparator,
-    MenuItem(ID_DIRTREE_EXPAND_ALL, "E&xpand All"),
-    MenuItem(ID_DIRTREE_COLLAPSE_ALL, "&Collapse All"),
-])
-
-context_menu_dir = Menu("", [
-    MenuItem(ID_DIRTREE_OPEN, "&Open"),
-    MenuItem(ID_DIRTREE_RENAME, "&Rename"),
-    MenuItem(ID_DIRTREE_DELETE, "&Delete"),
-    MenuSeparator,
-    MenuItem(ID_DIRTREE_NEW_FOLDER, "&New Folder..."),
-    MenuItem(ID_DIRTREE_OPEN_FOLDER, "Open Containing &Folder"),
-    MenuSeparator,
-    MenuItem(ID_DIRTREE_SEARCH, "Searc&h..."),
-    MenuSeparator,
-    MenuItem(ID_DIRTREE_EXPAND_ALL, "E&xpand All"),
-    MenuItem(ID_DIRTREE_COLLAPSE_ALL, "&Collapse All"),
-])
+from menu_defs import file_context_menu, dir_context_menu
 
 class EditorDirTreeCtrl(DirTreeCtrl):
     def __init__(self, parent, env, filter=None, show_root=False):
@@ -48,18 +14,18 @@ class EditorDirTreeCtrl(DirTreeCtrl):
         self.env = env
 
         self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.OnItemActivated)
-        self.Bind(wx.EVT_MENU, self.OnItemOpen, id=ID_DIRTREE_OPEN)
-        self.Bind(wx.EVT_MENU, self.OnItemEdit, id=ID_DIRTREE_EDIT)
-        self.Bind(wx.EVT_MENU, self.OnItemPreview, id=ID_DIRTREE_PREVIEW)
-        self.Bind(wx.EVT_MENU, self.OnItemOpenFolder, id=ID_DIRTREE_OPEN_FOLDER)
-        self.Bind(wx.EVT_MENU, self.OnSearch, id=ID_DIRTREE_SEARCH)
-        self.Bind(wx.EVT_MENU, self.OnSearchFolder, id=ID_DIRTREE_SEARCH_FOLDER)
+        self.Bind(wx.EVT_MENU, self.OnItemOpen, id=ID.DIRTREE_OPEN)
+        self.Bind(wx.EVT_MENU, self.OnItemEdit, id=ID.DIRTREE_EDIT)
+        self.Bind(wx.EVT_MENU, self.OnItemPreview, id=ID.DIRTREE_PREVIEW)
+        self.Bind(wx.EVT_MENU, self.OnItemOpenFolder, id=ID.DIRTREE_OPEN_FOLDER)
+        self.Bind(wx.EVT_MENU, self.OnSearch, id=ID.DIRTREE_SEARCH)
+        self.Bind(wx.EVT_MENU, self.OnSearchFolder, id=ID.DIRTREE_SEARCH_FOLDER)
 
     def GetNodeMenu(self, node):
         if node.type == 'd':
-            return context_menu_dir
+            return dir_context_menu
         if node.type == 'f':
-            return context_menu_file
+            return file_context_menu
 
     def OnItemActivated(self, evt):
         node = self.GetEventNode(evt)
@@ -82,7 +48,10 @@ class EditorDirTreeCtrl(DirTreeCtrl):
     def OnItemPreview(self, evt):
         node = self.GetSelectedNode()
         if node and node.type == 'f':
-            self.env.open_preview(node.path)
+            try:
+                self.env.open_preview(node.path)
+            except Exception as e:
+                dialogs.error(self, str(e))
 
     def _shell_open(self, path):
         try:

@@ -1,7 +1,6 @@
 import wx
 
 ID_DIRTREE_OPEN = wx.NewId()
-ID_DIRTREE_PREVIEW = wx.NewId()
 ID_DIRTREE_RENAME = wx.NewId()
 ID_DIRTREE_DELETE = wx.NewId()
 ID_DIRTREE_NEW_FOLDER = wx.NewId()
