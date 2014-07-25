@@ -66,16 +66,17 @@ menubar = MenuBar([
 ])
 
 file_context_menu = Menu("", [
-    MenuItem(ID.DIRTREE_OPEN, "&Open"),
+    MenuItem(ID.DIRTREE_OPEN, "&Open in External Application"),
     MenuItem(ID.DIRTREE_EDIT, "&Edit with Devo"),
     MenuItem(ID.DIRTREE_PREVIEW, "&Preview in Web View"),
+    MenuSeparator,
     MenuItem(ID.DIRTREE_RENAME, "&Rename"),
     MenuItem(ID.DIRTREE_DELETE, "&Delete"),
     MenuSeparator,
     MenuItem(ID.DIRTREE_NEW_FOLDER, "&New Folder..."),
     MenuItem(ID.DIRTREE_OPEN_FOLDER, "Open Containing &Folder"),
     MenuSeparator,
-    MenuItem(ID.DIRTREE_SEARCH, "Searc&h..."),
+    MenuItem(ID.DIRTREE_SEARCH, "Searc&h File..."),
     MenuItem(ID.DIRTREE_SEARCH_FOLDER, "Search Containing Folder..."),
     MenuSeparator,
     MenuItem(ID.DIRTREE_EXPAND_ALL, "E&xpand All"),
@@ -83,14 +84,14 @@ file_context_menu = Menu("", [
 ])
 
 dir_context_menu = Menu("", [
-    MenuItem(ID.DIRTREE_OPEN, "&Open"),
+    MenuItem(ID.DIRTREE_OPEN, "&Open Folder"),
     MenuItem(ID.DIRTREE_RENAME, "&Rename"),
     MenuItem(ID.DIRTREE_DELETE, "&Delete"),
     MenuSeparator,
     MenuItem(ID.DIRTREE_NEW_FOLDER, "&New Folder..."),
     MenuItem(ID.DIRTREE_OPEN_FOLDER, "Open Containing &Folder"),
     MenuSeparator,
-    MenuItem(ID.DIRTREE_SEARCH, "Searc&h..."),
+    MenuItem(ID.DIRTREE_SEARCH, "Searc&h Folder..."),
     MenuSeparator,
     MenuItem(ID.DIRTREE_EXPAND_ALL, "E&xpand All"),
     MenuItem(ID.DIRTREE_COLLAPSE_ALL, "&Collapse All"),
