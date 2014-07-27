@@ -26,7 +26,7 @@ from styled_text_ctrl import StyledTextCtrl, MARKER_FIND, MARKER_ERROR
 from shell import run_shell_command
 from terminal_ctrl import TerminalCtrl
 from util import frozen_window, frozen_or_hidden_window, is_text_file, new_id_range, shorten_path
-from view_settings_dialog import ViewSettingsDialog
+from view_settings_dialog import ViewSettingsDialog, get_font_from_settings
 
 def make_project_filename(project_root):
     return os.path.join(project_root, ".devo-project")
@@ -100,6 +100,10 @@ class AppEnv(object):
     def project_root(self):
         return self._mainframe.project_root
 
+    @property
+    def editor_font(self):
+        return self._mainframe.editor_font
+
 MAX_RECENT_FILES = 20
 
 DEFAULT_WIDTH = 1200
@@ -149,6 +153,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.search_details = None
         self.editor_focus = None
         self.editor_highlight = [None, None]
+        self.editor_font = get_font_from_settings({})
         self.menu_open = False
         self.closing = False
         self.closed = False
@@ -390,6 +395,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             self.MoveWindowToLeft(self.settings.get("window_start_width", width))
         else:
             self.MoveWindowToRight(self.settings.get("window_start_width", width))
+
+        self.editor_font = get_font_from_settings(self.settings)
 
         self.recent_files = LruQueue(self.settings.get("recent_files", []), MAX_RECENT_FILES)
 
@@ -1044,6 +1051,10 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 dlg.UpdateSettings(self.settings)
+
+                self.editor_font = dlg.font
+                for editor in self.editors:
+                    editor.RefreshStyle()
 
                 if self.settings["window_start_mode"] == "left":
                     self.MoveWindowToLeft(self.settings.get("window_start_width", self.Size.width))

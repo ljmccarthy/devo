@@ -2,7 +2,6 @@ import os.path, string
 from contextlib import contextmanager
 import wx, wx.stc
 
-from editor_fonts import font_face, font_size
 from find_replace_dialog import FindReplaceDetails, FindReplaceDialog
 from go_to_line_dialog import GoToLineDialog
 from menu_defs import edit_menu
@@ -11,8 +10,6 @@ from util import clean_text, clean_strip_text
 
 MARKER_FIND = 0
 MARKER_ERROR = 1
-
-MOD_CONTROL = wx.MOD_CONTROL if wx.VERSION < (2,9) else wx.MOD_RAW_CONTROL
 
 class StyledTextCtrl(wx.stc.StyledTextCtrl):
     name = ""
@@ -31,7 +28,7 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
     def ShouldFilterKeyEvent(self, evt):
         key = evt.GetKeyCode()
         mod = evt.GetModifiers()
-        return ((mod & MOD_CONTROL) and unichr(key) in string.ascii_letters) \
+        return ((mod & wx.MOD_RAW_CONTROL) and unichr(key) in string.ascii_letters) \
             or (wx.WXK_F1 <= key <= wx.WXK_F24)
 
     def __OnKeyDown(self, evt):
@@ -46,23 +43,31 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
         max_len = max(self.LineLength(line) for line in xrange(self.GetLineCount()))
         self.SetScrollWidth((max_len + 1) * self.TextWidth(wx.stc.STC_STYLE_DEFAULT, "_"))
 
-    def SetSyntax(self, syntax):
-        self.syntax = syntax
+    def RefreshStyle(self):
+        font = self.env.editor_font
+        font_info = (font.PointSize, font.FaceName,
+            font.Weight == wx.FONTWEIGHT_BOLD,
+            font.Style in (wx.FONTSTYLE_ITALIC, wx.FONTSTYLE_SLANT), False)
+
         self.ClearDocumentStyle()
-        self.SetLexer(syntax.lexer)
-        self.SetKeyWords(0, syntax.keywords)
+        self.SetLexer(self.syntax.lexer)
+        self.SetKeyWords(0, self.syntax.keywords)
         self.StyleResetDefault()
-        self.StyleSetFontAttr(wx.stc.STC_STYLE_DEFAULT, font_size, font_face, False, False, False)
+        self.StyleSetFontAttr(wx.stc.STC_STYLE_DEFAULT, *font_info)
         self.StyleSetSpec(wx.stc.STC_STYLE_DEFAULT, "")
         self.StyleClearAll()
         self.MarkerDefine(MARKER_FIND, wx.stc.STC_MARK_BACKGROUND, background="#CCCCFF")
         self.MarkerDefine(MARKER_ERROR, wx.stc.STC_MARK_BACKGROUND, background="#FFCCCC")
-        for style_num, spec in syntax.stylespecs:
+        for style_num, spec in self.syntax.stylespecs:
             self.StyleSetSpec(style_num, spec)
-        self.SetIndent(syntax.indent)
-        self.SetTabWidth(syntax.indent if syntax.use_tabs else 8)
-        self.SetUseTabs(syntax.use_tabs)
+        self.SetIndent(self.syntax.indent)
+        self.SetTabWidth(self.syntax.indent if self.syntax.use_tabs else 8)
+        self.SetUseTabs(self.syntax.use_tabs)
         self.Colourise(0, -1)
+
+    def SetSyntax(self, syntax):
+        self.syntax = syntax
+        self.RefreshStyle()
 
     def SetSyntaxFromFilename(self, path):
         self.SetSyntax(syntax_from_filename(path))
