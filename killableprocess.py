@@ -9,10 +9,8 @@
 # <benjamin@smedbergs.us> are Copyright (c) 2006 by the Mozilla Foundation
 # <http://www.mozilla.org/>
 #
-# More Modifications
-# Copyright (c) 2006-2007 by Mike Taylor <bear@code-bear.com>
-# Copyright (c) 2007-2008 by Mikeal Rogers <mikeal@mozilla.com>
-# Copyright (c) 2012 by Luke McCarthy <luke@iogopro.co.uk>
+# Additions and modifications written by Luke McCarthy <luke@iogopro.co.uk>
+# are Copyright (c) 2012 by Luke McCarthy
 #
 # By obtaining, using, and/or copying this software and/or its
 # associated documentation, you agree that you have read, understood,
@@ -35,7 +33,7 @@
 # NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
 # WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-"""killableprocess - Subprocesses which can be reliably killed
+r"""killableprocess - Subprocesses which can be reliably killed
 
 This module is a subclass of the builtin "subprocess" module. It allows
 processes that launch subprocesses to be reliably killed on Windows (via the Popen.kill() method.
@@ -51,11 +49,9 @@ Python 2.5+ or available from http://python.net/crew/theller/ctypes/
 import subprocess
 import sys
 import os
-import time
-import datetime
-import types
-import exceptions
 import signal
+import time
+import types
 
 try:
     from subprocess import CalledProcessError
@@ -75,13 +71,6 @@ mswindows = (sys.platform == "win32")
 
 if mswindows:
     import winprocess
-else:
-    import signal
-
-# This is normally defined in win32con, but we don't want
-# to incur the huge tree of dependencies (pywin32 and friends)
-# just to get one constant.  So here's our hack
-STILL_ACTIVE = 259
 
 def call(*args, **kwargs):
     waitargs = {}
@@ -122,8 +111,6 @@ class Popen(subprocess.Popen):
 
             subprocess.Popen.__init__(self, *args, **kwargs)
 
-            self.kill_called = False
-
     if mswindows:
         def _execute_child(self, *args_tuple):
             # workaround for bug 958609
@@ -146,9 +133,6 @@ class Popen(subprocess.Popen):
             if not isinstance(args, types.StringTypes):
                 args = subprocess.list2cmdline(args)
 
-            # Always or in the create new process group
-            creationflags |= winprocess.CREATE_NEW_PROCESS_GROUP
-
             if startupinfo is None:
                 startupinfo = winprocess.STARTUPINFO()
 
@@ -164,12 +148,13 @@ class Popen(subprocess.Popen):
                 comspec = os.environ.get("COMSPEC", "cmd.exe")
                 args = comspec + " /c " + args
 
-            # set process creation flags
+            # We create a new job for this process, so that we can kill
+            # the process and any sub-processes
+            self._job = winprocess.CreateJobObject()
+
             creationflags |= winprocess.CREATE_SUSPENDED
             creationflags |= winprocess.CREATE_UNICODE_ENVIRONMENT
-            creationflags |= winprocess.CREATE_BREAKAWAY_FROM_JOB
 
-            # create the process
             hp, ht, pid, tid = winprocess.CreateProcess(
                 executable, args,
                 None, None, # No special security
@@ -177,19 +162,14 @@ class Popen(subprocess.Popen):
                 creationflags,
                 winprocess.EnvironmentBlock(env),
                 cwd, startupinfo)
+
             self._child_created = True
             self._handle = hp
             self._thread = ht
             self.pid = pid
-            self.tid = tid
 
-            # We create a new job for this process, so that we can kill
-            # the process and any sub-processes
-            self._job = winprocess.CreateJobObject()
-            winprocess.AssignProcessToJobObject(self._job, int(hp))
-
-            winprocess.ResumeThread(int(ht))
-            ht.Close()
+            winprocess.AssignProcessToJobObject(self._job, hp)
+            winprocess.ResumeThread(ht)
 
             if p2cread is not None:
                 p2cread.Close()
@@ -197,7 +177,6 @@ class Popen(subprocess.Popen):
                 c2pwrite.Close()
             if errwrite is not None:
                 errwrite.Close()
-            time.sleep(.1)
 
     def send_signal(self, sig, group=True):
         if mswindows:
