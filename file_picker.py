@@ -58,7 +58,7 @@ def DirPicker(parent, size=(100, -1), value="", combo=False):
     return FilePicker(parent, dialogs.get_directory, size, value, combo)
 
 if __name__ == "__main__":
-    app = wx.PySimpleApp()
+    app = wx.App()
     frame = wx.Frame(None)
     FileOpenPicker(frame)
     frame.Show()

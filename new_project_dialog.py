@@ -39,6 +39,6 @@ class NewProjectDialog(wx.Dialog):
         return os.path.expanduser(self.fp_root.GetValue())
 
 if __name__ == "__main__":
-    app = wx.PySimpleApp()
+    app = wx.App()
     dlg = NewProjectDialog(None)
     dlg.ShowModal()

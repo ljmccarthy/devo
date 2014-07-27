@@ -106,7 +106,7 @@ class SearchDialog(wx.Dialog):
         evt.Enable(bool(find and path and os.path.isdir(path)))
 
 if __name__ == "__main__":
-    app = wx.PySimpleApp()
+    app = wx.App()
     dlg = SearchDialog(None)
     dlg.ShowModal()
     print dlg.GetDetails()

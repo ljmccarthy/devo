@@ -14,7 +14,7 @@ class HtmlFrame(wx.Frame):
         self.SetMinSize((100, 100))
 
 if __name__ == "__main__":
-    app = wx.PySimpleApp()
+    app = wx.App()
     dlg = HtmlFrame(None, "<h1>Hello, <i>World</i></h1>", title="Hello")
     dlg.Show()
     app.MainLoop()

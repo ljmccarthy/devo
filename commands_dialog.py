@@ -276,6 +276,6 @@ class CommandsDialog(wx.Dialog):
         return [self.cmdlist.GetClientData(i) for i in xrange(self.cmdlist.GetCount())]
 
 if __name__ == "__main__":
-    app = wx.PySimpleApp()
+    app = wx.App()
     dlg = CommandsDialog(None)
     dlg.ShowModal()

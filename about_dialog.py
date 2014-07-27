@@ -74,6 +74,6 @@ class AboutDialog(wx.Dialog):
         self.env.open_static_text("Devo License", license)
 
 if __name__ == "__main__":
-    app = wx.PySimpleApp()
+    app = wx.App()
     dlg = AboutDialog(None)
     dlg.ShowModal()
