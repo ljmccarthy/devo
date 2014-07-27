@@ -60,6 +60,8 @@ menubar = MenuBar([
     ]),
     Menu("&View", [
         MenuItem(ID.FULL_SCREEN, "&Full Screen", "Ctrl+Alt+F", kind=MenuItem.CHECK),
+        MenuSeparator,
+        MenuItem(ID.VIEW_SETTINGS, "&Settings..."),
     ]),
     Menu("&Help", [
         MenuItem(ID.REPORT_BUG, "Report Bug"),

@@ -26,6 +26,7 @@ from styled_text_ctrl import StyledTextCtrl, MARKER_FIND, MARKER_ERROR
 from shell import run_shell_command
 from terminal_ctrl import TerminalCtrl
 from util import frozen_window, frozen_or_hidden_window, is_text_file, new_id_range, shorten_path
+from view_settings_dialog import ViewSettingsDialog
 
 def make_project_filename(project_root):
     return os.path.join(project_root, ".devo-project")
@@ -101,17 +102,15 @@ class AppEnv(object):
 
 MAX_RECENT_FILES = 20
 
+DEFAULT_WIDTH = 1200
+
 NB_STYLE = (aui.AUI_NB_CLOSE_ON_ALL_TABS  | aui.AUI_NB_TOP | aui.AUI_NB_TAB_SPLIT
            | aui.AUI_NB_TAB_MOVE | aui.AUI_NB_SCROLL_BUTTONS | aui.AUI_NB_WINDOWLIST_BUTTON
            | wx.BORDER_NONE)
 
 class MainFrame(wx.Frame, wx.FileDropTarget):
     def __init__(self, args):
-        display_rect = wx.Display(wx.Display.GetFromPoint((0, 0))).GetClientArea()
-        width = min(display_rect.width, 1200)
-        rect = wx.Rect(display_rect.width - width, display_rect.y, width, display_rect.height)
-
-        wx.Frame.__init__(self, None, title="Devo", pos=rect.Position, size=rect.Size)
+        wx.Frame.__init__(self, None, title="Devo")
         wx.FileDropTarget.__init__(self)
 
         self.SetDropTarget(self)
@@ -169,9 +168,9 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.manager.AddPane(self.notebook,
             aui.AuiPaneInfo().CentrePane())
         self.manager.AddPane(self.terminal,
-            aui.AuiPaneInfo().Hide().Bottom().BestSize((width, 180)).Caption("Terminal"))
+            aui.AuiPaneInfo().Hide().Bottom().BestSize((-1, 180)).Caption("Terminal"))
         self.manager.AddPane(self.search,
-            aui.AuiPaneInfo().Hide().Top().BestSize((width, 250)).Caption("Search"))
+            aui.AuiPaneInfo().Hide().Top().BestSize((-1, 250)).Caption("Search"))
         self.manager.Update()
 
         self.Startup(args)
@@ -233,6 +232,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.Bind(wx.EVT_UPDATE_UI_RANGE, self.OnUpdateUI_ProjectCommand,
                   id=self.project_command_first_id, id2=self.project_command_last_id)
 
+        self.Bind(wx.EVT_MENU, self.OnViewSettings, id=ID.VIEW_SETTINGS)
         self.Bind(wx.EVT_MENU, self.OnFullScreen, id=ID.FULL_SCREEN)
 
         self.Bind(wx.EVT_MENU, self.OnReportBug, id=ID.REPORT_BUG)
@@ -348,6 +348,16 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.search.Destroy()
         self.Destroy()
 
+    def MoveWindowToLeft(self, width=DEFAULT_WIDTH):
+        display_rect = wx.Display(wx.Display.GetFromPoint((0, 0))).GetClientArea()
+        width = min(display_rect.width, width)
+        self.SetRect(wx.Rect(0, 0, width, display_rect.height))
+
+    def MoveWindowToRight(self, width=DEFAULT_WIDTH):
+        display_rect = wx.Display(wx.Display.GetFromPoint((0, 0))).GetClientArea()
+        width = min(display_rect.width, width)
+        self.SetRect(wx.Rect(display_rect.width - width, display_rect.y, width, display_rect.height))
+
     @managed("cm")
     @queued_coroutine("cq")
     def Startup(self, args):
@@ -361,6 +371,25 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                     shutil.copy2(self.settings_filename, backup_filename)
             except OSError:
                 pass
+
+        try:
+            width = self.settings["window_rect"][2]
+        except Exception:
+            width = DEFAULT_WIDTH
+
+        window_start_mode = self.settings.get("window_start_mode", "previous")
+        if window_start_mode == "previous":
+            if "window_rect" in self.settings:
+                try:
+                    self.SetRect(wx.Rect(*self.settings["window_rect"]))
+                except Exception:
+                    self.MoveWindowToRight()
+            else:
+                self.MoveWindowToRight()
+        elif window_start_mode == "left":
+            self.MoveWindowToLeft(self.settings.get("window_start_width", width))
+        else:
+            self.MoveWindowToRight(self.settings.get("window_start_width", width))
 
         self.recent_files = LruQueue(self.settings.get("recent_files", []), MAX_RECENT_FILES)
 
@@ -391,6 +420,13 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         for filename in args.filenames:
             self.OpenEditor(filename)
 
+        if window_start_mode == "previous":
+            window_state = self.settings.get("window_state", "normal")
+            if window_state == "fullscreen":
+                wx.CallAfter(self.OnFullScreen, None)
+            elif window_state == "maximized":
+                wx.CallAfter(self.Maximize)
+
         yield self.SaveSettings()
 
     @managed("cm")
@@ -400,6 +436,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.settings["last_project"] = self.project_root
         self.settings["recent_files"] = list(self.recent_files)
         self.settings["dialogs"] = dialogs.save_state()
+        self.settings["window_rect"] = self.Rect.Get()
+        self.settings["window_state"] = "fullscreen" if self.IsFullScreen() else "maximized" if self.IsMaximized() else "normal"
         try:
             yield async_call(write_settings, self.settings_filename, self.settings)
             yield True
@@ -1000,6 +1038,21 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         index = evt.GetId() - self.project_first_id
         if 0 <= index < len(self.project_info):
             self.OpenProject(self.projects_sorted[index][0])
+
+    def OnViewSettings(self, evt):
+        dlg = ViewSettingsDialog(self, settings=self.settings)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                dlg.UpdateSettings(self.settings)
+
+                if self.settings["window_start_mode"] == "left":
+                    self.MoveWindowToLeft(self.settings.get("window_start_width", self.Size.width))
+                elif self.settings["window_start_mode"] == "right":
+                    self.MoveWindowToRight(self.settings.get("window_start_width", self.Size.width))
+
+                self.SaveSettings()
+        finally:
+            dlg.Destroy()
 
     def OnFullScreen(self, evt):
         self.ShowFullScreen(not self.IsFullScreen())
