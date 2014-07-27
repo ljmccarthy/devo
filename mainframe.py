@@ -441,7 +441,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         try:
             yield async_call(write_settings, self.settings_filename, self.settings)
             yield True
-        except Exception, e:
+        except Exception as e:
             dialogs.error(self, "Error saving settings:\n\n%s" % e)
             yield False
 
@@ -471,13 +471,13 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                 try:
                     if not (yield self.SaveSession()):
                         yield False
-                except Exception, e:
+                except Exception as e:
                     dialogs.error(self, "Error saving session:\n\n%s" % e)
                     yield False
             try:
                 if self.project_filename:
                     yield async_call(write_settings, self.project_filename, self.project)
-            except Exception, e:
+            except Exception as e:
                 dialogs.error(self, "Error saving project:\n\n%s" % e)
                 yield False
             yield True
@@ -518,7 +518,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                     else:
                         try:
                             yield future
-                        except Exception, e:
+                        except Exception as e:
                             to_remove.append(i)
                             if not (isinstance(e, IOError) and e.errno == errno.ENOENT):
                                 errors.append(e)
@@ -609,7 +609,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                     yield self.SaveSettings()
                 self.Show()
                 yield True
-            except Exception, e:
+            except Exception as e:
                 if project_root in self.project_info:
                     if self._ShowLoadProjectError(e, project_root):
                         del self.project_info[project_root]
@@ -966,7 +966,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             try:
                 self.terminal.run(cmdline, cwd=workdir, killable=killable)
                 self.ShowPane(self.terminal, title=cmdline)
-            except Exception, e:
+            except Exception as e:
                 dialogs.error(self, "Error executing command:\n\n%s" % traceback.format_exc())
 
     @managed("cm")

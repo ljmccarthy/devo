@@ -77,7 +77,7 @@ def new_id_range(n):
 def _TryCallLater(timer, func, args, kwargs):
     try:
         wx.CallLater(timer, func, *args, **kwargs)
-    except wx._core.PyDeadObjectError, e:
+    except wx._core.PyDeadObjectError as e:
         pass
 
 def CallLater(timer, func, *args, **kwargs):

@@ -44,7 +44,7 @@ def mkdir(path):
     try:
         os.mkdir(path)
         return True
-    except OSError, e:
+    except OSError as e:
         if e.errno == errno.EEXIST:
             return False
         raise
@@ -56,7 +56,7 @@ def mkpath(path):
         try:
             os.mkdir(dirpath)
             break
-        except OSError, e:
+        except OSError as e:
             if e.errno == errno.EEXIST:
                 break
             elif e.errno == errno.ENOENT or (sys.platform == "win32" and e.winerror == 3):
@@ -86,7 +86,7 @@ def shell_remove(path):
     if ask_delete_file(path):
         try:
             yield async_call(remove, path)
-        except Exception, e:
+        except Exception as e:
             dialogs.error(get_top_window(), "Error deleting file:\n\n%s" % e)
 
 @coroutine
@@ -96,7 +96,7 @@ def shell_move(srcpath, dstpath):
     if ask_move_file(srcpath, dstpath):
         try:
             yield async_call(shutil.move, srcpath, dstpath)
-        except Exception, e:
+        except Exception as e:
             dialogs.error("Error moving file:\n\n%s" % e)
 
 @coroutine
@@ -106,7 +106,7 @@ def shell_copy(srcpath, dstpath):
     if ask_copy_file(srcpath, dstpath):
         try:
             yield async_call(shutil.copy2, srcpath, dstpath)
-        except Exception, e:
+        except Exception as e:
             dialogs.error(get_top_window(), "Error copying file:\n\n%s" % e)
 
 def shell_move_or_copy(srcpath, dstpath):

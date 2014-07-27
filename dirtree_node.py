@@ -147,7 +147,7 @@ class FSNode(object):
         if self.state == NODE_POPULATED:
             try:
                 info = (yield async_call(get_file_info, self.path, name))
-            except OSError, e:
+            except OSError as e:
                 return
             if not filter(info):
                 return

@@ -80,7 +80,7 @@ class FindReplaceDetails(object):
             if self.regexp:
                 try:
                     repl = self.rx_find.sub(self.replace, text, 1)
-                except re.error, e:
+                except re.error as e:
                     dialogs.error(editor, "Replace error:\n\n" + str(e).capitalize())
                     return False
             else:
@@ -266,7 +266,7 @@ class FindReplaceDialog(wx.Dialog):
                 case = self.check_case.GetValue(),
                 reverse = self.check_reverse.GetValue(),
                 regexp = self.check_regexp.GetValue())
-        except re.error, e:
+        except re.error as e:
             if show_error:
                 dialogs.error(self.editor,
                     "Invalid regular expression:\n\n" + str(e).capitalize())

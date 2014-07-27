@@ -143,7 +143,7 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
             yield self.LoadFile(path)
             self.EmptyUndoBuffer()
             yield True
-        except Exception, e:
+        except Exception as e:
             dialogs.error(self, "Error opening file:\n\n%s" % e)
             yield False
 
@@ -184,7 +184,7 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
             path = os.path.realpath(path)
             try:
                 yield self.WriteFile(path)
-            except Exception, exn:
+            except Exception as exn:
                 dialogs.error(self, "Error saving file '%s'\n\n%s" % (path, exn))
                 raise
             else:
@@ -208,7 +208,7 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
             try:
                 yield self.WriteFile(self.path)
                 yield True
-            except Exception, exn:
+            except Exception as exn:
                 dialogs.error(self, "Error saving file '%s'\n\n%s" % (self.path, exn))
                 raise
         else:

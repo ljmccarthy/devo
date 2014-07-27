@@ -72,7 +72,7 @@ class DevoApp(wx.App):
             config_dir = get_user_config_dir("devo")
             try:
                 mkpath(config_dir)
-            except OSError, e:
+            except OSError as e:
                 message = "Failed to create Devo configuration directory:\n\n" + str(e)
                 dialogs.error(None, message, "Initialization Error")
                 return False
@@ -134,7 +134,7 @@ def main():
 
     try:
         args = DevoArgs(args, os.getcwd())
-    except getopt.GetoptError, e:
+    except getopt.GetoptError as e:
         sys.stderr.write("devo: error: %s\n" % e)
         sys.exit(1)
 

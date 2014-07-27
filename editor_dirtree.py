@@ -53,7 +53,7 @@ class EditorDirTreeCtrl(DirTreeCtrl):
     def _shell_open(self, path):
         try:
             self.cm.add(async_call(fileutil.shell_open, path, workdir=os.path.dirname(path)))
-        except OSError, e:
+        except OSError as e:
             dialogs.error(self, str(e))
 
     def OnItemOpenFolder(self, evt):

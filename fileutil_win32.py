@@ -9,7 +9,7 @@ from fileutil_common import *
 def rename(old, new):
     try:
         win32file.MoveFileEx(old, new, win32file.MOVEFILE_REPLACE_EXISTING)
-    except pywintypes.error, e:
+    except pywintypes.error as e:
         raise WindowsError(*e.args)
 
 def shell_open(path, workdir=None):

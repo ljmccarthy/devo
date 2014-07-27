@@ -25,9 +25,9 @@ def check_variables(s):
     try:
         string.Template(s).substitute(
             FILE="", DIR="", BASENAME="", PROJECT_DIR="")
-    except KeyError, e:
+    except KeyError as e:
         raise Exception("Unknown variable name: %s" % e.args)
-    except ValueError, e:
+    except ValueError as e:
         raise Exception("Variable name missing after $")
 
 class EditCommandDialog(wx.Dialog):
@@ -135,7 +135,7 @@ class EditCommandDialog(wx.Dialog):
             ctrl = getattr(self, "field_" + field_name)
             try:
                 value = getter_method(self, ctrl)
-            except Exception, e:
+            except Exception as e:
                 ctrl.SetFocus()
                 dialogs.error(self, "Error: %s" % e)
                 return

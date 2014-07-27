@@ -302,7 +302,7 @@ class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
                         return
                 yield async_call(fileutil.rename, node.path, newpath)
                 self.SelectLater(self.GetItemParent(node.item), name)
-            except OSError, e:
+            except OSError as e:
                 dialogs.error(self, str(e))
 
     @managed("cm")
@@ -313,7 +313,7 @@ class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
             yield async_call(os.mkdir, path)
             if self.IsExpanded(node.item):
                 self.SelectLater(node.item, name)
-        except OSError, e:
+        except OSError as e:
             dialogs.error(self, str(e))
 
     @managed("cm")

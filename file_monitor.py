@@ -69,7 +69,7 @@ class FileMonitor(wx.EvtHandler):
                 if new_mtime != old_mtime:
                     self.path_mtime[path] = new_mtime
                     updated_paths.append(path)
-            except OSError, e:
+            except OSError as e:
                 if e.errno == errno.ENOENT:
                     deleted_paths.append(path)
         for path in deleted_paths:

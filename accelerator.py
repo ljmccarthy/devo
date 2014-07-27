@@ -57,7 +57,7 @@ def parse_accelerator(s):
         mod = 0
         for modname in parts[:-1]:
             mod |= modifier_bits[modname]
-    except KeyError, e:
+    except KeyError as e:
         raise ValueError("Invalid modifier name: %s" % e.args[0])
     keyname = parts[-1]
     key = None
