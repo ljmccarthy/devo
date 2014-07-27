@@ -2,6 +2,7 @@ import sys
 import wx
 
 import app_info
+import resources
 from hyper_link_ctrl import HyperLinkCtrl
 
 license = app_info.copyright + u"""
@@ -32,12 +33,14 @@ class AboutDialog(wx.Dialog):
 
         version_text = "Version %s (Released %s)" % (app_info.version_string, app_info.release_date.strftime("%Y-%m-%d"))
 
+        bitmap_devo = wx.StaticBitmap(self)
+        bitmap_devo.SetBitmap(resources.load_bitmap("icons/devo-icon-64.png"))
+
         fontsize = self.GetFont().PointSize
         label_devo = wx.StaticText(self, label=app_info.name)
-        label_devo.SetForegroundColour(wx.RED)
-        label_devo.SetFont(wx.Font(fontsize * 2, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
+        label_devo.SetFont(wx.Font(fontsize * 2.5, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
         label_devolved = wx.StaticText(self, label="      Text Editing Devolved")
-        label_devolved.SetFont(wx.Font(fontsize, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_ITALIC, wx.FONTWEIGHT_BOLD))
+        label_devolved.SetFont(wx.Font(fontsize * 1.25, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_ITALIC, wx.FONTWEIGHT_NORMAL))
         label_version = wx.StaticText(self, label=version_text)
 
         label_developer = wx.StaticText(self, label=app_info.developer)
@@ -51,9 +54,16 @@ class AboutDialog(wx.Dialog):
         btn_sizer.AddStretchSpacer()
         btn_sizer.Add(btn_ok)
 
+        logo_text_sizer = wx.BoxSizer(wx.VERTICAL)
+        logo_text_sizer.Add(label_devo, 0, wx.LEFT | wx.RIGHT | wx.TOP, 10)
+        logo_text_sizer.Add(label_devolved, 0, wx.LEFT | wx.RIGHT, 10)
+
+        logo_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        logo_sizer.Add(bitmap_devo, 0, wx.ALIGN_CENTER_VERTICAL)
+        logo_sizer.Add(logo_text_sizer, 1, wx.ALIGN_CENTER_VERTICAL)
+
         sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(label_devo, 0, wx.LEFT | wx.RIGHT | wx.TOP, 10)
-        sizer.Add(label_devolved, 0, wx.LEFT | wx.RIGHT, 10)
+        sizer.Add(logo_sizer, 0, wx.LEFT | wx.RIGHT | wx.TOP, 20)
         sizer.AddSpacer(15)
         sizer.Add(label_version, 0, wx.LEFT | wx.RIGHT, 20)
         sizer.AddSpacer(5)
@@ -75,5 +85,5 @@ class AboutDialog(wx.Dialog):
 
 if __name__ == "__main__":
     app = wx.App()
-    dlg = AboutDialog(None)
+    dlg = AboutDialog(None, None)
     dlg.ShowModal()
