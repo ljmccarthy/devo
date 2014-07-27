@@ -259,6 +259,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_ProjectIsOpen, id=ID.CLOSE_PROJECT)
         self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_ProjectIsOpen, id=ID.EDIT_PROJECT)
 
+        self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateUI_FullScreen, id=ID.FULL_SCREEN)
+
     @property
     def views(self):
         for i in xrange(self.notebook.GetPageCount()):
