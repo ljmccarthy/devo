@@ -1073,14 +1073,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         evt.Enable(True)
         evt.Check(self.IsFullScreen())
 
-    def OpenURL(self, url, show_browser_ui=True):
-        if is_preview_available():
-            preview = self.NewPreview(url=url, show_browser_ui=show_browser_ui)
-        else:
-            webbrowser.open_new_tab(url)
-
     def OnReportBug(self, evt):
-        self.OpenURL(app_info.bug_report_url)
+        webbrowser.open_new_tab(app_info.bug_report_url)
 
     def OnAboutBox(self, evt):
         dlg = AboutDialog(self, self.env)
