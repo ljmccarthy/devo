@@ -221,113 +221,46 @@ class Popen(subprocess.Popen):
         sig = signal.CTRL_C_EVENT if mswindows else signal.SIGTERM
         self.send_signal(sig, group)
 
-    def wait(self, timeout=None, group=True):
+    def wait(self, timeout=-1, group=True):
         """Wait for the process to terminate. Returns returncode attribute.
         If timeout seconds are reached and the process has not terminated,
         it will be forcefully killed. If timeout is -1, wait will not
         time out."""
-        if timeout is not None:
-            # timeout is now in milliseconds
-            timeout = timeout * 1000
 
-        starttime = datetime.datetime.now()
-
-        if mswindows:
-            if timeout is None:
-                timeout = -1
-            rc = winprocess.WaitForSingleObject(self._handle, timeout)
-
-            if (rc == winprocess.WAIT_OBJECT_0 or
-                rc == winprocess.WAIT_ABANDONED or
-                rc == winprocess.WAIT_FAILED):
-                # Object has either signaled, or the API call has failed.  In
-                # both cases we want to give the OS the benefit of the doubt
-                # and supply a little time before we start shooting processes
-                # with an M-16.
-
-                # Returns 1 if running, 0 if not, -1 if timed out
-                def check():
-                    now = datetime.datetime.now()
-                    diff = now - starttime
-                    if (diff.seconds * 1000 * 1000 + diff.microseconds) < (timeout * 1000):
-                        if self._job:
-                            if (winprocess.QueryInformationJobObject(self._job, 8)['BasicInfo']['ActiveProcesses'] > 0):
-                                # Job Object is still containing active processes
-                                return 1
-                        else:
-                            # No job, we use GetExitCodeProcess, which will tell us if the process is still active
-                            self.returncode = winprocess.GetExitCodeProcess(self._handle)
-                            if (self.returncode == STILL_ACTIVE):
-                                # Process still active, continue waiting
-                                return 1
-                        # Process not active, return 0
-                        return 0
-                    else:
-                        # Timed out, return -1
-                        return -1
-
-                notdone = check()
-                while notdone == 1:
-                    time.sleep(.5)
-                    notdone = check()
-
-                if notdone == -1:
-                    # Then check timed out, we have a hung process, attempt
-                    # last ditch kill with explosives
-                    self.kill(group)
-
-            else:
-                # In this case waitforsingleobject timed out.  We have to
-                # take the process behind the woodshed and shoot it.
-                self.kill(group)
-
-        else:
-            if sys.platform in ('linux2', 'sunos5', 'solaris') \
-                    or sys.platform.startswith('freebsd'):
-                def group_wait(timeout):
-                    try:
-                        os.waitpid(self.pid, 0)
-                    except OSError, e:
-                        pass # If wait has already been called on this pid, bad things happen
-                    return self.returncode
-            elif sys.platform == 'darwin':
-                def group_wait(timeout):
-                    try:
-                        count = 0
-                        if timeout is None and self.kill_called:
-                            timeout = 10 # Have to set some kind of timeout or else this could go on forever
-                        if timeout is None:
-                            while 1:
-                                os.killpg(self.pid, signal.SIG_DFL)
-                        while ((count * 2) <= timeout):
-                            os.killpg(self.pid, signal.SIG_DFL)
-                            # count is increased by 500ms for every 0.5s of sleep
-                            time.sleep(.5); count += 500
-                    except exceptions.OSError:
-                        return self.returncode
-
-            if timeout is None:
-                if group is True:
-                    return group_wait(timeout)
-                else:
-                    subprocess.Popen.wait(self)
-                    return self.returncode
-
-            returncode = False
-
-            now = datetime.datetime.now()
-            diff = now - starttime
-            while (diff.seconds * 1000 * 1000 + diff.microseconds) < (timeout * 1000) and ( returncode is False ):
-                if group is True:
-                    return group_wait(timeout)
-                else:
-                    if subprocess.poll() is not None:
-                        returncode = self.returncode
-                time.sleep(.5)
-                now = datetime.datetime.now()
-                diff = now - starttime
+        if self.returncode is not None:
             return self.returncode
 
+        if mswindows:
+            if timeout != -1:
+                timeout = timeout * 1000
+            rc = winprocess.WaitForSingleObject(self._handle, timeout)
+            if rc == winprocess.WAIT_TIMEOUT:
+                self.kill(group)
+            else:
+                self.returncode = winprocess.GetExitCodeProcess(self._handle)
+        else:
+            if timeout == -1:
+                subprocess.Popen.wait(self)
+                return self.returncode
+
+            starttime = time.time()
+
+            # Make sure there is a signal handler for SIGCHLD installed
+            oldsignal = signal.signal(signal.SIGCHLD, DoNothing)
+
+            while time.time() < starttime + timeout - 0.01:
+                pid, sts = os.waitpid(self.pid, os.WNOHANG)
+                if pid != 0:
+                    self._handle_exitstatus(sts)
+                    signal.signal(signal.SIGCHLD, oldsignal)
+                    return self.returncode
+
+                # time.sleep is interrupted by signals (good!)
+                newtimeout = timeout - time.time() + starttime
+                time.sleep(newtimeout)
+
+            self.kill(group)
+            signal.signal(signal.SIGCHLD, oldsignal)
+            subprocess.Popen.wait(self)
+
         return self.returncode
-    # We get random maxint errors from subprocesses __del__
-    __del__ = lambda self: None
