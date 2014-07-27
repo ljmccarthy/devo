@@ -142,9 +142,6 @@ def main():
         if os.fork() != 0:
             os._exit(0)
 
-    if wx.VERSION < (2,9):
-        wx.InitAllImageHandlers()
-
     app = DevoApp()
     if app.Startup(args):
         app.MainLoop()
