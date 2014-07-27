@@ -49,7 +49,8 @@ class ViewSettingsDialog(wx.Dialog):
         self.choice_start_mode = wx.Choice(self, choices=list(x[0] for x in view_modes))
         self.choice_start_mode.Select(view_mode_indices.get(settings.get("window_start_mode", "previous"), 0))
 
-        self.spin_width = wx.SpinCtrl(self, min=100, max=65535, value=str(settings.get("window_start_width", 1200)))
+        display_rect = wx.Display(wx.Display.GetFromWindow(parent)).GetClientArea()
+        self.spin_width = wx.SpinCtrl(self, min=100, max=display_rect.width, value=str(settings.get("window_start_width", 1200)))
         self.check_remember_width = wx.CheckBox(self, label="Remember last width")
         self.check_remember_width.SetValue("window_start_width" not in settings)
         self.OnUpdateControls(None)
