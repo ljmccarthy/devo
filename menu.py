@@ -15,7 +15,7 @@ class MenuItem(object):
         text = "%s\t%s" % (self.label, self.accel) if self.accel else self.label
         menu.Append(self.id, text, kind=self.kind)
 
-    def GetAccelerators(self):
+    def GetAccelerators(self, hooks={}):
         if self.accel:
             accel = wx.AcceleratorEntry()
             accel.FromString(self.accel)
@@ -30,7 +30,7 @@ class MenuSeparator(object):
         if last >= 0 and menu.FindItemByPosition(last).GetKind() != wx.ITEM_SEPARATOR:
             menu.AppendSeparator()
 
-    def GetAccelerators(self):
+    def GetAccelerators(self, hooks={}):
         return []
 
 class MenuHook(object):
@@ -41,8 +41,11 @@ class MenuHook(object):
         for item in hooks.get(self.id, []):
             item.Build(menu, hooks)
 
-    def GetAccelerators(self):
-        return []
+    def GetAccelerators(self, hooks={}):
+        accels = []
+        for item in hooks.get(self.id, []):
+            accels.extend(item.GetAccelerators(hooks))
+        return accels
 
 MenuSeparator = MenuSeparator()
 
@@ -65,10 +68,10 @@ class Menu(object):
                 menu.DeleteItem(item)
         return menu
 
-    def GetAccelerators(self):
+    def GetAccelerators(self, hooks={}):
         accels = []
         for item in self.items:
-            accels.extend(item.GetAccelerators())
+            accels.extend(item.GetAccelerators(hooks))
         return accels
 
 class MenuBar(object):
@@ -81,8 +84,8 @@ class MenuBar(object):
             menubar.Append(menu.Create(hooks), menu.label)
         return menubar
 
-    def GetAccelerators(self):
+    def GetAccelerators(self, hooks={}):
         accels = []
         for menu in self.menus:
-            accels.extend(menu.GetAccelerators())
+            accels.extend(menu.GetAccelerators(hooks))
         return accels

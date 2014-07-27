@@ -176,9 +176,6 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
 
         self.Startup(args)
 
-        accel_table = wx.AcceleratorTable(menubar.GetAccelerators())
-        self.SetAcceleratorTable(accel_table)
-
         self.Bind(wx.EVT_CLOSE, self.OnClose)
         self.Bind(wx.EVT_ACTIVATE, self.OnActivate)
         self.Bind(wx.EVT_CHILD_FOCUS, self.OnChildFocus)
@@ -305,7 +302,12 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             ]
         }
 
+    def UpdateAcceleratorTable(self):
+        accel_table = wx.AcceleratorTable(menubar.GetAccelerators(self.GetMenuHooks()))
+        self.SetAcceleratorTable(accel_table)
+
     def UpdateMenuBar(self):
+        self.UpdateAcceleratorTable()
         with frozen_window(self):
             old_menubar = self.GetMenuBar()
             new_menubar = menubar.Create(self.GetMenuHooks())
