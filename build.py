@@ -63,6 +63,14 @@ def add_win32com_modules(win32com_modules):
     except ImportError:
         pass
 
+def find_program_files(rel_path):
+    for envvar in ["PROGRAMW6432", "PROGRAMFILES", "PROGRAMFILES(X86)"]:
+        if envvar in os.environ:
+            path = os.path.join(os.environ[envvar], rel_path)
+            if os.path.exists(path):
+                return path
+    return ""
+
 def build_py2exe():
     from distutils.core import setup
     import py2exe
@@ -99,10 +107,14 @@ def build_py2exe():
         windows = [target],
     )
 
-    run(os.environ["PROGRAMFILES"] + r"\7-Zip\7z.exe", "a", "-tzip", "-y",
-        "%s-%s.zip" % (target_name, app_info.version_string),
-        "%s-%s" % (target_name, app_info.version_string),
-        cwd = platform_dir)
+    sevenzip = find_program_files(r"7-Zip\7z.exe")
+    if sevenzip:
+        run(sevenzip, "a", "-tzip", "-y",
+            "%s-%s.zip" % (target_name, app_info.version_string),
+            "%s-%s" % (target_name, app_info.version_string),
+            cwd = platform_dir)
+    else:
+        print "Error: 7-zip not found"
 
 def build_py2app():
     from distutils.core import setup
