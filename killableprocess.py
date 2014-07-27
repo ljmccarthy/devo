@@ -55,6 +55,7 @@ import time
 import datetime
 import types
 import exceptions
+import signal
 
 try:
     from subprocess import CalledProcessError
@@ -163,16 +164,10 @@ class Popen(subprocess.Popen):
                 comspec = os.environ.get("COMSPEC", "cmd.exe")
                 args = comspec + " /c " + args
 
-            # determine if we can create create a job
-            canCreateJob = winprocess.CanCreateJobObject()
-
             # set process creation flags
             creationflags |= winprocess.CREATE_SUSPENDED
             creationflags |= winprocess.CREATE_UNICODE_ENVIRONMENT
-            if canCreateJob:
-                # Uncomment this line below to discover very useful things about your environment
-                #print "++++ killableprocess: releng twistd patch not applied, we can create job objects"
-                creationflags |= winprocess.CREATE_BREAKAWAY_FROM_JOB
+            creationflags |= winprocess.CREATE_BREAKAWAY_FROM_JOB
 
             # create the process
             hp, ht, pid, tid = winprocess.CreateProcess(
@@ -188,13 +183,10 @@ class Popen(subprocess.Popen):
             self.pid = pid
             self.tid = tid
 
-            if canCreateJob:
-                # We create a new job for this process, so that we can kill
-                # the process and any sub-processes
-                self._job = winprocess.CreateJobObject()
-                winprocess.AssignProcessToJobObject(self._job, int(hp))
-            else:
-                self._job = None
+            # We create a new job for this process, so that we can kill
+            # the process and any sub-processes
+            self._job = winprocess.CreateJobObject()
+            winprocess.AssignProcessToJobObject(self._job, int(hp))
 
             winprocess.ResumeThread(int(ht))
             ht.Close()
