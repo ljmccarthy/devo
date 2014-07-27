@@ -133,6 +133,8 @@ class Popen(subprocess.Popen):
             if not isinstance(args, types.StringTypes):
                 args = subprocess.list2cmdline(args)
 
+            creationflags = winprocess.CREATE_NEW_PROCESS_GROUP
+
             if startupinfo is None:
                 startupinfo = winprocess.STARTUPINFO()
 
@@ -154,6 +156,7 @@ class Popen(subprocess.Popen):
 
             creationflags |= winprocess.CREATE_SUSPENDED
             creationflags |= winprocess.CREATE_UNICODE_ENVIRONMENT
+            creationflags |= winprocess.CREATE_BREAKAWAY_FROM_JOB
 
             hp, ht, pid, tid = winprocess.CreateProcess(
                 executable, args,
