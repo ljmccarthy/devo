@@ -238,6 +238,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                   id=self.project_command_first_id, id2=self.project_command_last_id)
 
         self.Bind(wx.EVT_MENU, self.OnViewSettings, id=ID.VIEW_SETTINGS)
+        self.Bind(wx.EVT_MENU, self.OnShowPaneTerminal, id=ID.SHOW_PANE_TERMINAL)
+        self.Bind(wx.EVT_MENU, self.OnShowPaneSearch, id=ID.SHOW_PANE_SEARCH)
         self.Bind(wx.EVT_MENU, self.OnFullScreen, id=ID.FULL_SCREEN)
 
         self.Bind(wx.EVT_MENU, self.OnReportBug, id=ID.REPORT_BUG)
@@ -265,6 +267,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_ProjectIsOpen, id=ID.EDIT_PROJECT)
 
         self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateUI_FullScreen, id=ID.FULL_SCREEN)
+        self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateUI_ShowPaneTerminal, id=ID.SHOW_PANE_TERMINAL)
+        self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateUI_ShowPaneSearch, id=ID.SHOW_PANE_SEARCH)
 
     @property
     def views(self):
@@ -882,12 +886,19 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
 
     def ShowPane(self, window, title=None):
         pane = self.manager.GetPane(window)
-        if title is not None:
-            pane.Caption(title)
-        if not pane.IsShown():
-            pane.Show()
-            self.manager.Update()
-        elif title is not None:
+        if pane:
+            if title is not None:
+                pane.Caption(title)
+            if not pane.IsShown():
+                pane.Show()
+                self.manager.Update()
+            elif title is not None:
+                self.manager.Update()
+
+    def HidePane(self, window):
+        pane = self.manager.GetPane(window)
+        if pane and pane.IsShown():
+            pane.Hide()
             self.manager.Update()
 
     def GetCurrentSelection(self):
@@ -1064,6 +1075,26 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                 self.SaveSettings()
         finally:
             dlg.Destroy()
+
+    def TogglePane(self, window):
+        if window.IsShown():
+            self.HidePane(window)
+        else:
+            self.ShowPane(window)
+
+    def OnShowPaneTerminal(self, evt):
+        self.TogglePane(self.terminal)
+
+    def OnShowPaneSearch(self, evt):
+        self.TogglePane(self.search)
+
+    def OnUpdateUI_ShowPaneTerminal(self, evt):
+        evt.Enable(True)
+        evt.Check(self.terminal.IsShown())
+
+    def OnUpdateUI_ShowPaneSearch(self, evt):
+        evt.Enable(True)
+        evt.Check(self.search.IsShown())
 
     def OnFullScreen(self, evt):
         self.ShowFullScreen(not self.IsFullScreen())
