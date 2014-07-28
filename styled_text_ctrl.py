@@ -215,7 +215,7 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
             self.env.find_details.Find(self, reverse=True)
 
     def GoToLine(self):
-        dlg = GoToLineDialog(self, self.name)
+        dlg = GoToLineDialog(self, self.name, self.GetCurrentLine() + 1)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 self.CentreLine(dlg.GetLineNumber())

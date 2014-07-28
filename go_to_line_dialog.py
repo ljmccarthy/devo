@@ -3,14 +3,14 @@ from dialogs import dialogs
 from dialog_util import bind_escape_key
 
 class GoToLineDialog(wx.Dialog):
-    def __init__(self, parent, filename="", details=None):
+    def __init__(self, parent, filename="", line="", details=None):
         title = "Go To Line"
         if filename:
             title += " [%s]" % filename
 
         wx.Dialog.__init__(self, parent, title=title)
 
-        self.text = wx.TextCtrl(self, size=(100, -1))
+        self.text = wx.TextCtrl(self, value=str(line), size=(100, -1))
         self.text.SetFocus()
 
         flags = wx.RIGHT | wx.TOP | wx.BOTTOM | wx.ALIGN_CENTRE_VERTICAL
