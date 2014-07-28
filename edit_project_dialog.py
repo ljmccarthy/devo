@@ -39,5 +39,5 @@ class EditProjectDialog(wx.Dialog):
 
 if __name__ == "__main__":
     app = wx.App()
-    dlg = EditProjectDialog(None, "Foo Bar")
+    dlg = EditProjectDialog(None, {"name": "Foo Bar"})
     dlg.ShowModal()
