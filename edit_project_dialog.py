@@ -30,10 +30,12 @@ class EditProjectDialog(wx.Dialog):
         self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateUI_OK, id=wx.ID_OK)
 
     def OnUpdateUI_OK(self, evt):
-        evt.Enable(bool(self.GetName()))
+        evt.Enable(bool(self.text_name.Value.strip()))
 
     def UpdateProject(self, project):
-        project["name"] = self.text_name.GetValue().strip()
+        name = self.text_name.Value.strip()
+        if name:
+            project["name"] = name
 
 if __name__ == "__main__":
     app = wx.App()
