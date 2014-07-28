@@ -10,6 +10,7 @@ from dialogs import dialogs
 from commands_dialog import CommandsDialog
 from dirtree import DirNode
 from dirtree_filter import DirTreeFilter
+from edit_project_dialog import EditProjectDialog
 from editor import Editor
 from editor_dirtree import EditorDirTreeCtrl
 from file_monitor import FileMonitor
@@ -220,7 +221,6 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.Bind(wx.EVT_MENU, self.OnOpenProject, id=ID.OPEN_PROJECT)
         self.Bind(wx.EVT_MENU, self.OnCloseProject, id=ID.CLOSE_PROJECT)
         self.Bind(wx.EVT_MENU, self.OnEditProject, id=ID.EDIT_PROJECT)
-        self.Bind(wx.EVT_MENU, self.OnOrganiseProjects, id=ID.ORGANISE_PROJECTS)
         self.Bind(wx.EVT_MENU, self.OnConfigureSharedCommands, id=ID.CONFIGURE_SHARED_COMMANDS)
         self.Bind(wx.EVT_MENU, self.OnConfigureProjectCommands, id=ID.CONFIGURE_PROJECT_COMMANDS)
         self.Bind(wx.EVT_UPDATE_UI, self.OnUpdate_ConfigureProjectCommands, id=ID.CONFIGURE_PROJECT_COMMANDS)
@@ -881,10 +881,15 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             self.OpenDefaultProject()
 
     def OnEditProject(self, evt):
-        pass
-
-    def OnOrganiseProjects(self, evt):
-        pass
+        if self.project_filename:
+            dlg = EditProjectDialog(self, self.project)
+            try:
+                if dlg.ShowModal() == wx.ID_OK:
+                    dlg.UpdateProject(self.project)
+                    self.UpdateMenuBar()
+                    self.SaveProject()
+            finally:
+                dlg.Destroy()
 
     def ShowPane(self, window, title=None):
         pane = self.manager.GetPane(window)
