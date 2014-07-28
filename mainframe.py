@@ -565,6 +565,9 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.deleted_paths.clear()
         self.fmon.start()
 
+    def UpdateTitle(self):
+        self.SetTitle("Devo [%s]" % self.project["name"] if self.project_filename else "Devo")
+
     def SetProject(self, project, project_root):
         project_root = os.path.realpath(project_root)
         self.project = project
@@ -577,7 +580,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.DeleteAllPages()
         self.tree.SetTopLevel([DirNode(self.project_root)])
         self.UpdateMenuBar()
-        self.SetTitle("Devo [%s]" % project["name"])
+        self.UpdateTitle()
         self.StartFileMonitor()
 
     @managed("cm")
@@ -652,7 +655,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             finally:
                 self.Show()
                 self.UpdateMenuBar()
-                self.SetTitle("Devo")
+                self.UpdateTitle()
                 self.StartFileMonitor()
 
     def OnPaneClose(self, evt):
@@ -887,6 +890,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                 if dlg.ShowModal() == wx.ID_OK:
                     dlg.UpdateProject(self.project)
                     self.UpdateMenuBar()
+                    self.UpdateTitle()
                     self.SaveProject()
             finally:
                 dlg.Destroy()
