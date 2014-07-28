@@ -61,8 +61,9 @@ menubar = MenuBar([
     Menu("&View", [
         MenuItem(ID.FULL_SCREEN, "&Full Screen", "Ctrl+Alt+F", kind=MenuItem.CHECK),
         MenuSeparator,
-        MenuItem(ID.SHOW_PANE_SEARCH, "Show Searc&h Pane", kind=MenuItem.CHECK),
-        MenuItem(ID.SHOW_PANE_TERMINAL, "Show &Terminal Pane", kind=MenuItem.CHECK),
+        MenuItem(ID.SHOW_PANE_FILE_BROWSER, "Show File &Browser", "Ctrl+1", kind=MenuItem.CHECK),
+        MenuItem(ID.SHOW_PANE_SEARCH, "Show Searc&h Pane", "Ctrl+2", kind=MenuItem.CHECK),
+        MenuItem(ID.SHOW_PANE_TERMINAL, "Show &Terminal Pane", "Ctrl+3", kind=MenuItem.CHECK),
         MenuSeparator,
         MenuItem(ID.VIEW_SETTINGS, "&Settings..."),
     ]),

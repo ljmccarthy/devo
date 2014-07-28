@@ -238,6 +238,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                   id=self.project_command_first_id, id2=self.project_command_last_id)
 
         self.Bind(wx.EVT_MENU, self.OnViewSettings, id=ID.VIEW_SETTINGS)
+        self.Bind(wx.EVT_MENU, self.OnShowPaneFileBrowser, id=ID.SHOW_PANE_FILE_BROWSER)
         self.Bind(wx.EVT_MENU, self.OnShowPaneTerminal, id=ID.SHOW_PANE_TERMINAL)
         self.Bind(wx.EVT_MENU, self.OnShowPaneSearch, id=ID.SHOW_PANE_SEARCH)
         self.Bind(wx.EVT_MENU, self.OnFullScreen, id=ID.FULL_SCREEN)
@@ -267,6 +268,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_ProjectIsOpen, id=ID.EDIT_PROJECT)
 
         self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateUI_FullScreen, id=ID.FULL_SCREEN)
+        self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateUI_ShowPaneFileBrowser, id=ID.SHOW_PANE_FILE_BROWSER)
         self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateUI_ShowPaneTerminal, id=ID.SHOW_PANE_TERMINAL)
         self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateUI_ShowPaneSearch, id=ID.SHOW_PANE_SEARCH)
 
@@ -1082,11 +1084,18 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         else:
             self.ShowPane(window)
 
+    def OnShowPaneFileBrowser(self, evt):
+        self.TogglePane(self.tree)
+
     def OnShowPaneTerminal(self, evt):
         self.TogglePane(self.terminal)
 
     def OnShowPaneSearch(self, evt):
         self.TogglePane(self.search)
+
+    def OnUpdateUI_ShowPaneFileBrowser(self, evt):
+        evt.Enable(True)
+        evt.Check(self.tree.IsShown())
 
     def OnUpdateUI_ShowPaneTerminal(self, evt):
         evt.Enable(True)
