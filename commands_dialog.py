@@ -148,7 +148,7 @@ class EditCommandDialog(wx.Dialog):
             pos = (self.Position.x - 420, self.Position.y)
             self.help_frame = HtmlFrame(
                 self, command_help, title="Edit Command Help",
-                pos=pos, size=(400, 225))
+                pos=pos, size=(400, 250))
             self.help_frame.Bind(wx.EVT_CLOSE, self.OnHelpFrameClose)
         self.help_frame.Show()
         self.help_frame.Raise()
