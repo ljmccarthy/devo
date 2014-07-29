@@ -1,8 +1,9 @@
-import os.path, json, threading
+import os.path, json, threading, tempfile, getpass
 from multiprocessing.connection import Client, Listener
 
 import fileutil
 from async import Future, get_scheduler
+from util import pid_exists
 
 class AppInstance(object):
     def __init__(self, instance_filename):
@@ -10,6 +11,8 @@ class AppInstance(object):
         self.pid = instance["pid"]
         self.address = str(instance["address"])
         self.client = None
+        if not pid_exists(self.pid):
+            raise Exception("Instance pid is invalid")
 
     def connect(self):
         if self.client is None:
@@ -22,7 +25,7 @@ class AppInstance(object):
         return client.recv()
 
 def make_instance_filename(name):
-    return os.path.join(fileutil.get_user_config_dir(name), "instance")
+    return os.path.join(tempfile.gettempdir(), "." + getpass.getuser() + ".devo-instance")
 
 def get_app_instance(app_name):
     try:
@@ -37,7 +40,7 @@ class AppListener(object):
         self.instance_filename = make_instance_filename(app_name)
 
         with open(self.instance_filename, "w") as f:
-            f.write(json.dumps({"pid": os.getpid(), "address": self.listener.address}))
+            f.write(json.dumps({"pid": os.getpid(), "address": self.listener.address}, sort_keys=True))
 
         self.thread = threading.Thread(target=self.accept_loop)
         self.thread.daemon = True
