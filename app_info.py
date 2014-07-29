@@ -4,7 +4,7 @@ import datetime
 
 name = "Devo"
 
-release_date = datetime.date(2014, 7, 24)
+release_date = datetime.date(2014, 7, 29)
 
 version = (1, 2, 0)
 
@@ -12,7 +12,7 @@ version_string = ".".join(str(x) for x in version)
 
 identifier = "com.iogopro.devo"
 
-copyright = u"Copyright © 2010-2014 Luke McCarthy"
+copyright = u"Copyright © 2010-%s Luke McCarthy" % release_date.year
 
 developer = "Developer: Luke McCarthy <luke@iogopro.co.uk>"
 
