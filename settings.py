@@ -7,5 +7,5 @@ def read_settings(filename):
 
 def write_settings(filename, settings):
     fileutil.mkpath(os.path.dirname(filename))
-    data = json.dumps(settings, indent=2)
+    data = json.dumps(settings, indent=2, sort_keys=True)
     fileutil.atomic_write_file(filename, data)
