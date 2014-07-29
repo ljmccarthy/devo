@@ -13,9 +13,11 @@ def shell_open(path, workdir=None):
     return run([shell_open_command, path], workdir=workdir) == 0
 
 def get_user_config_dir(name=""):
-    path = os.environ.get("HOME", "")
+    path = os.environ.get("XDG_CONFIG_HOME")
+    if not path:
+        path = os.path.join(os.environ.get("HOME", "/"), ".config")
     if name:
-        path = os.path.join(path, "." + name)
+        path = os.path.join(path, name)
     return os.path.realpath(path)
 
 __all__ = (
