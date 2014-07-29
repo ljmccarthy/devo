@@ -1,4 +1,4 @@
-import os.path, re
+import sys, os.path, re
 import wx
 
 class frozen_window(object):
@@ -20,11 +20,6 @@ class hidden_window(object):
 
     def __exit__(self, exn_type, exn_value, exn_traceback):
         self.win.Show()
-
-if wx.Platform == "__WXMSW__":
-    frozen_or_hidden_window = frozen_window
-else:
-    frozen_or_hidden_window = hidden_window
 
 def iter_tree_children(tree, item):
     item = tree.GetFirstChild(item)[0]

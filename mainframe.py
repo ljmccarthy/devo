@@ -26,7 +26,7 @@ from settings import read_settings, write_settings
 from styled_text_ctrl import StyledTextCtrl, MARKER_FIND, MARKER_ERROR
 from shell import run_shell_command
 from terminal_ctrl import TerminalCtrl
-from util import frozen_window, frozen_or_hidden_window, is_text_file, new_id_range, shorten_path
+from util import frozen_window, is_text_file, new_id_range, shorten_path
 from view_settings_dialog import ViewSettingsDialog, get_font_from_settings
 
 def make_project_filename(project_root):
@@ -109,9 +109,19 @@ MAX_RECENT_FILES = 20
 
 DEFAULT_WIDTH = 1200
 
-NB_STYLE = (aui.AUI_NB_CLOSE_ON_ALL_TABS  | aui.AUI_NB_TOP | aui.AUI_NB_TAB_SPLIT
-           | aui.AUI_NB_TAB_MOVE | aui.AUI_NB_SCROLL_BUTTONS | aui.AUI_NB_WINDOWLIST_BUTTON
-           | wx.BORDER_NONE)
+AUI_MANAGER_STYLE = aui.AUI_MGR_TRANSPARENT_HINT \
+                  | aui.AUI_MGR_HINT_FADE \
+                  | aui.AUI_MGR_NO_VENETIAN_BLINDS_FADE \
+                  | aui.AUI_MGR_LIVE_RESIZE
+
+AUI_NOTEBOOK_STYLE = aui.AUI_NB_TOP \
+                   | aui.AUI_NB_CLOSE_ON_ALL_TABS \
+                   | aui.AUI_NB_TAB_FIXED_WIDTH \
+                   | aui.AUI_NB_TAB_SPLIT \
+                   | aui.AUI_NB_TAB_MOVE \
+                   | aui.AUI_NB_SCROLL_BUTTONS \
+                   | aui.AUI_NB_WINDOWLIST_BUTTON \
+                   | aui.AUI_NB_MIDDLE_CLICK_CLOSE
 
 class MainFrame(wx.Frame, wx.FileDropTarget):
     def __init__(self, args):
@@ -159,11 +169,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.closing = False
         self.closed = False
 
-        agwFlags = aui.AUI_MGR_TRANSPARENT_HINT \
-                 | aui.AUI_MGR_HINT_FADE \
-                 | aui.AUI_MGR_NO_VENETIAN_BLINDS_FADE
-        self.manager = aui.AuiManager(self, agwFlags=agwFlags)
-        self.notebook = aui.AuiNotebook(self, agwStyle=NB_STYLE)
+        self.manager = aui.AuiManager(self, agwFlags=AUI_MANAGER_STYLE)
+        self.notebook = aui.AuiNotebook(self, agwStyle=AUI_NOTEBOOK_STYLE)
         self.filter = DirTreeFilter()
         self.tree = EditorDirTreeCtrl(self, self.env, filter=self.filter)
         self.terminal = TerminalCtrl(self, self.env)
@@ -187,7 +194,6 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.Bind(wx.EVT_MENU_OPEN, self.OnMenuOpen)
         self.Bind(wx.EVT_MENU_CLOSE, self.OnMenuClose)
         self.Bind(aui.EVT_AUI_PANE_CLOSE, self.OnPaneClose)
-        self.Bind(aui.EVT_AUINOTEBOOK_TAB_MIDDLE_UP, self.OnPageClose)
         self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CLOSE, self.OnPageClose)
         self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnPageChanged)
         self.Bind(aui.EVT_AUINOTEBOOK_BG_DCLICK, self.OnTabAreaDClick)
@@ -502,7 +508,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     def LoadSession(self):
         session = (yield async_call(read_settings, self.session_filename))
 
-        with frozen_or_hidden_window(self.notebook):
+        with frozen_window(self.notebook):
             errors = []
             try:
                 views = []
@@ -556,7 +562,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                         ("\n\n".join(str(e) for e in errors)))
 
     def DeleteAllPages(self):
-        with frozen_or_hidden_window(self.notebook):
+        with frozen_window(self.notebook):
             for i in xrange(self.notebook.GetPageCount()-1, -1, -1):
                 self.notebook.DeletePage(i)
 
