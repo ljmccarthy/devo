@@ -121,3 +121,27 @@ def shorten_path(path):
         return os.path.sep.join(parts[:3] + ["..."] + parts[-2:])
     else:
         return path
+
+def pid_exists(pid):
+    if sys.platform != "win32":
+        import errno
+        if pid < 0:
+            return False
+        try:
+            os.kill(pid, 0)
+            return True
+        except OSError as e:
+            return e.errno == errno.EPERM
+    else:
+        import ctypes
+        kernel32 = ctypes.windll.kernel32
+        DWORD = ctypes.c_ulong
+        hProcess = kernel32.OpenProcess(0x101000, 0, pid)
+        if not hProcess:
+            return False
+        try:
+            exit_code = DWORD()
+            out = kernel32.GetExitCodeProcess(hProcess, ctypes.byref(exit_code))
+        finally:
+            kernel32.CloseHandle(hProcess)
+        return bool(not out or exit_code.value)
