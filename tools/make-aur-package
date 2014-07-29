@@ -11,7 +11,7 @@ mkdir devo
 cd devo
 cp "$TOOLS_DIR/arch-pkgbuild" PKGBUILD
 cp "$TOOLS_DIR/arch-install" devo.install
-makepkg --source
+mkaurball
 mv devo*.src.tar.gz "$DEST_DIR"
 cd "$DEST_DIR"
 rm -rf "$BUILD_DIR"
