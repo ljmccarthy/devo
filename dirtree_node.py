@@ -152,11 +152,11 @@ class FSNode(object):
             if not filter(info):
                 return
             if info.is_file:
-                type = 'f'
-                image = IM_FILE
+                type, image = 'f', IM_FILE
             elif info.is_dir:
-                type = 'd'
-                image = IM_FOLDER
+                type, image = 'd', IM_FOLDER
+            else:
+                return
             item = dirtree_insert(tree, self.item, name, image)
             node = FSNode(info.path, type)
             tree.SetItemNode(item, node)
