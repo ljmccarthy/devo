@@ -75,7 +75,7 @@ class AboutDialog(wx.Dialog):
 
         self.SetSizer(sizer)
         self.Fit()
-        self.CentreOnScreen()
+        self.Centre()
 
         self.Bind(wx.EVT_BUTTON, self.OnLicense, btn_license)
 
