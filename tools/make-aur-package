@@ -8,9 +8,10 @@ rm -rf "$BUILD_DIR"
 mkdir -p "$BUILD_DIR"
 cd "$BUILD_DIR"
 mkdir devo
-cp "$TOOLS_DIR/arch-pkgbuild" devo/PKGBUILD
-cp "$TOOLS_DIR/arch-install" devo/devo.install
-tar cvzf devo.tar.gz devo
-mv devo.tar.gz "$DEST_DIR"
+cd devo
+cp "$TOOLS_DIR/arch-pkgbuild" PKGBUILD
+cp "$TOOLS_DIR/arch-install" devo.install
+makepkg --source
+mv devo*.src.tar.gz "$DEST_DIR"
 cd "$DEST_DIR"
 rm -rf "$BUILD_DIR"
