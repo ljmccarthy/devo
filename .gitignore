@@ -7,5 +7,6 @@ __pycache__
 aui
 build
 dist
+fsmonitor
 res_compiled.py
 wx
