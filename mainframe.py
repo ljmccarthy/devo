@@ -1,8 +1,8 @@
 import os, string, traceback, errno, shutil, webbrowser
 import wx
+from wx.lib.agw import aui
 from wx.lib.utils import AdjustRectToScreen
 
-import aui
 import app_info, async, fileutil, ID
 from about_dialog import AboutDialog
 from async import async_call, coroutine, queued_coroutine, managed, CoroutineManager, CoroutineQueue
