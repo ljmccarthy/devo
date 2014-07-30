@@ -112,7 +112,7 @@ DEFAULT_WIDTH = 1200
 AUI_MANAGER_STYLE = aui.AUI_MGR_TRANSPARENT_HINT \
                   | aui.AUI_MGR_HINT_FADE \
                   | aui.AUI_MGR_NO_VENETIAN_BLINDS_FADE \
-                  | aui.AUI_MGR_LIVE_RESIZE
+                  | (aui.AUI_MGR_LIVE_RESIZE if wx.Platform == "__WXMSW__" else 0)
 
 AUI_NOTEBOOK_STYLE = aui.AUI_NB_TOP \
                    | aui.AUI_NB_CLOSE_ON_ALL_TABS \
