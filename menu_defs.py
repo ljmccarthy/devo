@@ -23,6 +23,8 @@ edit_menu = Menu("&Edit", [
     MenuSeparator,
     MenuItem(ID.COMMENT, "Comment", "Ctrl+/"),
     MenuItem(ID.UNCOMMENT, "Uncomment", "Ctrl+\\"),
+    MenuSeparator,
+    MenuHook("edit"),
 ])
 
 menubar = MenuBar([

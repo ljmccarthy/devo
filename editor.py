@@ -1,8 +1,12 @@
 import os
 import wx, wx.stc
+from urllib import urlencode
+
+import ID
 from async import async_call, coroutine
 from dialogs import dialogs
 from fileutil import atomic_write_file, read_file, mkpath
+from menu import MenuItem
 from signal_wx import Signal
 from styled_text_ctrl import StyledTextCtrl
 from util import clean_text
@@ -43,6 +47,7 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
         self.Bind(wx.stc.EVT_STC_SAVEPOINTLEFT, self.OnSavePointLeft)
         self.Bind(wx.stc.EVT_STC_SAVEPOINTREACHED, self.OnSavePointReached)
         self.Bind(wx.stc.EVT_STC_UPDATEUI, self.OnStcUpdateUI)
+        self.Bind(wx.EVT_MENU, self.OnWebSearch, id=ID.WEB_CODE_SEARCH)
 
     def GetModify(self):
         return (not self.GetReadOnly()) and (
@@ -280,6 +285,19 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
                 yield self.env.close_view(self)
             else:
                 self.SetModified()
+
+    def GetDyanmicEditMenuItems(self):
+        items = []
+        selected = self.GetSelectedFirstLine()
+        if selected:
+            items.append(MenuItem(ID.WEB_CODE_SEARCH, "Web Code Search for %s" % repr(selected)[1:]))
+        return items
+
+    def OnWebSearch(self, evt):
+        selected = self.GetSelectedFirstLine()
+        if selected:
+            url = "https://searchcode.com/?" + urlencode([("q", selected)])
+            self.env.open_web_view(url)
 
     def SavePerspective(self):
         p = {

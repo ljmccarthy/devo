@@ -51,6 +51,9 @@ class AppEnv(object):
     def open_preview(self, path):
         self._mainframe.OpenPreview(path)
 
+    def open_web_view(self, url):
+        self._mainframe.NewPreview(url=url)
+
     def open_static_text(self, title, text):
         return self._mainframe.OpenStaticEditor(title, text)
 

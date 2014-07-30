@@ -34,9 +34,12 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
     def __OnKeyDown(self, evt):
         evt.Skip(not self.ShouldFilterKeyEvent(evt))
 
+    def GetDyanmicEditMenuItems(self):
+        return []
+
     def __OnContextMenu(self, evt):
         self.SetFocus()
-        self.PopupMenu(edit_menu.Create())
+        self.PopupMenu(edit_menu.Create(hooks={"edit": self.GetDyanmicEditMenuItems()}))
 
     def __OnChange(self, evt):
         # Assumes that all styles use the same fixed-width font.
@@ -188,8 +191,11 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
                     self.SetRangeText(pos, pos + len(self.syntax.comment_token), "")
         self.EndUndoAction()
 
+    def GetSelectedFirstLine(self):
+        return self.GetSelectedText().strip().split("\n", 1)[0]
+
     def Find(self):
-        selected = self.GetSelectedText().strip().split("\n", 1)[0]
+        selected = self.GetSelectedFirstLine()
         find_details = self.env.find_details or FindReplaceDetails(find=selected)
         if selected:
             find_details.find = selected
