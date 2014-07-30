@@ -168,6 +168,8 @@ class FSNode(object):
     def remove(self, name, tree, monitor):
         if self.state == NODE_POPULATED:
             dirtree_delete(tree, self.item, name)
+            child_item = tree.GetFirstChild(self.item)[0]
+            tree.SetItemHasChildren(self.item, child_item.IsOk())
 
 def DirNode(path):
     return FSNode(path, 'd')
