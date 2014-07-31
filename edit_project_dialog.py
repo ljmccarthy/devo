@@ -26,6 +26,8 @@ class EditProjectDialog(wx.Dialog):
         self.SetSizer(sizer)
         self.Fit()
         self.Centre()
+        self.SetMinSize(self.Size)
+        self.SetMaxSize((-1, self.Size.height))
 
         self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateUI_OK, id=wx.ID_OK)
 
