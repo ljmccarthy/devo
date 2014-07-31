@@ -95,7 +95,8 @@ class DevoApp(wx.App):
                 sys.stderr, self.stderr = self.log_file, sys.stderr
 
             from mainframe import MainFrame
-            self.mainframe = MainFrame(args)
+            self.mainframe = MainFrame.__new__(MainFrame, args)
+            self.mainframe.__init__(args)
             self.SetTopWindow(self.mainframe)
 
             self.Bind(wx.EVT_END_SESSION, self.OnEndSession)
@@ -104,6 +105,11 @@ class DevoApp(wx.App):
 
         except Exception:
             message = "Devo failed to initialize due to the following error:\n\n" + traceback.format_exc()
+            if self.mainframe:
+                try:
+                    self.mainframe.Destroy()
+                except Exception:
+                    pass
             dialogs.error(None, message, "Initialization Error")
             return False
 
