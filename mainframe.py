@@ -189,8 +189,6 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             aui.AuiPaneInfo().Hide().Top().BestSize((-1, 250)).Caption("Search"))
         self.manager.Update()
 
-        self.Startup(args)
-
         self.Bind(wx.EVT_CLOSE, self.OnClose)
         self.Bind(wx.EVT_ACTIVATE, self.OnActivate)
         self.Bind(wx.EVT_CHILD_FOCUS, self.OnChildFocus)
@@ -230,7 +228,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.Bind(wx.EVT_MENU, self.OnOpenProject, id=ID.OPEN_PROJECT)
         self.Bind(wx.EVT_MENU, self.OnCloseProject, id=ID.CLOSE_PROJECT)
         self.Bind(wx.EVT_MENU, self.OnEditProject, id=ID.EDIT_PROJECT)
-        self.Bind(wx.EVT_MENU, self.OnConfigureSharedCommands, id=ID.CONFIGURE_SHARED_COMMANDS)
+        self.Bind(wx.EVT_MENU, self.OnConfigureGlobalCommands, id=ID.CONFIGURE_GLOBAL_COMMANDS)
         self.Bind(wx.EVT_MENU, self.OnConfigureProjectCommands, id=ID.CONFIGURE_PROJECT_COMMANDS)
         self.Bind(wx.EVT_UPDATE_UI, self.OnUpdate_ConfigureProjectCommands, id=ID.CONFIGURE_PROJECT_COMMANDS)
 
@@ -281,6 +279,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateUI_ShowPaneTerminal, id=ID.SHOW_PANE_TERMINAL)
         self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateUI_ShowPaneSearch, id=ID.SHOW_PANE_SEARCH)
 
+        self.Startup(args)
+
     @property
     def views(self):
         for i in xrange(self.notebook.GetPageCount()):
@@ -303,12 +303,12 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         return sorted(self.project_info.iteritems(), key=lambda x: x[1]["name"].lower())
 
     def GetMenuHooks(self):
-        shared_commands = self.settings.get("commands", [])
+        global_commands = self.settings.get("commands", [])
         project_commands = self.project.get("commands", [])
         return {
-            "shared_commands" : [
+            "global_commands" : [
                 MenuItem(i + self.shared_command_first_id, command["name"], command["accel"])
-                for i, command in enumerate(shared_commands)
+                for i, command in enumerate(global_commands)
             ],
             "project_commands" : [
                 MenuItem(i + self.project_command_first_id, command["name"], command["accel"])
@@ -971,8 +971,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     def OnSearch(self, evt):
         self.Search()
 
-    def OnConfigureSharedCommands(self, evt):
-        dlg = CommandsDialog(self, self.settings.get("commands", []), title="Configure Shared Commands")
+    def OnConfigureGlobalCommands(self, evt):
+        dlg = CommandsDialog(self, self.settings.get("commands", []), title="Global Commands")
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 self.settings["commands"] = dlg.GetCommands()
@@ -984,7 +984,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     def OnConfigureProjectCommands(self, evt):
         if not self.project_filename:
             return
-        dlg = CommandsDialog(self, self.project.get("commands", []), title="Configure Project Commands")
+        dlg = CommandsDialog(self, self.project.get("commands", []), title="Project Commands")
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 self.project["commands"] = dlg.GetCommands()
