@@ -223,6 +223,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.Bind(wx.EVT_MENU, self.EditorAction("Unindent"), id=ID.UNINDENT)
         self.Bind(wx.EVT_MENU, self.EditorAction("Comment"), id=ID.COMMENT)
         self.Bind(wx.EVT_MENU, self.EditorAction("Uncomment"), id=ID.UNCOMMENT)
+        self.Bind(wx.EVT_MENU, self.EditorAction("JoinLines"), id=ID.JOIN_LINES)
+        self.Bind(wx.EVT_MENU, self.EditorAction("SplitLines"), id=ID.SPLIT_LINES)
 
         self.Bind(wx.EVT_MENU, self.OnNewProject, id=ID.NEW_PROJECT)
         self.Bind(wx.EVT_MENU, self.OnOpenProject, id=ID.OPEN_PROJECT)
@@ -270,6 +272,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasMethod("Unindent"), id=ID.UNINDENT)
         self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasMethod("Comment"), id=ID.COMMENT)
         self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasMethod("Uncomment"), id=ID.UNCOMMENT)
+        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasMethodAndSelection("JoinLines"), id=ID.JOIN_LINES)
+        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasMethodAndSelection("SplitLines"), id=ID.SPLIT_LINES)
 
         self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_ProjectIsOpen, id=ID.CLOSE_PROJECT)
         self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_ProjectIsOpen, id=ID.EDIT_PROJECT)
@@ -1235,6 +1239,13 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         def handler(evt):
             editor = self.editor_focus
             evt.Enable(bool(editor and hasattr(editor, method)))
+        return handler
+
+    def UpdateUI_EditorHasMethodAndSelection(self, method):
+        def handler(evt):
+            editor = self.editor_focus
+            start, end = editor.GetSelection()
+            evt.Enable(bool(editor and hasattr(editor, method) and start != end))
         return handler
 
     def UpdateUI_ProjectIsOpen(self, evt):

@@ -28,6 +28,7 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
         self.UsePopUp(False)
         self.SetSyntax(syntax_plain)
         self.SetScrollWidth(1)
+        #self.SetScrollWidthTracking(True)
 
         self.Bind(wx.EVT_KEY_DOWN, self.__OnKeyDown)
         self.Bind(wx.EVT_CONTEXT_MENU, self.__OnContextMenu)
@@ -204,6 +205,26 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
                     pos = self.PositionFromLine(line) + offset
                     self.SetRangeText(pos, pos + len(self.syntax.comment_token), "")
         self.EndUndoAction()
+
+    def ReplaceSelectionAndSelect(self, replace):
+        start = self.GetSelectionStart()
+        self.ReplaceSelection(replace)
+        self.SetSelection(start, start + len(replace))
+
+    def JoinLines(self):
+        start = self.GetSelectionStart()
+        lines = self.GetSelectedText().split("\n")
+        replace = " ".join(line.strip() for line in lines[1:])
+        replace = lines[0] + " " + replace if replace else lines[0]
+        self.ReplaceSelectionAndSelect(replace)
+
+    def SplitLines(self):
+        start = self.GetSelectionStart()
+        selected = self.GetSelectedText()
+        first_line = selected.split("\n", 1)[0]
+        indent = first_line[:len(first_line) - len(first_line.lstrip())]
+        replace = "\n".join(indent + line.strip() for line in selected.split())
+        self.ReplaceSelectionAndSelect(replace)
 
     def GetSelectedFirstLine(self):
         return self.GetSelectedText().strip().split("\n", 1)[0]

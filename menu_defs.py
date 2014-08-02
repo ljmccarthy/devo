@@ -24,6 +24,10 @@ edit_menu = Menu("&Edit", [
     MenuItem(ID.COMMENT, "Comment", "Ctrl+/"),
     MenuItem(ID.UNCOMMENT, "Uncomment", "Ctrl+\\"),
     MenuSeparator,
+    Menu("&Lines", [
+        MenuItem(ID.JOIN_LINES, "&Join Lines", "Ctrl+J"),
+        MenuItem(ID.SPLIT_LINES, "&Split Lines", "Ctrl+Shift+J"),
+    ]),
     MenuHook("edit"),
 ])
 
