@@ -18,15 +18,23 @@ edit_menu = Menu("&Edit", [
     MenuItem(ID.FIND_PREV, "Find Pre&vious", "Shift+F3"),
     MenuItem(ID.GO_TO_LINE, "&Go To Line...", "Ctrl+G"),
     MenuSeparator,
-    Menu("&Lines", [
+    Menu("&Block", [
         MenuItem(ID.INDENT, "&Indent", "Ctrl+]"),
-        MenuItem(ID.UNINDENT, "Unin&dent", "Ctrl+["),
+        MenuItem(ID.UNINDENT, "&Unindent", "Ctrl+["),
         MenuSeparator,
         MenuItem(ID.COMMENT, "Comment", "Ctrl+/"),
         MenuItem(ID.UNCOMMENT, "Uncomment", "Ctrl+\\"),
-        MenuSeparator,
+    ]),
+    Menu("&Lines", [
         MenuItem(ID.JOIN_LINES, "&Join Lines", "Ctrl+J"),
         MenuItem(ID.SPLIT_LINES, "&Split Lines", "Ctrl+Shift+J"),
+        MenuSeparator,
+        MenuItem(ID.SORT_LINES, "S&ort Lines"),
+        MenuItem(ID.SORT_LINES_CASE_INSENSITIVE, "Sort Lines (Case &Insensitive)"),
+        MenuItem(ID.UNIQUE_LINES, "&Unique Lines"),
+        MenuSeparator,
+        MenuItem(ID.REVERSE_LINES, "&Reverse Lines"),
+        MenuItem(ID.SHUFFLE_LINES, "S&huffle Lines"),
     ]),
     Menu("&Space", [
         MenuSeparator,

@@ -206,30 +206,35 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.Bind(wx.EVT_MENU_RANGE, self.OnRecentFile,
                   id=self.recent_file_first_id, id2=self.recent_file_last_id)
 
-        self.Bind(wx.EVT_MENU, self.EditorAction("Save"), id=ID.SAVE)
-        self.Bind(wx.EVT_MENU, self.EditorAction("SaveAs"), id=ID.SAVEAS)
-        self.Bind(wx.EVT_MENU, self.EditorAction("Undo"), id=ID.UNDO)
-        self.Bind(wx.EVT_MENU, self.EditorAction("Redo"), id=ID.REDO)
-        self.Bind(wx.EVT_MENU, self.EditorAction("Cut"), id=ID.CUT)
-        self.Bind(wx.EVT_MENU, self.EditorAction("Copy"), id=ID.COPY)
-        self.Bind(wx.EVT_MENU, self.EditorAction("Paste"), id=ID.PASTE)
-        self.Bind(wx.EVT_MENU, self.EditorAction("SelectAll"), id=ID.SELECTALL)
-        self.Bind(wx.EVT_MENU, self.EditorAction("Find"), id=ID.FIND)
-        self.Bind(wx.EVT_MENU, self.EditorAction("FindNext"), id=ID.FIND_NEXT)
-        self.Bind(wx.EVT_MENU, self.EditorAction("FindPrev"), id=ID.FIND_PREV)
-        self.Bind(wx.EVT_MENU, self.EditorAction("GoToLine"), id=ID.GO_TO_LINE)
-        self.Bind(wx.EVT_MENU, self.EditorAction("Indent"), id=ID.INDENT)
-        self.Bind(wx.EVT_MENU, self.EditorAction("Unindent"), id=ID.UNINDENT)
-        self.Bind(wx.EVT_MENU, self.EditorAction("Comment"), id=ID.COMMENT)
-        self.Bind(wx.EVT_MENU, self.EditorAction("Uncomment"), id=ID.UNCOMMENT)
-        self.Bind(wx.EVT_MENU, self.EditorAction("JoinLines"), id=ID.JOIN_LINES)
-        self.Bind(wx.EVT_MENU, self.EditorAction("SplitLines"), id=ID.SPLIT_LINES)
-        self.Bind(wx.EVT_MENU, self.EditorAction("RemoveExtraSpace"), id=ID.REMOVE_EXTRA_SPACE)
-        self.Bind(wx.EVT_MENU, self.EditorAction("TabsToSpaces"), id=ID.TABS_TO_SPACES)
-        self.Bind(wx.EVT_MENU, self.EditorAction("LowerCase"), id=ID.LOWER_CASE)
-        self.Bind(wx.EVT_MENU, self.EditorAction("UpperCase"), id=ID.UPPER_CASE)
-        self.Bind(wx.EVT_MENU, self.EditorAction("TitleCase"), id=ID.TITLE_CASE)
-        self.Bind(wx.EVT_MENU, self.EditorAction("SwapCase"), id=ID.SWAP_CASE)
+        self.BindEditorAction(ID.SAVE, "Save", "GetModify")
+        self.BindEditorAction(ID.SAVEAS, "SaveAs")
+        self.BindEditorAction(ID.UNDO, "Undo", "CanUndo")
+        self.BindEditorAction(ID.REDO, "Redo", "CanRedo")
+        self.BindEditorAction(ID.CUT, "Cut", "CanCut")
+        self.BindEditorAction(ID.COPY, "Copy", "CanCopy")
+        self.BindEditorAction(ID.PASTE, "Paste", "CanPaste")
+        self.BindEditorAction(ID.SELECTALL, "SelectAll")
+        self.BindEditorAction(ID.FIND, "Find")
+        self.BindEditorAction(ID.FIND_NEXT, "FindNext", "CanFindNext")
+        self.BindEditorAction(ID.FIND_PREV, "FindPrev", "CanFindPrev")
+        self.BindEditorAction(ID.GO_TO_LINE, "GoToLine")
+        self.BindEditorAction(ID.INDENT, "Indent")
+        self.BindEditorAction(ID.UNINDENT, "Unindent")
+        self.BindEditorAction(ID.COMMENT, "Comment")
+        self.BindEditorAction(ID.UNCOMMENT, "Uncomment")
+        self.BindEditorAction(ID.JOIN_LINES, "JoinLines", "HasSelection")
+        self.BindEditorAction(ID.SPLIT_LINES, "SplitLines", "HasSelection")
+        self.BindEditorAction(ID.SORT_LINES, "SortLines", "HasSelection")
+        self.BindEditorAction(ID.SORT_LINES_CASE_INSENSITIVE, "SortLinesCaseInsensitive", "HasSelection")
+        self.BindEditorAction(ID.UNIQUE_LINES, "UniqueLines", "HasSelection")
+        self.BindEditorAction(ID.REVERSE_LINES, "ReverseLines", "HasSelection")
+        self.BindEditorAction(ID.SHUFFLE_LINES, "ShuffleLines", "HasSelection")
+        self.BindEditorAction(ID.REMOVE_EXTRA_SPACE, "RemoveExtraSpace", "HasSelection")
+        self.BindEditorAction(ID.TABS_TO_SPACES, "TabsToSpaces", "HasSelection")
+        self.BindEditorAction(ID.LOWER_CASE, "LowerCase", "HasSelection")
+        self.BindEditorAction(ID.UPPER_CASE, "UpperCase", "HasSelection")
+        self.BindEditorAction(ID.TITLE_CASE, "TitleCase", "HasSelection")
+        self.BindEditorAction(ID.SWAP_CASE, "SwapCase", "HasSelection")
 
         self.Bind(wx.EVT_MENU, self.OnNewProject, id=ID.NEW_PROJECT)
         self.Bind(wx.EVT_MENU, self.OnOpenProject, id=ID.OPEN_PROJECT)
@@ -256,39 +261,12 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.Bind(wx.EVT_MENU, self.OnShowPaneTerminal, id=ID.SHOW_PANE_TERMINAL)
         self.Bind(wx.EVT_MENU, self.OnShowPaneSearch, id=ID.SHOW_PANE_SEARCH)
         self.Bind(wx.EVT_MENU, self.OnFullScreen, id=ID.FULL_SCREEN)
-
         self.Bind(wx.EVT_MENU, self.OnReportBug, id=ID.REPORT_BUG)
         self.Bind(wx.EVT_MENU, self.OnAboutBox, id=ID.ABOUT)
 
-        self.Bind(wx.EVT_UPDATE_UI, self.EditorUpdateUI("GetModify"), id=ID.SAVE)
-        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasMethod("SaveAs"), id=ID.SAVEAS)
         self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_HasEditorTab, id=ID.CLOSE)
-        self.Bind(wx.EVT_UPDATE_UI, self.EditorUpdateUI("CanUndo"), id=ID.UNDO)
-        self.Bind(wx.EVT_UPDATE_UI, self.EditorUpdateUI("CanRedo"), id=ID.REDO)
-        self.Bind(wx.EVT_UPDATE_UI, self.EditorUpdateUI("CanCut"), id=ID.CUT)
-        self.Bind(wx.EVT_UPDATE_UI, self.EditorUpdateUI("CanCopy"), id=ID.COPY)
-        self.Bind(wx.EVT_UPDATE_UI, self.EditorUpdateUI("CanPaste"), id=ID.PASTE)
-        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasMethod("SelectAll"), id=ID.SELECTALL)
-        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasMethod("Find"), id=ID.FIND)
-        self.Bind(wx.EVT_UPDATE_UI, self.EditorUpdateUI("CanFindNext"), id=ID.FIND_NEXT)
-        self.Bind(wx.EVT_UPDATE_UI, self.EditorUpdateUI("CanFindPrev"), id=ID.FIND_PREV)
-        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasMethod("GoToLine"), id=ID.GO_TO_LINE)
-        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasMethod("Indent"), id=ID.INDENT)
-        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasMethod("Unindent"), id=ID.UNINDENT)
-        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasMethod("Comment"), id=ID.COMMENT)
-        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasMethod("Uncomment"), id=ID.UNCOMMENT)
-        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasMethodAndSelection("JoinLines"), id=ID.JOIN_LINES)
-        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasMethodAndSelection("SplitLines"), id=ID.SPLIT_LINES)
-        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasMethodAndSelection("RemoveExtraSpace"), id=ID.REMOVE_EXTRA_SPACE)
-        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasMethodAndSelection("TabsToSpaces"), id=ID.TABS_TO_SPACES)
-        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasMethodAndSelection("LowerCase"), id=ID.LOWER_CASE)
-        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasMethodAndSelection("UpperCase"), id=ID.UPPER_CASE)
-        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasMethodAndSelection("TitleCase"), id=ID.TITLE_CASE)
-        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasMethodAndSelection("SwapCase"), id=ID.SWAP_CASE)
-
         self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_ProjectIsOpen, id=ID.CLOSE_PROJECT)
         self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_ProjectIsOpen, id=ID.EDIT_PROJECT)
-
         self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateUI_FullScreen, id=ID.FULL_SCREEN)
         self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateUI_ShowPaneFileBrowser, id=ID.SHOW_PANE_FILE_BROWSER)
         self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateUI_ShowPaneTerminal, id=ID.SHOW_PANE_TERMINAL)
@@ -1227,37 +1205,29 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     def IsEditorFocused(self, editor):
         return editor is self.editor_focus
 
-    def EditorAction(self, method):
+    def BindEditorAction(self, id, method, update_ui_method=None):
         def handler(evt):
             editor = self.editor_focus
             if editor:
                 return getattr(editor, method)()
-        return handler
 
-    def EditorUpdateUI(self, method):
-        def handler(evt):
-            editor = self.editor_focus
-            if editor and hasattr(editor, method):
-                evt.Enable(getattr(editor, method)())
-            else:
-                evt.Enable(False)
-        return handler
+        if update_ui_method:
+            def update_handler(evt):
+                editor = self.editor_focus
+                if editor and hasattr(editor, update_ui_method):
+                    evt.Enable(getattr(editor, update_ui_method)())
+                else:
+                    evt.Enable(False)
+        else:
+            def update_handler(evt):
+                editor = self.editor_focus
+                evt.Enable(bool(editor and hasattr(editor, method)))
+
+        self.Bind(wx.EVT_MENU, handler, id=id)
+        self.Bind(wx.EVT_UPDATE_UI, update_handler, id=id)
 
     def UpdateUI_HasEditorTab(self, evt):
         evt.Enable(self.GetCurrentEditorTab() is not None)
-
-    def UpdateUI_EditorHasMethod(self, method):
-        def handler(evt):
-            editor = self.editor_focus
-            evt.Enable(bool(editor and hasattr(editor, method)))
-        return handler
-
-    def UpdateUI_EditorHasMethodAndSelection(self, method):
-        def handler(evt):
-            editor = self.editor_focus
-            start, end = editor.GetSelection()
-            evt.Enable(bool(editor and hasattr(editor, method) and start != end))
-        return handler
 
     def UpdateUI_ProjectIsOpen(self, evt):
         evt.Enable(bool(self.project_root))

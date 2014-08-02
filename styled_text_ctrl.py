@@ -1,13 +1,16 @@
-import os.path, string
+import os.path
+import string
+import random
+import wx
+import wx.stc
 from contextlib import contextmanager
-import wx, wx.stc
 
 from find_replace_dialog import FindReplaceDetails, FindReplaceDialog
 from go_to_line_dialog import GoToLineDialog
 from menu_defs import edit_menu
 from syntax import syntax_from_filename, syntax_plain
 from themes import default_theme
-from util import clean_text, clean_strip_text
+from util import clean_text, clean_strip_text, unique
 
 MARKER_FIND = 0
 MARKER_ERROR = 1
@@ -237,6 +240,43 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
         replace_lines.extend(indent + x for x in rest.split())
         replace = "\n".join(replace_lines)
         self.ReplaceSelectionAndSelect(replace)
+
+    def SelectLines(self):
+        start, end = self.GetSelection()
+        start = self.PositionFromLine(self.LineFromPosition(start))
+        end_line = self.LineFromPosition(end)
+        end = self.PositionFromLine(end_line) + self.GetLineLength(end_line)
+        self.SetSelection(start, end)
+
+    def SortLines(self):
+        self.SelectLines()
+        lines = self.GetSelectedText().split("\n")
+        lines.sort(key=lambda x: x.strip())
+        self.ReplaceSelectionAndSelect("\n".join(lines))
+
+    def SortLinesCaseInsensitive(self):
+        self.SelectLines()
+        lines = self.GetSelectedText().split("\n")
+        lines.sort(key=lambda x: x.strip().lower())
+        self.ReplaceSelectionAndSelect("\n".join(lines))
+
+    def UniqueLines(self):
+        self.SelectLines()
+        lines = self.GetSelectedText().split("\n")
+        lines = unique(lines)
+        self.ReplaceSelectionAndSelect("\n".join(lines))
+
+    def ReverseLines(self):
+        self.SelectLines()
+        lines = self.GetSelectedText().split("\n")
+        lines.reverse()
+        self.ReplaceSelectionAndSelect("\n".join(lines))
+
+    def ShuffleLines(self):
+        self.SelectLines()
+        lines = self.GetSelectedText().split("\n")
+        random.shuffle(lines)
+        self.ReplaceSelectionAndSelect("\n".join(lines))
 
     def RemoveExtraSpace(self):
         replace_lines = []

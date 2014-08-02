@@ -145,3 +145,12 @@ def pid_exists(pid):
         finally:
             kernel32.CloseHandle(hProcess)
         return bool(not out or exit_code.value)
+
+def unique(xs):
+    seen = set()
+    result = []
+    for x in xs:
+        if x not in seen:
+            seen.add(x)
+            result.append(x)
+    return result
