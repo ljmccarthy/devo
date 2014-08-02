@@ -247,6 +247,28 @@ class def defined? do else elsif end ensure false for if in module next nil
 not or redo rescue retry return self super then true undef unless until when
 while yield"""
 
+keywords_pascal = """\
+absolute and array asm begin case const constructor destructor div do downto
+else end file for function goto if implementation in inherited inline interface
+label mod nil not object of operator or packed procedure program record
+reintroduce repeat self set shl shr string then to type unit until uses var
+while with xor
+dispose exit false new true
+as class dispinterface except exports finalization finally initialization inline
+is library on out packed property raise resourcestring threadvar try  absolute
+abstract alias assembler bitpacked break cdecl continue cppdecl cvar default
+deprecated dynamic enumerator experimental export external far far16 forward
+generic helper implements index interrupt iochecks local message name near
+nodefault noreturn nostackframe oldfpccall otherwise overload override pascal
+platform private protected public published read register reintroduce result
+safecall saveregisters softfloat specialize static stdcall stored strict
+unaligned unimplemented varargs virtual write"""
+
+keywords_modula2 = """\
+and elsif loop repeat array end mod return begin exit module set by export not
+then case for of to const from or type definition if pointer until div
+implementation procedure var do import qualified while else in record with"""
+
 syntax_plain = Syntax("plain", "Plain Text", stc.STC_LEX_NULL, "*")
 
 syntax_list = [
@@ -271,6 +293,8 @@ syntax_list = [
     Syntax("batch", "Batch File", stc.STC_LEX_BATCH, "*.bat;*.cmd;*.nt", "REM ", keywords_batch),
     Syntax("scheme", "Scheme", stc.STC_LEX_LISP, "*.scm;*.ss", ";", keywords_scheme),
     Syntax("ruby", "Ruby", stc.STC_LEX_RUBY, "*.rb;*.rbw;*.rake;*.rjs;Rakefile", "#", keywords_ruby),
+    Syntax("pascal", "Pascal", stc.STC_LEX_PASCAL, "*.dpr;*.dpk;*.pas;*.dfm;*.inc;*.pp", "//", keywords_pascal),
+    Syntax("modula2", "Modula-2", stc.STC_LEX_PASCAL, "*.mod;*.def", "", keywords_modula2),
     syntax_plain,
 ]
 
