@@ -41,5 +41,9 @@ class DirDialog(wx.Dialog):
         self.dirtree.SetFocus()
         self.Centre()
 
+    def Destroy(self):
+        self.dirtree.Destroy()
+        super(DirDialog, self).Destroy()
+
     def GetPath(self):
         return self.dirtree.GetSelectedPath()
