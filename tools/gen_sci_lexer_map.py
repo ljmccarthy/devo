@@ -91,11 +91,10 @@ for name in constant_names:
         short_name = name[len(m.group(0)):].lower().replace("_", "")
         if short_name.startswith("word"):
             short_name = "key" + short_name
-        if short_name != "default":
-            value = constants[name]
-            all_short_names.add(short_name)
-            for lexer_type in sce_prefix_to_lexer_types[m.group(0)]:
-                lexer_constants[lexer_type][short_name] = value
+        value = constants[name]
+        all_short_names.add(short_name)
+        for lexer_type in sce_prefix_to_lexer_types[m.group(0)]:
+            lexer_constants[lexer_type][short_name] = value
 
 pp = pprint.PrettyPrinter()
 

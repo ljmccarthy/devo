@@ -5,11 +5,19 @@ import wx, wx.stc
 from find_replace_dialog import FindReplaceDetails, FindReplaceDialog
 from go_to_line_dialog import GoToLineDialog
 from menu_defs import edit_menu
-from syntax import syntax_from_filename, plain
+from syntax import syntax_from_filename, syntax_plain
+from themes import default_theme
 from util import clean_text, clean_strip_text
 
 MARKER_FIND = 0
 MARKER_ERROR = 1
+
+default_styles = [
+    (wx.stc.STC_STYLE_DEFAULT,    ""),
+    (wx.stc.STC_STYLE_LINENUMBER, "back:#C0C0C0"),
+    (wx.stc.STC_STYLE_BRACELIGHT, "fore:#FFFFFF,back:#0000FF,bold"),
+    (wx.stc.STC_STYLE_BRACEBAD,   "fore:#000000,back:#FF0000,bold"),
+]
 
 class StyledTextCtrl(wx.stc.StyledTextCtrl):
     name = ""
@@ -18,7 +26,7 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
         wx.stc.StyledTextCtrl.__init__(self, parent, pos=(-1, -1), size=(1, 1), style=wx.BORDER_NONE)
         self.env = env
         self.UsePopUp(False)
-        self.SetSyntax(plain)
+        self.SetSyntax(syntax_plain)
         self.SetScrollWidth(1)
 
         self.Bind(wx.EVT_KEY_DOWN, self.__OnKeyDown)
@@ -59,12 +67,18 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
         self.StyleSetFontAttr(wx.stc.STC_STYLE_DEFAULT, *font_info)
         self.StyleSetSpec(wx.stc.STC_STYLE_DEFAULT, "")
         self.StyleClearAll()
+
         self.MarkerDefine(MARKER_FIND, wx.stc.STC_MARK_BACKGROUND, background="#CCCCFF")
         self.MarkerDefine(MARKER_ERROR, wx.stc.STC_MARK_BACKGROUND, background="#FFCCCC")
-        for style_num, spec in self.syntax.stylespecs:
-            self.StyleSetSpec(style_num, spec)
-        self.SetIndent(self.syntax.indent)
-        self.SetTabWidth(self.syntax.indent if self.syntax.use_tabs else 8)
+
+        for token_type, style_spec in default_styles:
+            self.StyleSetSpec(token_type, style_spec)
+
+        for token_type, style_spec in self.syntax.get_style_specs(default_theme):
+            self.StyleSetSpec(token_type, style_spec)
+
+        self.SetIndent(self.syntax.indent_width)
+        self.SetTabWidth(self.syntax.tab_width)
         self.SetUseTabs(self.syntax.use_tabs)
         self.Colourise(0, -1)
 
