@@ -97,7 +97,7 @@ def shell_move(srcpath, dstpath):
         try:
             yield async_call(shutil.move, srcpath, dstpath)
         except Exception as e:
-            dialogs.error("Error moving file:\n\n%s" % e)
+            dialogs.error(get_top_window(), "Error moving file:\n\n%s" % e)
 
 @coroutine
 def shell_copy(srcpath, dstpath):
