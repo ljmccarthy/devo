@@ -53,6 +53,125 @@ and as assert break class continue def del elif else except exec finally for
 from global if import in is lambda not or pass print raise return try
 while with yield None True False"""
 
+keywords_perl = """\
+NULL __FILE__ __LINE__ __PACKAGE__ __DATA__ __END__ AUTOLOAD
+BEGIN CORE DESTROY END EQ GE GT INIT LE LT NE CHECK abs accept
+alarm and atan2 bind binmode bless caller chdir chmod chomp chop
+chown chr chroot close closedir cmp connect continue cos crypt
+dbmclose dbmopen defined delete die do dump each else elsif endgrent
+endhostent endnetent endprotoent endpwent endservent eof eq eval
+exec exists exit exp fcntl fileno flock for foreach fork format
+formline ge getc getgrent getgrgid getgrnam gethostbyaddr gethostbyname
+gethostent getlogin getnetbyaddr getnetbyname getnetent getpeername
+getpgrp getppid getpriority getprotobyname getprotobynumber getprotoent
+getpwent getpwnam getpwuid getservbyname getservbyport getservent
+getsockname getsockopt glob gmtime goto grep gt hex if index
+int ioctl join keys kill last lc lcfirst le length link listen
+local localtime lock log lstat lt map mkdir msgctl msgget msgrcv
+msgsnd my ne next no not oct open opendir or ord our pack package
+pipe pop pos print printf prototype push quotemeta qu
+rand read readdir readline readlink readpipe recv redo
+ref rename require reset return reverse rewinddir rindex rmdir
+scalar seek seekdir select semctl semget semop send setgrent
+sethostent setnetent setpgrp setpriority setprotoent setpwent
+setservent setsockopt shift shmctl shmget shmread shmwrite shutdown
+sin sleep socket socketpair sort splice split sprintf sqrt srand
+stat study sub substr symlink syscall sysopen sysread sysseek
+system syswrite tell telldir tie tied time times truncate
+uc ucfirst umask undef unless unlink unpack unshift untie until
+use utime values vec wait waitpid wantarray warn while write
+xor given when default break say state UNITCHECK __SUB__ fc"""
+
+keywords_awk = """\
+BEGIN END
+if else while do for in break continue delete exit function return
+print printf sprintf
+system close getline next nextfile fflush
+atan2 cos exp int log rand sin sqrt srand
+asort asorti gensub sub gsub index length match split
+strtonum substr tolower toupper
+mktime strftime systime
+and compl lshift or rshift xor
+bindtextdomain dcgettext dcngettext
+ARGC ARGIND ARGV BINMODE CONVFMT ENVIRON ERRNO FIELDWIDTHS
+FILENAME FNR FS IGNORECASE LINT NF NR OFMT OFS ORS PROCINFO
+RS RT RSTART RLENGTH SUBSEP TEXTDOMAIN"""
+
+keywords_bash = """\
+alias ar asa awk banner basename bash bc bdiff break
+bunzip2 bzip2 cal calendar case cat cc cd chmod cksum
+clear cmp col comm compress continue cp cpio crypt
+csplit ctags cut date dc dd declare deroff dev df diff diff3
+dircmp dirname do done du echo ed egrep elif else env
+esac eval ex exec exit expand export expr false fc
+fgrep fi file find fmt fold for function functions
+getconf getopt getopts grep gres hash head help
+history iconv id if in integer jobs join kill local lc
+let line ln logname look ls m4 mail mailx make
+man mkdir more mt mv newgrp nl nm nohup ntps od
+pack paste patch pathchk pax pcat perl pg pr print
+printf ps pwd read readonly red return rev rm rmdir
+sed select set sh shift size sleep sort spell
+split start stop strings strip stty sum suspend
+sync tail tar tee test then time times touch tr
+trap true tsort tty type typeset ulimit umask unalias
+uname uncompress unexpand uniq unpack unset until
+uudecode uuencode vi vim vpax wait wc whence which
+while who wpaste wstart xargs zcat
+chgrp chown chroot dir dircolors
+factor groups hostid install link md5sum mkfifo
+mknod nice pinky printenv ptx readlink seq
+sha1sum shred stat su tac unlink users vdir whoami yes"""
+
+keywords_sql = """\
+absolute action add admin after aggregate alias all allocate alter and any are
+array as asc assertion at authorization before begin binary bit blob body
+boolean both breadth by call cascade cascaded case cast catalog char character
+check class clob close collate collation column commit completion connect
+connection constraint constraints constructor continue corresponding create
+cross cube current current_date current_path current_role current_time
+current_timestamp current_user cursor cycle data date day deallocate dec decimal
+declare default deferrable deferred delete depth deref desc describe descriptor
+destroy destructor deterministic dictionary diagnostics disconnect distinct
+domain double drop dynamic each else end end-exec equals escape every except
+exception exec execute exists exit external false fetch first float for foreign
+found from free full function general get global go goto grant group grouping
+having host hour identity if ignore immediate in indicator initialize initially
+inner inout input insert int integer intersect interval into is isolation
+iterate join key language large last lateral leading left less level like limit
+locallocaltime localtimestamp locator map match merge minute modifies modify
+module month names national natural nchar nclob new next no none not null
+numeric object of off old on only open operation option or order ordinality out
+outer output package pad parameter parameters partial path postfix precision
+prefix preorder prepare preserve primary prior privileges procedure public read
+reads real recursive ref references referencing relative restrict result return
+returns revoke right role rollback rollup routine row rows savepoint schema
+scroll scope search second section select sequence session session_user set sets
+size smallint some| space specific specifictype sql sqlexception sqlstate
+sqlwarning start state statement static structure system_user table temporary
+terminate than then time timestamp timezone_hour timezone_minute to trailing
+transaction translation treat trigger true under union unique unknown unnest
+update usage user using value values varchar variable varying view when whenever
+where with without work write year zone"""
+
+keywords_plsql = """\
+all alter and any array as asc at authid avg begin between binary_integer body
+boolean bulk by char char_base check close cluster collect comment commit
+compress connect constant create current currval cursor date day declare decimal
+default delete desc distinct do drop else elsif end exception exclusive execute
+exists exit extends false fetch float for forall from function goto group having
+heap hour if immediate in index indicator insert integer interface intersect
+interval into is isolation java level like limited lock long loop max min minus
+minute mlslabel mod mode month natural naturaln new nextval nocopy not nowait
+null number number_base ocirowid of on opaque open operator option or order
+organization others out package partition pctfree pls_integer positive positiven
+pragma prior private procedure public raise range raw real record ref release
+return reverse rollback row rowid rownum rowtype savepoint second select
+separate set share smallint space sql sqlcode sqlerrm start stddev subtype
+successful sum synonym sysdate table then time timestamp to trigger true type
+uid union unique update use user validate values varchar varchar2 variance view
+when whenever where while with work write year zone"""
+
 syntax_plain = Syntax("plain", "Plain Text", stc.STC_LEX_NULL, "*")
 
 syntax_list = [
@@ -64,7 +183,13 @@ syntax_list = [
     Syntax("python", "Python", stc.STC_LEX_PYTHON, "*.py", "#", keywords_python),
     Syntax("html", "HTML", stc.STC_LEX_HTML, "*.html;*.htm"),
     Syntax("sgml", "SGML", stc.STC_LEX_HTML, "*.sgml"),
-    Syntax("xml", "XML", stc.STC_LEX_XML, "*.xml;*.xslt;*.rdf;*.rss;*.atom"),
+    Syntax("xml", "XML", stc.STC_LEX_XML, "*.xml;*.xhtml;*.xht;*.xslt;*.rdf;*.rss;*.atom;*.dbk;*.kml"),
+    Syntax("perl", "Perl", stc.STC_LEX_PERL, "*.pl;*.pm;*.pod", "#", keywords_perl),
+    Syntax("awk", "Awk", stc.STC_LEX_PERL, "*.awk", "#", keywords_awk),
+    Syntax("bash", "Bash", stc.STC_LEX_BASH, "*.sh", "#", keywords_bash),
+    Syntax("sql", "SQL", stc.STC_LEX_SQL, "*.sql", "#", keywords_sql),
+    Syntax("plsql", "PL/SQL", stc.STC_LEX_SQL, "*.spec;*.body;*.sps;*.spb;*.sf;*.sp", "#", keywords_plsql),
+    Syntax("diff", "Diff", stc.STC_LEX_DIFF, "*.diff;*.patch"),
     Syntax("makefile", "Makefile", stc.STC_LEX_MAKEFILE, "Makefile*;makefile*;GNUmakefile*;*.mk", "#",
            indent_width = 8, tab_width = 8, use_tabs = True),
     syntax_plain,
