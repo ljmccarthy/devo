@@ -21,17 +21,6 @@ Key Features
 * Unsaved editors are saved in the session.
 * Automatically switches to hard tabs when editing Makefiles.
 
-Known Bugs
-----------
-
-* Occasionally files may disappear from the tree view in Windows when running CVS update.
-
-Known Limitations
------------------
-
-* Syntax colouring is only supported for Python, C, C++ and Java.
-  More languages will be added in the future.
-
 Bug Reporting
 -------------
 

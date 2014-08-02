@@ -82,6 +82,9 @@ def CallLater(timer, func, *args, **kwargs):
     else:
         wx.CallAfter(_TryCallLater, timer, func, args, kwargs)
 
+def is_dead_object(win):
+    return isinstance(win, wx._core._wxPyDeadObject)
+
 non_printable_re = re.compile(r"[\0-\x07\x0E-\x1F\x7F]")
 line_end_re = re.compile(r"\r\n|\r|\n")
 

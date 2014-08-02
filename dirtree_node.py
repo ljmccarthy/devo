@@ -75,26 +75,26 @@ class SimpleNode(object):
     def __init__(self, label, children):
         self.label = label
         self.children = children
-        self.state = NODE_UNPOPULATED
+        self.populated = False
         self.item = None
 
     def expand(self, tree, monitor, filter):
-        if self.state == NODE_UNPOPULATED:
+        if not self.populated:
+            self.populated = True
             tree.SetItemImage(self.item, IM_FOLDER)
             for node in self.children:
                 item = tree.AppendItem(self.item, node.label, IM_FOLDER)
                 tree.SetItemNode(item, node)
                 tree.SetItemHasChildren(item, True)
-            self.state = NODE_POPULATED
 
     def collapse(self, tree, monitor):
         pass
 
 class FSNode(object):
-    __slots__ = ("state", "path", "type", "item", "watch", "label")
+    __slots__ = ("populated", "path", "type", "item", "watch", "label")
 
     def __init__(self, path, type, label=""):
-        self.state = NODE_UNPOPULATED
+        self.populated = False
         self.path = path
         self.type = type
         self.item = None
@@ -127,15 +127,14 @@ class FSNode(object):
 
     @coroutine
     def expand(self, tree, monitor, filter):
-        if self.type == 'd' and self.state == NODE_UNPOPULATED:
-            self.state = NODE_POPULATING
+        if self.type == 'd' and not self.populated:
             try:
                 yield self._do_expand(tree, monitor, filter)
             except Exception:
-                self.state = NODE_UNPOPULATED
+                self.populated = False
                 print traceback.format_exc()
             else:
-                self.state = NODE_POPULATED
+                self.populated = True
 
     def collapse(self, tree, monitor):
         pass
@@ -144,32 +143,30 @@ class FSNode(object):
 
     @coroutine
     def add(self, name, tree, monitor, filter):
-        if self.state == NODE_POPULATED:
-            try:
-                info = (yield async_call(get_file_info, self.path, name))
-            except OSError as e:
-                return
-            if not filter(info):
-                return
-            if info.is_file:
-                type, image = 'f', IM_FILE
-            elif info.is_dir:
-                type, image = 'd', IM_FOLDER
-            else:
-                return
-            item = dirtree_insert(tree, self.item, name, image)
-            node = FSNode(info.path, type)
-            tree.SetItemNode(item, node)
-            if type == 'd':
-                tree.SetItemHasChildren(item, True)
-            tree.SetItemHasChildren(self.item, True)
-            yield item
+        try:
+            info = (yield async_call(get_file_info, self.path, name))
+        except OSError as e:
+            return
+        if not filter(info):
+            return
+        if info.is_file:
+            type, image = 'f', IM_FILE
+        elif info.is_dir:
+            type, image = 'd', IM_FOLDER
+        else:
+            return
+        item = dirtree_insert(tree, self.item, name, image)
+        node = FSNode(info.path, type)
+        tree.SetItemNode(item, node)
+        if type == 'd':
+            tree.SetItemHasChildren(item, True)
+        tree.SetItemHasChildren(self.item, True)
+        yield item
 
     def remove(self, name, tree, monitor):
-        if self.state == NODE_POPULATED:
-            dirtree_delete(tree, self.item, name)
-            child_item = tree.GetFirstChild(self.item)[0]
-            tree.SetItemHasChildren(self.item, child_item.IsOk())
+        dirtree_delete(tree, self.item, name)
+        child_item = tree.GetFirstChild(self.item)[0]
+        tree.SetItemHasChildren(self.item, child_item.IsOk())
 
 def DirNode(path):
     return FSNode(path, 'd')

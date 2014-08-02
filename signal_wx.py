@@ -14,12 +14,12 @@ class Signal(object):
         elif owner is not None:
             self.__owner_ref = weakref.ref(owner, lambda ref: self.destroy())
 
-    def signal(self, arg):
+    def signal(self, *args, **kwargs):
         if self.__lock is None:
             return
-        wx.CallAfter(self.__dosignal, arg)
+        wx.CallAfter(self.__dosignal, *args, **kwargs)
 
-    def __dosignal(self, arg):
+    def __dosignal(self, *args, **kwargs):
         if self.__lock is None:
             return
         with self.__lock:
@@ -27,19 +27,19 @@ class Signal(object):
             for i, (func, ref) in enumerate(self.__handlers):
                 try:
                     if ref is None:
-                        func(arg)
+                        func(*args, **kwargs)
                     else:
                         obj = ref()
                         if isinstance(obj, wx._core._wxPyDeadObject):
                             dead.append(i)
                         if obj is not None:
-                            func(obj, arg)
+                            func(obj, *args, **kwargs)
                 except SystemExit:
                     raise
                 except:
                     sys.stdout.write(
-                        "\nError signalling %s with argument %s:\n\n%s" %
-                        (func, arg, traceback.format_exc()))
+                        "\nError signalling %s with arguments %r %r:\n\n%s" %
+                        (func, args, kwargs, traceback.format_exc()))
             for i in reversed(dead):
                 del self.__handlers[i]
 

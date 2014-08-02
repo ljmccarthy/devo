@@ -1,17 +1,19 @@
 import os, os.path
 import sys
 import time
+import threading
 import wx
-from fsmonitor import FSMonitorThread, FSEvent
+from fsmonitor import FSMonitor, FSEvent
 
 import fileutil
 from async import async_call, coroutine, queued_coroutine, managed, Future, CoroutineQueue, CoroutineManager
 from dialogs import dialogs
 from dirtree_constants import *
 from dirtree_filter import DirTreeFilter
-from dirtree_node import SimpleNode, FSNode, DirNode, NODE_UNPOPULATED, NODE_POPULATING
+from dirtree_node import SimpleNode, FSNode, DirNode
 from menu import Menu, MenuItem, MenuSeparator
-from util import iter_tree_children, iter_tree_breadth_first, frozen_window
+from signal_wx import Signal
+from util import iter_tree_children, iter_tree_breadth_first, frozen_window, is_dead_object
 from resources import load_bitmap
 
 context_menu = Menu("", [
@@ -56,6 +58,39 @@ def make_top_level():
     else:
         return [FSNode("/", 'd')]
 
+class DirTreeMonitor(object):
+    def __init__(self, tree, monitor):
+        self.tree = tree
+        self.monitor = monitor
+        self.__lock = threading.Lock()
+        self.__to_add = []
+        self.__to_remove = []
+        self.__thread = threading.Thread(target=self.__monitor_update_thread)
+        self.__thread.daemon = True
+        self.__thread.start()
+
+    def __monitor_update_thread(self):
+        while not is_dead_object(self.tree):
+            events = self.monitor.read_events()
+            if events:
+                to_add = [evt for evt in events if evt.action in (FSEvent.Attrib, FSEvent.Create, FSEvent.MoveTo)]
+                to_remove = [evt for evt in events if evt.action in (FSEvent.Delete, FSEvent.MoveFrom)]
+                with self.__lock:
+                    self.__to_add.extend(to_add)
+                    self.__to_remove.extend(to_remove)
+                if not is_dead_object(self.tree):
+                    self.tree.sig_update_tree.signal()
+        self.monitor.remove_all_watches()
+        with self.__lock:
+            self.__to_add = []
+            self.__to_remove = []
+
+    def get_events(self):
+        with self.__lock:
+            to_add, self.__to_add = self.__to_add, []
+            to_remove, self.__to_remove = self.__to_remove, []
+            return to_add, to_remove
+
 class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
     def __init__(self, parent, filter=None, show_root=False):
         style = wx.TR_DEFAULT_STYLE | wx.TR_EDIT_LABELS | wx.BORDER_NONE
@@ -81,6 +116,11 @@ class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
         self.select_later_time = 0
         self.expanding_all = False
         self.drop_item = None
+        self.monitor = FSMonitor()
+        self.monitor_thread = DirTreeMonitor(self, self.monitor)
+        self.updating = False
+        self.sig_update_tree = Signal(self)
+        self.sig_update_tree.bind(self.UpdateFromFSMonitor)
 
         self.imglist = wx.ImageList(16, 16)
         self.imglist.Add(load_bitmap("icons/folder.png"))
@@ -100,11 +140,7 @@ class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
         self.Bind(wx.EVT_MENU, self.OnExpandAll, id=ID_DIRTREE_EXPAND_ALL)
         self.Bind(wx.EVT_MENU, self.OnCollapseAll, id=ID_DIRTREE_COLLAPSE_ALL)
 
-        self.monitor = FSMonitorThread(callback=lambda event: wx.CallAfter(self.OnFSEvent, event))
-
     def Destroy(self):
-        self.monitor.remove_all_watches()
-        self.monitor.read_events()
         self.cm.cancel()
         wx.TreeCtrl.Destroy(self)
 
@@ -113,25 +149,35 @@ class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
         self.select_later_name = name
         self.select_later_time = time.time() + timeout
 
+    def UpdateFromFSMonitor(self):
+        if not self.updating:
+            self.DoUpdateFromFSMonitor()
+
     @managed("cm")
-    @queued_coroutine("cq")
-    def OnFSEvent(self, evt):
-        if evt.action in (FSEvent.Create, FSEvent.MoveTo):
-            item = (yield evt.user.add(evt.name, self, self.monitor, self.filter))
-            if item:
-                if evt.name == self.select_later_name \
-                and self.GetItemParent(item) == self.select_later_parent:
-                    if time.time() < self.select_later_time:
-                        self.SelectItem(item)
-                    self.select_later_name = None
-                    self.select_later_parent = None
-                    self.select_later_time = 0
-        elif evt.action in (FSEvent.Delete, FSEvent.MoveFrom):
-            evt.user.remove(evt.name, self, self.monitor)
+    @coroutine
+    def DoUpdateFromFSMonitor(self):
+        if not self.updating:
+            self.updating = True
+            try:
+                to_add, to_remove = self.monitor_thread.get_events()
+                for evt in to_add:
+                    item = (yield evt.user.add(evt.name, self, self.monitor, self.filter))
+                    if item:
+                        if evt.name == self.select_later_name \
+                        and self.GetItemParent(item) == self.select_later_parent:
+                            if time.time() < self.select_later_time:
+                                self.SelectItem(item)
+                            self.select_later_name = None
+                            self.select_later_parent = None
+                            self.select_later_time = 0
+                for evt in to_remove:
+                    evt.user.remove(evt.name, self, self.monitor)
+            finally:
+                self.updating = False
 
     def OnItemExpanding(self, evt):
         node = self.GetEventNode(evt)
-        if node.type == 'd' and node.state == NODE_UNPOPULATED:
+        if node.type == 'd' and not node.populated:
             self.ExpandNode(node)
 
     def OnItemCollapsed(self, evt):
@@ -217,6 +263,7 @@ class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
             if name:
                 self.NewFolder(node, name)
 
+    @managed("cm")
     @coroutine
     def OnExpandAll(self, evt):
         del evt
@@ -229,7 +276,7 @@ class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
                     return
                 node = self.GetPyData(item)
                 if node.type == 'd':
-                    if node.state == NODE_UNPOPULATED:
+                    if not node.populated:
                         try:
                             yield self.ExpandNode(node)
                         except Exception:
@@ -272,7 +319,7 @@ class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
     @managed("cm")
     @coroutine
     def PopulateNode(self, node):
-        if node.state == NODE_UNPOPULATED:
+        if not node.populated:
             f = node.expand(self, self.monitor, self.filter)
             if isinstance(f, Future):
                 yield f
@@ -280,12 +327,12 @@ class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
     @managed("cm")
     @coroutine
     def ExpandNode(self, node):
-        if node.state == NODE_UNPOPULATED:
+        if not node.populated:
             try:
                 yield self.PopulateNode(node)
             except OSError:
                 return
-        if node.state == NODE_POPULATED:
+        if node.populated:
             self.Expand(node.item)
 
     def CollapseNode(self, node):
@@ -324,8 +371,6 @@ class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
             yield self.ExpandNode(toplevel[0])
 
     def SetTopLevel(self, toplevel=None):
-        self.monitor.remove_all_watches()
-        self.monitor.read_events()
         self.cm.cancel()
         self.cq.cancel()
         self.DeleteAllItems()
