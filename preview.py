@@ -101,11 +101,15 @@ class Preview(wx.Panel):
 
     @property
     def status_text(self):
-        return self.title
+        return self.wv.GetCurrentTitle()
 
     @property
     def status_text_path(self):
-        return self.title
+        return self.path or self.url or ""
+
+    @property
+    def status_text_syntax(self):
+        return ""
 
     @coroutine
     def TryClose(self):
@@ -143,11 +147,13 @@ class Preview(wx.Panel):
 
     def OnWebViewTitleChanged(self, evt):
         self.sig_title_changed.signal(self)
+        self.sig_status_changed.signal(self)
 
     def OnWebViewLoaded(self, evt):
         if self.show_browser_ui:
             self.location.SetValue(self.path or self.url)
         self.sig_title_changed.signal(self)
+        self.sig_status_changed.signal(self)
 
     def OnLocationSelect(self, evt):
         url = self.location.GetStringSelection()

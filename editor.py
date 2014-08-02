@@ -77,6 +77,10 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
     def status_text_path(self):
         return self.static_title or self.path or "Untitled"
 
+    @property
+    def status_text_syntax(self):
+        return "Syntax: " + self.syntax.description
+
     def SetModified(self):
         self.modified_externally = True
         self.sig_title_changed.signal(self)

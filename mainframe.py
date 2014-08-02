@@ -133,8 +133,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
 
         self.SetDropTarget(self)
         self.SetMenuBar(menubar.Create())
-        self.CreateStatusBar(2)
-        self.SetStatusWidths([200, -1])
+        self.CreateStatusBar(3)
+        self.SetStatusWidths([200, -1, 120])
 
         if wx.Platform != "__WXMAC__":
             self.SetIcons(load_icon_bundle(
@@ -699,6 +699,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                 if self.notebook.GetPageCount() == 0:
                     self.SetStatusText("", 0)
                     self.SetStatusText("", 1)
+                    self.SetStatusText("", 2)
 
     def AddPage(self, win, index=None):
         if index is None:
@@ -713,6 +714,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         editor.SetFocus()
         self.SetStatusText(editor.status_text, 0)
         self.SetStatusText(editor.status_text_path, 1)
+        self.SetStatusText(editor.status_text_syntax, 2)
 
     def OnPageTitleChanged(self, win):
         i = self.notebook.GetPageIndex(win)
@@ -723,6 +725,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         if win is self.notebook.GetCurrentPage():
             self.SetStatusText(win.status_text, 0)
             self.SetStatusText(win.status_text_path, 1)
+            self.SetStatusText(win.status_text_syntax, 2)
 
     def OnTabAreaDClick(self, evt):
         self.NewEditor(index=self.notebook.GetPageCount())
