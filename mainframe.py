@@ -1,8 +1,7 @@
 import os, string, traceback, errno, shutil, webbrowser
 import wx
-from wx.lib.agw import aui
-from wx.lib.utils import AdjustRectToScreen
 
+import aui
 import app_info, async, fileutil, ID
 from about_dialog import AboutDialog
 from async import async_call, coroutine, queued_coroutine, managed, CoroutineManager, CoroutineQueue
@@ -225,6 +224,12 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.Bind(wx.EVT_MENU, self.EditorAction("Uncomment"), id=ID.UNCOMMENT)
         self.Bind(wx.EVT_MENU, self.EditorAction("JoinLines"), id=ID.JOIN_LINES)
         self.Bind(wx.EVT_MENU, self.EditorAction("SplitLines"), id=ID.SPLIT_LINES)
+        self.Bind(wx.EVT_MENU, self.EditorAction("RemoveExtraSpace"), id=ID.REMOVE_EXTRA_SPACE)
+        self.Bind(wx.EVT_MENU, self.EditorAction("TabsToSpaces"), id=ID.TABS_TO_SPACES)
+        self.Bind(wx.EVT_MENU, self.EditorAction("LowerCase"), id=ID.LOWER_CASE)
+        self.Bind(wx.EVT_MENU, self.EditorAction("UpperCase"), id=ID.UPPER_CASE)
+        self.Bind(wx.EVT_MENU, self.EditorAction("TitleCase"), id=ID.TITLE_CASE)
+        self.Bind(wx.EVT_MENU, self.EditorAction("SwapCase"), id=ID.SWAP_CASE)
 
         self.Bind(wx.EVT_MENU, self.OnNewProject, id=ID.NEW_PROJECT)
         self.Bind(wx.EVT_MENU, self.OnOpenProject, id=ID.OPEN_PROJECT)
@@ -274,6 +279,12 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasMethod("Uncomment"), id=ID.UNCOMMENT)
         self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasMethodAndSelection("JoinLines"), id=ID.JOIN_LINES)
         self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasMethodAndSelection("SplitLines"), id=ID.SPLIT_LINES)
+        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasMethodAndSelection("RemoveExtraSpace"), id=ID.REMOVE_EXTRA_SPACE)
+        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasMethodAndSelection("TabsToSpaces"), id=ID.TABS_TO_SPACES)
+        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasMethodAndSelection("LowerCase"), id=ID.LOWER_CASE)
+        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasMethodAndSelection("UpperCase"), id=ID.UPPER_CASE)
+        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasMethodAndSelection("TitleCase"), id=ID.TITLE_CASE)
+        self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_EditorHasMethodAndSelection("SwapCase"), id=ID.SWAP_CASE)
 
         self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_ProjectIsOpen, id=ID.CLOSE_PROJECT)
         self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_ProjectIsOpen, id=ID.EDIT_PROJECT)

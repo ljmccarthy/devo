@@ -19,6 +19,7 @@ def get_fsmonitor():
 
 
 def get_components():
+    get_aui()
     get_fsmonitor()
 
 if __name__ == "__main__":

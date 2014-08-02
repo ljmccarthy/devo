@@ -226,6 +226,29 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
         replace = "\n".join(indent + line.strip() for line in selected.split())
         self.ReplaceSelectionAndSelect(replace)
 
+    def RemoveExtraSpace(self):
+        replace_lines = []
+        for line in self.GetSelectedText().split("\n"):
+            indent = line[:len(line) - len(line.lstrip())]
+            replace_lines.append(indent + " ".join(line.split()))
+        self.ReplaceSelectionAndSelect("\n".join(replace_lines))
+
+    def TabsToSpaces(self):
+        replace = self.GetSelectedText().expandtabs(self.GetTabWidth())
+        self.ReplaceSelectionAndSelect(replace)
+
+    def LowerCase(self):
+        self.ReplaceSelectionAndSelect(self.GetSelectedText().lower())
+
+    def UpperCase(self):
+        self.ReplaceSelectionAndSelect(self.GetSelectedText().upper())
+
+    def TitleCase(self):
+        self.ReplaceSelectionAndSelect(self.GetSelectedText().title())
+
+    def SwapCase(self):
+        self.ReplaceSelectionAndSelect(self.GetSelectedText().swapcase())
+
     def GetSelectedFirstLine(self):
         return self.GetSelectedText().strip().split("\n", 1)[0]
 
