@@ -371,11 +371,13 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     def MoveWindowToLeft(self, width=DEFAULT_WIDTH):
         display_rect = wx.Display(wx.Display.GetFromWindow(self)).GetClientArea()
         width = min(display_rect.width, width)
+        self.Restore()
         self.SetRect(wx.Rect(0, 0, width, display_rect.height))
 
     def MoveWindowToRight(self, width=DEFAULT_WIDTH):
         display_rect = wx.Display(wx.Display.GetFromWindow(self)).GetClientArea()
         width = min(display_rect.width, width)
+        self.Restore()
         self.SetRect(wx.Rect(display_rect.width - width, display_rect.y, width, display_rect.height))
 
     @managed("cm")
