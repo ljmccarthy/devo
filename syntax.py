@@ -172,6 +172,21 @@ successful sum synonym sysdate table then time timestamp to trigger true type
 uid union unique update use user validate values varchar varchar2 variance view
 when whenever where while with work write year zone"""
 
+keywords_batch = """\
+rem set if exist errorlevel for in do break call chcp cd chdir choice cls
+country ctty date del erase dir echo exit goto loadfix loadhigh mkdir md move
+path pause prompt rename ren rmdir rd shift time type ver verify vol com con lpt
+nul color copy defined else not start append attrib chkdsk comp diskcomp"""
+
+keywords_scheme = """\
+quote lambda if set! include include-ci cond else case and or when unless
+cond-expand library not let let* letrec letrec* let-values let-values* begin do
+delay delay-force force promise? make-promise make-parameter parameterize guard
+raise quasiquote unquote unquote-splicing case-lambda let-syntax letrec-syntax
+syntax-rules syntax-error import only except prefix rename define define-values
+define-syntax define-record-type define-library export
+include-library-declarations"""
+
 syntax_plain = Syntax("plain", "Plain Text", stc.STC_LEX_NULL, "*")
 
 syntax_list = [
@@ -192,6 +207,8 @@ syntax_list = [
     Syntax("diff", "Diff", stc.STC_LEX_DIFF, "*.diff;*.patch"),
     Syntax("makefile", "Makefile", stc.STC_LEX_MAKEFILE, "Makefile*;makefile*;GNUmakefile*;*.mk", "#",
            indent_width = 8, tab_width = 8, use_tabs = True),
+    Syntax("batch", "Batch File", stc.STC_LEX_BATCH, "*.bat;*.cmd;*.nt", "REM ", keywords_batch),
+    Syntax("scheme", "Scheme", stc.STC_LEX_LISP, "*.scm;*.ss", ";", keywords_scheme),
     syntax_plain,
 ]
 
