@@ -182,10 +182,53 @@ keywords_scheme = """\
 quote lambda if set! include include-ci cond else case and or when unless
 cond-expand library not let let* letrec letrec* let-values let-values* begin do
 delay delay-force force promise? make-promise make-parameter parameterize guard
-raise quasiquote unquote unquote-splicing case-lambda let-syntax letrec-syntax
+quasiquote unquote unquote-splicing case-lambda let-syntax letrec-syntax
 syntax-rules syntax-error import only except prefix rename define define-values
 define-syntax define-record-type define-library export
-include-library-declarations"""
+include-library-declarations
+eqv? eq? equal? number? complex? real? rational? integer? exact? inexact?
+exact-integer? finite? infinite? nan? zero? positive? negative? odd? even? max
+min + * - / abs floor/ floor-quotient floor-remainder truncate/
+truncate-quotient truncate-remainder quotient remainder modulo gcd lcm numerator
+denominator floor ceiling truncate round rationalize exp log sin cos tan asin
+acos atan square sqrt exact-integer-sqrt expt make-rectangular make-polar
+real-part imag-part magnitude angle inexact exact number->string string->number
+boolean? boolean=? pair? cons car cdr set-car! set-cdr! caar cadr cdar cddr
+caaar caadr cadar caddr cdaar cdadr cddar cdddr caaaar caaadr caadar caaddr
+cadaar cadadr caddar cadddr cdaaar cdaadr cdadar cdaddr cddaar cddadr cdddar
+cddddr null? list? make-list list length append reverse list-tail list-ref
+list-set! memq memv member assq assv assoc list-copy symbol? symbol->string
+string->symbol char? char=? char<? char>? char<=? char>=? char-ci=? char-ci<?
+char-ci>? char-ci<=? char-ci>=? char-alphabetic? char-numeric? char-whitespace?
+char-upper-case? char-lower-case? digit-value char->integer integer->char
+char-upcase char-downcase char-foldcase string? make-string string string-length
+string-ref string-set! string=? string-ci=? string<? string-ci<? string>?
+string-ci>? string<=? string-ci<=? string>=? string-ci>=? string-upcase
+string-downcase string-foldcase substring string-append string->list
+list->string string-copy string-copy! string-fill! vector? make-vector vector
+vector-length vector-ref vector-set! vector->list list->vector vector->string
+string->vector vector-copy vector-copy! vector-append vector-fill! bytevector?
+make-bytevector bytevector bytevector-length bytevector-u8-ref
+bytevector-u8-set! bytevector-copy bytevector-copy! bytevector-append
+utf8->string string->utf8 procedure? apply map string-map vector-map for-each
+string-for-each vector-for-each call-with-current-continuation call/cc values
+call-with-values dynamic-wind with-exception-handler raise raise-continuable
+error error-object? error-object-message error-object-irritants read-error?
+file-error? environment scheme-report-environment null-environment
+interactive-environment eval call-with-port call-with-input-file
+call-with-output-file input-port? output-port? textual-port? binary-port? port?
+input-port-open? output-port-open? current-input-port current-output-port
+current-error-port with-input-from-file with-output-to-file open-input-file
+open-binary-input-file open-output-file open-binary-output-file close-port
+close-input-port close-output-port open-input-string open-output-string
+get-output-string open-input-bytevector open-output-bytevector
+get-input-bytevector read read-char peek-char read-line eof-object? eof-object
+char-ready? read-string read-u8 peek-u8 u8-ready? read-bytevector
+read-bytevector! write write-shared write-simple display newline write-char
+write-string write-u8 write-bytevector flush-output-port load file-exists?
+delete-file command-line exit emergency-exit get-environment-variable
+get-environment-variables current-second current-jiffy jiffies-per-second
+features"""
 
 syntax_plain = Syntax("plain", "Plain Text", stc.STC_LEX_NULL, "*")
 
