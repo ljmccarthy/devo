@@ -39,6 +39,7 @@ edit_menu = Menu("&Edit", [
         MenuItem(ID.TITLE_CASE, "&Title Case"),
         MenuItem(ID.SWAP_CASE, "&Swap Case"),
     ]),
+    MenuSeparator,
     MenuHook("edit"),
 ])
 
