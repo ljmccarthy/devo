@@ -91,6 +91,9 @@ class AppEnv(object):
     def close_view(self, view):
         self._mainframe.ClosePage(view)
 
+    def shell_open(self, path):
+        self._mainframe.tree.shell_open(path)
+
     @property
     def find_details(self):
         return self._mainframe.find_details
@@ -236,6 +239,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.BindEditorAction(ID.TITLE_CASE, "TitleCase", "HasSelection")
         self.BindEditorAction(ID.SWAP_CASE, "SwapCase", "HasSelection")
         self.BindEditorAction(ID.OPEN_IN_WEB_VIEW, "OpenPreview", "HasOpenFile")
+        self.BindEditorAction(ID.OPEN_CONTAINING_FOLDER, "OpenContainingFolder", "HasOpenFile")
         self.BindEditorAction(ID.WEB_SEARCH, "WebSearch", "HasSelection")
 
         self.Bind(wx.EVT_MENU, self.OnNewProject, id=ID.NEW_PROJECT)

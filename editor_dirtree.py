@@ -38,7 +38,7 @@ class EditorDirTreeCtrl(DirTreeCtrl):
     def OnItemOpen(self, evt):
         path = self.GetSelectedPath()
         if path:
-            self._shell_open(path)
+            self.shell_open(path)
 
     def OnItemEdit(self, evt):
         node = self.GetSelectedNode()
@@ -50,7 +50,7 @@ class EditorDirTreeCtrl(DirTreeCtrl):
         if node and node.type == 'f':
             self.env.open_preview(node.path)
 
-    def _shell_open(self, path):
+    def shell_open(self, path):
         try:
             self.cm.add(async_call(fileutil.shell_open, path, workdir=os.path.dirname(path)))
         except OSError as e:
@@ -59,7 +59,7 @@ class EditorDirTreeCtrl(DirTreeCtrl):
     def OnItemOpenFolder(self, evt):
         path = self.GetSelectedPath()
         if path:
-            self._shell_open(os.path.dirname(path))
+            self.shell_open(os.path.dirname(path))
 
     def OnSearch(self, evt):
         path = self.GetSelectedPath()

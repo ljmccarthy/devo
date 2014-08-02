@@ -1,5 +1,6 @@
 import os
-import wx, wx.stc
+import wx
+import wx.stc
 from urllib import urlencode
 
 import ID
@@ -296,14 +297,21 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
                 self.SetModified()
 
     def GetDyanmicEditMenuItems(self):
-        items = [
-            MenuItem(ID.OPEN_IN_WEB_VIEW, "Preview in Web View"),
-            MenuSeparator,
-        ]
+        items = []
+        if self.path:
+            items.extend([
+                MenuItem(ID.OPEN_CONTAINING_FOLDER, "Open Containing Folder"),
+                MenuItem(ID.OPEN_IN_WEB_VIEW, "Preview in Web View"),
+                MenuSeparator,
+            ])
         selected = self.GetSelectedFirstLine()
         if selected:
             items.append(MenuItem(ID.WEB_SEARCH, "Web Search for %s" % repr(selected)[1:]))
         return items
+
+    def OpenContainingFolder(self):
+        if self.path:
+            self.env.shell_open(os.path.dirname(self.path))
 
     def OpenPreview(self):
         if self.path:
