@@ -66,7 +66,7 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
         if self.static_title is not None:
             return self.static_title
         path = os.path.basename(self.path) or "Untitled"
-        return path + " *" if self.modified else path
+        return "* " + path if self.modified else path
 
     @property
     def status_text(self):
