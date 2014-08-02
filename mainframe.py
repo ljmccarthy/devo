@@ -134,7 +134,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.SetDropTarget(self)
         self.SetMenuBar(menubar.Create())
         self.CreateStatusBar(3)
-        self.SetStatusWidths([200, -1, 120])
+        self.SetStatusWidths([200, -1, 160])
 
         if wx.Platform != "__WXMAC__":
             self.SetIcons(load_icon_bundle(
