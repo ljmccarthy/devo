@@ -241,6 +241,12 @@ delete-file command-line exit emergency-exit get-environment-variable
 get-environment-variables current-second current-jiffy jiffies-per-second
 features"""
 
+keywords_ruby = """\
+BEGIN END __ENCODING__ __END__ __FILE__ __LINE__ alias and begin break case
+class def defined? do else elsif end ensure false for if in module next nil
+not or redo rescue retry return self super then true undef unless until when
+while yield"""
+
 syntax_plain = Syntax("plain", "Plain Text", stc.STC_LEX_NULL, "*")
 
 syntax_list = [
@@ -264,6 +270,7 @@ syntax_list = [
            indent_width = 8, tab_width = 8, use_tabs = True),
     Syntax("batch", "Batch File", stc.STC_LEX_BATCH, "*.bat;*.cmd;*.nt", "REM ", keywords_batch),
     Syntax("scheme", "Scheme", stc.STC_LEX_LISP, "*.scm;*.ss", ";", keywords_scheme),
+    Syntax("ruby", "Ruby", stc.STC_LEX_RUBY, "*.rb;*.rbw;*.rake;*.rjs;Rakefile", "#", keywords_ruby),
     syntax_plain,
 ]
 
