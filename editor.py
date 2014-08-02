@@ -41,6 +41,9 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
         self.SetBackSpaceUnIndents(True)
         self.SetViewWhiteSpace(wx.stc.STC_WS_VISIBLEALWAYS)
         self.SetWhitespaceForeground(True, "#dddddd")
+        self.SetEdgeMode(wx.stc.STC_EDGE_LINE)
+        self.SetEdgeColumn(80)
+        self.SetEdgeColour("#dddddd")
 
         self.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
         self.Bind(wx.EVT_RIGHT_DOWN, self.OnRightDown)
