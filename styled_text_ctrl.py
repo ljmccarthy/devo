@@ -218,12 +218,24 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
         replace = lines[0] + " " + replace if replace else lines[0]
         self.ReplaceSelectionAndSelect(replace)
 
-    def SplitLines(self):
+    def GetLineIndentText(self, line_num):
+        line = self.GetLine(line_num)
+        return line[:len(line) - len(line.lstrip())]
+
+    def GetFirstSelectedLineIndent(self):
         start = self.GetSelectionStart()
-        selected = self.GetSelectedText()
-        first_line = selected.split("\n", 1)[0]
-        indent = first_line[:len(first_line) - len(first_line.lstrip())]
-        replace = "\n".join(indent + line.strip() for line in selected.split())
+        return self.GetLineIndentText(self.LineFromPosition(start))
+
+    def SplitLines(self):
+        indent = self.GetFirstSelectedLineIndent()
+        lines = self.GetSelectedText().split("\n", 1)
+        first = lines[0]
+        rest = lines[1] if len(lines) == 2 else ""
+        first_parts = first.split()
+        replace_lines = [first.rsplit(None, len(first_parts) - 1)[0]]
+        replace_lines.extend(indent + x for x in first_parts[1:])
+        replace_lines.extend(indent + x for x in rest.split())
+        replace = "\n".join(replace_lines)
         self.ReplaceSelectionAndSelect(replace)
 
     def RemoveExtraSpace(self):
