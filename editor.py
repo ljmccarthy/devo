@@ -6,7 +6,7 @@ import ID
 from async import async_call, coroutine
 from dialogs import dialogs
 from fileutil import atomic_write_file, read_file, mkpath
-from menu import MenuItem
+from menu import MenuItem, MenuSeparator
 from signal_wx import Signal
 from styled_text_ctrl import StyledTextCtrl
 from util import clean_text
@@ -50,7 +50,6 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
         self.Bind(wx.stc.EVT_STC_SAVEPOINTLEFT, self.OnSavePointLeft)
         self.Bind(wx.stc.EVT_STC_SAVEPOINTREACHED, self.OnSavePointReached)
         self.Bind(wx.stc.EVT_STC_UPDATEUI, self.OnStcUpdateUI)
-        self.Bind(wx.EVT_MENU, self.OnWebSearch, id=ID.WEB_CODE_SEARCH)
 
     def GetModify(self):
         return (not self.GetReadOnly()) and (
@@ -189,6 +188,9 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
         self.sig_title_changed.signal(self)
         self.sig_status_changed.signal(self)
 
+    def HasOpenFile(self):
+        return bool(self.path)
+
     @coroutine
     def SaveAsInSameTab(self):
         path = self.env.get_file_to_save(path=os.path.dirname(self.path))
@@ -294,16 +296,23 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
                 self.SetModified()
 
     def GetDyanmicEditMenuItems(self):
-        items = []
+        items = [
+            MenuItem(ID.OPEN_IN_WEB_VIEW, "Preview in Web View"),
+            MenuSeparator,
+        ]
         selected = self.GetSelectedFirstLine()
         if selected:
-            items.append(MenuItem(ID.WEB_CODE_SEARCH, "Web Code Search for %s" % repr(selected)[1:]))
+            items.append(MenuItem(ID.WEB_SEARCH, "Web Search for %s" % repr(selected)[1:]))
         return items
 
-    def OnWebSearch(self, evt):
+    def OpenPreview(self):
+        if self.path:
+            self.env.open_preview(self.path)
+
+    def WebSearch(self):
         selected = self.GetSelectedFirstLine()
         if selected:
-            url = "https://searchcode.com/?" + urlencode([("q", selected)])
+            url = "https://www.google.com/search?" + urlencode([("q", selected)])
             self.env.open_web_view(url)
 
     def SavePerspective(self):

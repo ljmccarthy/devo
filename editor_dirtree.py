@@ -16,8 +16,8 @@ class EditorDirTreeCtrl(DirTreeCtrl):
         self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.OnItemActivated)
         self.Bind(wx.EVT_MENU, self.OnItemOpen, id=ID.DIRTREE_OPEN)
         self.Bind(wx.EVT_MENU, self.OnItemEdit, id=ID.DIRTREE_EDIT)
-        self.Bind(wx.EVT_MENU, self.OnItemPreview, id=ID.DIRTREE_PREVIEW)
         self.Bind(wx.EVT_MENU, self.OnItemOpenFolder, id=ID.DIRTREE_OPEN_FOLDER)
+        self.Bind(wx.EVT_MENU, self.OnItemOpenWebView, id=ID.DIRTREE_OPEN_IN_WEB_VIEW)
         self.Bind(wx.EVT_MENU, self.OnSearch, id=ID.DIRTREE_SEARCH)
         self.Bind(wx.EVT_MENU, self.OnSearchFolder, id=ID.DIRTREE_SEARCH_FOLDER)
 
@@ -45,7 +45,7 @@ class EditorDirTreeCtrl(DirTreeCtrl):
         if node and node.type == 'f':
             self.env.open_file(node.path)
 
-    def OnItemPreview(self, evt):
+    def OnItemOpenWebView(self, evt):
         node = self.GetSelectedNode()
         if node and node.type == 'f':
             self.env.open_preview(node.path)
