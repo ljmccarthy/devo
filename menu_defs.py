@@ -19,8 +19,8 @@ edit_menu = Menu("&Edit", [
     MenuItem(ID.GO_TO_LINE, "&Go To Line...", "Ctrl+G"),
     MenuSeparator,
     Menu("&Lines", [
-        MenuItem(ID.INDENT, "&Indent", "Ctrl+I"),
-        MenuItem(ID.UNINDENT, "Unin&dent", "Ctrl+U"),
+        MenuItem(ID.INDENT, "&Indent", "Ctrl+]"),
+        MenuItem(ID.UNINDENT, "Unin&dent", "Ctrl+["),
         MenuSeparator,
         MenuItem(ID.COMMENT, "Comment", "Ctrl+/"),
         MenuItem(ID.UNCOMMENT, "Uncomment", "Ctrl+\\"),
@@ -34,8 +34,8 @@ edit_menu = Menu("&Edit", [
         MenuItem(ID.TABS_TO_SPACES, "Convert &Tabs To Spaces"),
     ]),
     Menu("Case", [
-        MenuItem(ID.LOWER_CASE, "&Lower Case"),
-        MenuItem(ID.UPPER_CASE, "&Upper Case"),
+        MenuItem(ID.LOWER_CASE, "&Lower Case", "Ctrl+Shift+U"),
+        MenuItem(ID.UPPER_CASE, "&Upper Case", "Ctrl+U"),
         MenuItem(ID.TITLE_CASE, "&Title Case"),
         MenuItem(ID.SWAP_CASE, "&Swap Case"),
     ]),
