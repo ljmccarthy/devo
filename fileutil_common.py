@@ -23,9 +23,16 @@ def ask_copy_file(parent, srcpath, dstpath):
         "Confirm Copy",
         wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION) == wx.ID_YES
 
+def ask_overwrite_file(parent, dstpath):
+    return dialogs.message_dialog(parent,
+        "The destination already exists. Overwrite?",
+        "Confirm Overwrite",
+        wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION) == wx.ID_YES
+
 __all__ = (
     "destination_is_same",
     "ask_delete_file",
     "ask_move_file",
     "ask_copy_file",
+    "ask_overwrite_file",
 )

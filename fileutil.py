@@ -94,6 +94,15 @@ def shell_move(srcpath, dstpath, parent=None):
     if destination_is_same(srcpath, dstpath):
         return
     if ask_move_file(parent, srcpath, dstpath):
+        dstfile = os.path.join(dstpath, os.path.basename(srcpath))
+        if os.path.exists(dstfile):
+            if not ask_overwrite_file(parent, dstfile):
+                return
+            try:
+                os.remove(dstfile)
+            except Exception as e:
+                dialogs.error(parent, "Error overwriting file file:\n\n%s" % e)
+                return
         try:
             yield async_call(shutil.move, srcpath, dstpath)
         except Exception as e:
