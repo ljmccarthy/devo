@@ -116,11 +116,11 @@ class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
         self.select_later_time = 0
         self.expanding_all = False
         self.drop_item = None
+        self.sig_update_tree = Signal(self)
+        self.sig_update_tree.bind(self.UpdateFromFSMonitor)
         self.monitor = FSMonitor()
         self.monitor_thread = DirTreeMonitor(self, self.monitor)
         self.updating = False
-        self.sig_update_tree = Signal(self)
-        self.sig_update_tree.bind(self.UpdateFromFSMonitor)
 
         self.imglist = wx.ImageList(16, 16)
         self.imglist.Add(load_bitmap("icons/folder.png"))
