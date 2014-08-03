@@ -82,40 +82,40 @@ def mount_point(path):
     return path
 
 @coroutine
-def shell_remove(path):
-    if ask_delete_file(path):
+def shell_remove(path, parent=None):
+    if ask_delete_file(parent, path):
         try:
             yield async_call(remove, path)
         except Exception as e:
             dialogs.error(get_top_window(), "Error deleting file:\n\n%s" % e)
 
 @coroutine
-def shell_move(srcpath, dstpath):
+def shell_move(srcpath, dstpath, parent=None):
     if destination_is_same(srcpath, dstpath):
         return
-    if ask_move_file(srcpath, dstpath):
+    if ask_move_file(parent, srcpath, dstpath):
         try:
             yield async_call(shutil.move, srcpath, dstpath)
         except Exception as e:
             dialogs.error(get_top_window(), "Error moving file:\n\n%s" % e)
 
 @coroutine
-def shell_copy(srcpath, dstpath):
+def shell_copy(srcpath, dstpath, parent=None):
     if destination_is_same(srcpath, dstpath):
         return
-    if ask_copy_file(srcpath, dstpath):
+    if ask_copy_file(parent, srcpath, dstpath):
         try:
             yield async_call(shutil.copy2, srcpath, dstpath)
         except Exception as e:
             dialogs.error(get_top_window(), "Error copying file:\n\n%s" % e)
 
-def shell_move_or_copy(srcpath, dstpath):
+def shell_move_or_copy(srcpath, dstpath, parent=None):
     srcdev = os.stat(srcpath).st_dev
     dstdev = os.stat(dstpath).st_dev
     if srcdev == dstdev:
-        return shell_move(srcpath, dstpath)
+        return shell_move(srcpath, dstpath, parent)
     else:
-        return shell_copy(srcpath, dstpath)
+        return shell_copy(srcpath, dstpath, parent)
 
 if sys.platform == "win32":
     from fileutil_win32 import *

@@ -237,7 +237,7 @@ class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
                 node = self.GetPyData(item)
                 if node.type == 'd':
                     for filename in filenames:
-                        fileutil.shell_move_or_copy(filename, node.path)
+                        fileutil.shell_move_or_copy(filename, node.path, parent=self)
                     break
                 item = self.GetItemParent(item)
 
@@ -250,7 +250,7 @@ class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
         node = self.GetSelectedNode()
         if node:
             next_item = self.GetNextSibling(node.item)
-            fileutil.shell_remove(node.path)
+            fileutil.shell_remove(node.path, parent=self)
 
     def OnNewFolder(self, evt):
         node = self.GetSelectedNode()
