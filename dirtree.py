@@ -73,7 +73,7 @@ class DirTreeMonitor(object):
         while not is_dead_object(self.tree):
             events = self.monitor.read_events(timeout=1)
             if events:
-                to_add = [evt for evt in events if evt.action in (FSEvent.Attrib, FSEvent.Create, FSEvent.MoveTo)]
+                to_add = [evt for evt in events if evt.action in (FSEvent.Attrib, FSEvent.Modify, FSEvent.Create, FSEvent.MoveTo)]
                 to_remove = [evt for evt in events if evt.action in (FSEvent.Delete, FSEvent.MoveFrom)]
                 with self.__lock:
                     self.__to_add.extend(to_add)
