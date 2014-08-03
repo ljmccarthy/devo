@@ -80,7 +80,7 @@ class DirTreeMonitor(object):
                     self.__to_remove.extend(to_remove)
                 if not is_dead_object(self.tree):
                     self.tree.sig_update_tree.signal()
-        self.monitor.remove_all_watches()
+        self.monitor.close()
         with self.__lock:
             self.__to_add = []
             self.__to_remove = []
