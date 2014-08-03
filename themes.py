@@ -23,7 +23,7 @@ default_theme = [
     ("defname",                "fore:#007F7F,bold"),
     ("deleted",                "fore:#FF0000"),
     ("directive",              "fore:#007F00,bold"),
-    ("doublestring",           "fore:#0000FF"),
+    ("doublestring",           "fore:#7F007F"),
     ("entity",                 "fore:#FF4500"),
     ("global",                 "fore:#000000"),
     ("globalclass",            "fore:#000000"),

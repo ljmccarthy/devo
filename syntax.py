@@ -59,6 +59,13 @@ virtual void volatile while
 add alias ascending async await descending dynamic from get global group into
 join let orderby partial remove select set value var where yield"""
 
+keywords_javascript = """\
+break case catch class const continue debugger default delete do else enum
+export extends finally for function if implements import in instanceof interface
+let new package private protected return static super switch this throw try
+typeof var void while with yield
+"""
+
 keywords_python = """\
 and as assert break class continue def del elif else except exec finally for
 from global if import in is lambda not or pass print raise return try
@@ -445,6 +452,7 @@ syntax_list = [
     Syntax("objcpp", "Objective-C++", stc.STC_LEX_CPP, "*.mm", "//", keywords_cpp),
     Syntax("java", "Java", stc.STC_LEX_CPP, "*.java", "//", keywords_java),
     Syntax("csharp", "C#", stc.STC_LEX_CPP, "*.cs", "//", keywords_csharp),
+    Syntax("javascript", "JavaScript", stc.STC_LEX_CPP, "*.js;*.es", "//", keywords_javascript),
     Syntax("python", "Python", stc.STC_LEX_PYTHON, "*.py", "#", keywords_python),
     Syntax("html", "HTML", stc.STC_LEX_HTML, "*.html;*.htm"),
     Syntax("sgml", "SGML", stc.STC_LEX_HTML, "*.sgml"),
