@@ -37,8 +37,9 @@ edit_menu = Menu("&Edit", [
         MenuItem(ID.SHUFFLE_LINES, "S&huffle Lines"),
     ]),
     Menu("&Space", [
-        MenuSeparator,
+        MenuItem(ID.ALIGN_COLUMNS, "&Align Columns"),
         MenuItem(ID.REMOVE_EXTRA_SPACE, "Remove &Extra Space"),
+        MenuSeparator,
         MenuItem(ID.TABS_TO_SPACES, "Convert &Tabs To Spaces"),
     ]),
     Menu("Case", [

@@ -1,6 +1,7 @@
 import os.path
 import string
 import random
+import re
 import wx
 import wx.stc
 from contextlib import contextmanager
@@ -276,6 +277,26 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
         self.SelectLines()
         lines = self.GetSelectedText().split("\n")
         random.shuffle(lines)
+        self.ReplaceSelectionAndSelect("\n".join(lines))
+
+    def AlignColumns(self):
+        self.SelectLines()
+        lines = self.GetSelectedText().split("\n")
+        regex = re.compile("([,:])")
+        lines = [regex.split(line) for line in lines]
+        lines = [[line[i] + line[i+1] for i in xrange(0, len(line)-1, 2)] + [line[-1]] for line in lines]
+        columns = []
+        for line in lines:
+            for i, col_text in enumerate(line):
+                col_width = len(col_text.strip() if i > 0 else col_text) + 1
+                if i >= len(columns):
+                    columns.append(col_width)
+                else:
+                    columns[i] = max(columns[i], col_width)
+        lines = [
+            line[0].ljust(columns[0]) + "".join(x.strip().ljust(columns[j+1]) for j, x in enumerate(line[1:]))
+            for i, line in enumerate(lines)
+        ]
         self.ReplaceSelectionAndSelect("\n".join(lines))
 
     def RemoveExtraSpace(self):
