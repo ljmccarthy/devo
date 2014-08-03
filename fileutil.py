@@ -87,7 +87,7 @@ def shell_remove(path, parent=None):
         try:
             yield async_call(remove, path)
         except Exception as e:
-            dialogs.error(get_top_window(), "Error deleting file:\n\n%s" % e)
+            dialogs.error(parent, "Error deleting file:\n\n%s" % e)
 
 @coroutine
 def shell_move(srcpath, dstpath, parent=None):
@@ -97,7 +97,7 @@ def shell_move(srcpath, dstpath, parent=None):
         try:
             yield async_call(shutil.move, srcpath, dstpath)
         except Exception as e:
-            dialogs.error(get_top_window(), "Error moving file:\n\n%s" % e)
+            dialogs.error(parent, "Error moving file:\n\n%s" % e)
 
 @coroutine
 def shell_copy(srcpath, dstpath, parent=None):
@@ -107,7 +107,7 @@ def shell_copy(srcpath, dstpath, parent=None):
         try:
             yield async_call(shutil.copy2, srcpath, dstpath)
         except Exception as e:
-            dialogs.error(get_top_window(), "Error copying file:\n\n%s" % e)
+            dialogs.error(parent, "Error copying file:\n\n%s" % e)
 
 def shell_move_or_copy(srcpath, dstpath, parent=None):
     srcdev = os.stat(srcpath).st_dev
