@@ -247,6 +247,11 @@ class def defined? do else elsif end ensure false for if in module next nil
 not or redo rescue retry return self super then true undef unless until when
 while yield"""
 
+keywords_lua = """
+and break do else elseif end false for function if in local nil not or repeat
+return then true until while
+"""
+
 keywords_pascal = """\
 absolute and array asm begin case const constructor destructor div do downto
 else end file for function goto if implementation in inherited inline interface
@@ -268,6 +273,100 @@ keywords_modula2 = """\
 and elsif loop repeat array end mod return begin exit module set by export not
 then case for of to const from or type definition if pointer until div
 implementation procedure var do import qualified while else in record with"""
+
+keywords_freebasic = """\
+append as asc asin asm atan2 atn beep bin binary bit bitreset bitset bload
+bsave byref byte byval call callocate case cbyte cdbl cdecl chain chdir chr
+cint circle clear clng clngint close cls color command common cons const
+continue cos cshort csign csng csrlin cubyte cuint culngint cunsg curdir
+cushort custom cvd cvi cvl cvlongint cvs cvshort data date deallocate declare
+defbyte defdbl defined defint deflng deflngint defshort defsng defstr defubyte
+defuint defulngint defushort dim dir do double draw dylibload dylibsymbol else
+elseif end enum environ environ$ eof eqv erase err error exec exepath exit exp
+export extern field fix flip for fre freefile function get getjoystick getkey
+getmouse gosub goto hex hibyte hiword if iif imagecreate imagedestroy imp
+inkey inp input instr int integer is kill lbound lcase left len let lib line
+lobyte loc local locate lock lof log long longint loop loword lset ltrim
+mid mkd mkdir mki mkl mklongint mks mkshort mod multikey mutexcreate
+mutexdestroy mutexlock mutexunlock name next not oct on once open option or out
+output overload paint palette pascal pcopy peek peeki peeks pipe pmap point
+pointer poke pokei pokes pos preserve preset print private procptr pset ptr
+public put random randomize read reallocate redim rem reset restore resume
+resume next return rgb rgba right rmdir rnd rset rtrim run sadd screen
+screencopy screeninfo screenlock screenptr screenres screenset screensync
+screenunlock seek statement seek function selectcase setdate setenviron
+setmouse settime sgn shared shell shl short shr sin single sizeof sleep space
+spc sqr static stdcall step stop str string string strptr sub swap system tab
+tan then threadcreate threadwait time time timer to trans trim type ubound
+ubyte ucase uinteger ulongint union unlock unsigned until ushort using va_arg
+va_first va_next val val64 valint varptr view viewprint wait wend while width
+window windowtitle with write xor zstring"""
+
+keywords_vb = """\
+addhandler addressof alias and andalso ansi as assembly attribute auto base
+begin binary boolean byref byte byval call case catch cbool cbyte cchar cdate
+cdbl cdec char cint class clng cobj compare const continue csbyte cshort csng
+cstr ctype cuint culng currency cushort custom date decimal declare default
+defbool defbyte defcur defdate defdbl defdec defint deflng defobj defsng defstr
+defvar delegate dim directcast do double each else elseif empty end endif enum
+eqv erase error event exit explicit externalsource false finally for friend
+function get gettype global gosub goto handles if imp implements imports in
+inherits input integer interface is isfalse isnot istrue len let lib like load
+lock long loop lset me mid midb mod module mustinherit mustoverride my mybase
+myclass namespace narrowing new next not nothing notinheritable notoverridable
+null object of off on operator option optional or orelse overloads overridable
+overrides paramarray partial preserve print private property protected public
+raiseevent randomize readonly redim region rem removehandler resume return rset
+sbyte seek select set shadows shared short single static step stop strict string
+structure sub synclock text then throw time to true try trycast type typeof
+uinteger ulong unicode unload until ushort using variant wend when while
+widening with withevents writeonly xor"""
+
+keywords_blitzbasic = """\
+abs accepttcpstream acos after and apptitle asc asin atan atan2
+automidhandle autosuspend availvidmem backbuffer banksize before bin calldll
+case ceil changedir channelpan channelpitch channelplaying channelvolume chr
+closedir closefile closemovie closetcpserver closetcpstream closeudpstream cls
+clscolor color colorblue colorgreen colorred commandline const copybank copyfile
+copyimage copypixel copypixelfast copyrect copystream cos countgfxdrivers
+countgfxmodes counthostips createbank createdir createimage createnetplayer
+createprocess createtcpserver createtimer createudpstream currentdate currentdir
+currenttime data debuglog default delay delete deletedir deletefile
+deletenetplayer desktopbuffer dim dottedip drawblock drawblockrect drawimage
+drawimagerect drawmovie each else else if elseif end end function end if end
+select end type endgraphics endif eof execfile exit exp false field filepos
+filesize filetype first flip float floor flushjoy flushkeys flushmouse
+fontheight fontname fontsize fontstyle fontwidth for forever freebank freefont
+freeimage freesound freetimer frontbuffer function gammablue gammagreen gammared
+getcolor getenv getkey getmouse gfxdrivername gfxmodedepth gfxmodeexists
+gfxmodeformat gfxmodeheight gfxmodewidth global gosub goto grabimage graphics
+graphicsbuffer graphicsdepth graphicsformat graphicsheight graphicswidth
+handleimage hex hidepointer hostip hostnetgame if imagebuffer imageheight
+imagerectcollide imagerectoverlap imagescollide imagesoverlap imagewidth
+imagexhandle imageyhandle include input insert instr int joinnetgame joydown
+joyhat joyhit joypitch joyroll joytype joyu joyudir joyv joyvdir joyx joyxdir
+joyy joyyaw joyydir joyz joyzdir keydown keyhit keywait last left len line
+loadanimimage loadbuffer loadfont loadimage loadsound local lockbuffer
+lockedformat lockedpitch lockedpixels log log10 loopsound lower lset maskimage
+mid midhandle millisecs mod morefiles mousedown mousehit mousex mousexspeed
+mousey mouseyspeed mousez mousezspeed movemouse movieheight movieplaying
+moviewidth netmsgdata netmsgfrom netmsgto netmsgtype netplayerlocal
+netplayername new next nextfile not null openfile openmovie opentcpstream or
+origin oval pausechannel pausetimer peekbyte peekfloat peekint peekshort pi
+playcdtrack playmusic playsound plot pokebyte pokefloat pokeint pokeshort print
+queryobject rand read readavail readbyte readbytes readdir readfile readfloat
+readint readline readpixel readpixelfast readshort readstring rect rectsoverlap
+recvnetmsg recvudpmsg repeat replace resettimer resizebank resizeimage restore
+resumechannel resumetimer return right rnd rndseed rotateimage rset runtimeerror
+sar savebuffer saveimage scaleimage scanline seedrnd seekfile select sendnetmsg
+sendudpmsg setbuffer setenv setfont setgamma setgfxdriver sgn shl showpointer
+shr sin soundpan soundpitch soundvolume sqr startnetgame step stop stopchannel
+stopnetgame str string stringheight stringwidth systemproperty tan tcpstreamip
+tcpstreamport tcptimeouts text tformfilter tformimage then tileblock tileimage
+timerticks to totalvidmem trim true type udpmsgip udpmsgport udpstreamip
+udpstreamport udptimeouts unlockbuffer until updategamma upper viewport vwait
+waitkey waitmouse waittimer wend while write writebyte writebytes writefile
+writefloat writeint writeline writepixel writepixelfast writeshort writestring"""
 
 syntax_plain = Syntax("plain", "Plain Text", stc.STC_LEX_NULL, "*")
 
@@ -293,8 +392,13 @@ syntax_list = [
     Syntax("batch", "Batch File", stc.STC_LEX_BATCH, "*.bat;*.cmd;*.nt", "REM ", keywords_batch),
     Syntax("scheme", "Scheme", stc.STC_LEX_LISP, "*.scm;*.ss", ";", keywords_scheme),
     Syntax("ruby", "Ruby", stc.STC_LEX_RUBY, "*.rb;*.rbw;*.rake;*.rjs;Rakefile", "#", keywords_ruby),
+    Syntax("lua", "Lua", stc.STC_LEX_LUA, "*.lua", "#", keywords_lua),
     Syntax("pascal", "Pascal", stc.STC_LEX_PASCAL, "*.dpr;*.dpk;*.pas;*.dfm;*.inc;*.pp", "//", keywords_pascal),
     Syntax("modula2", "Modula-2", stc.STC_LEX_PASCAL, "*.mod;*.def", "", keywords_modula2),
+    Syntax("freebasic", "FreeBasic", stc.STC_LEX_FREEBASIC, "*.bas;*.bi", "'", keywords_freebasic),
+    Syntax("vb", "Visual Basic", stc.STC_LEX_VB, "*.vb;*.bas;*.frm;*.cls;*.ctl;*.pag;*.dsr;*.dob", "'", keywords_vb),
+    Syntax("blitzbasic", "Blitz Basic", stc.STC_LEX_BLITZBASIC, "*.bb", "'", keywords_blitzbasic),
+    Syntax("latex", "LaTeX", stc.STC_LEX_LATEX, "*.tex;*.sty", "%"),
     syntax_plain,
 ]
 
