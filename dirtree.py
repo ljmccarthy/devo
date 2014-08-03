@@ -142,6 +142,7 @@ class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
 
     def Destroy(self):
         self.cm.cancel()
+        self.monitor.close()
         wx.TreeCtrl.Destroy(self)
 
     def SelectLater(self, parent, name, timeout=1):
