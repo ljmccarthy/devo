@@ -71,7 +71,7 @@ class DirTreeMonitor(object):
 
     def __monitor_update_thread(self):
         while not is_dead_object(self.tree):
-            events = self.monitor.read_events()
+            events = self.monitor.read_events(timeout=1)
             if events:
                 to_add = [evt for evt in events if evt.action in (FSEvent.Attrib, FSEvent.Create, FSEvent.MoveTo)]
                 to_remove = [evt for evt in events if evt.action in (FSEvent.Delete, FSEvent.MoveFrom)]
