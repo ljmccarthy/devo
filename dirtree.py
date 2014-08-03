@@ -437,9 +437,20 @@ class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
         self._SelectExpandedPath(self.GetRootItem(), path)
 
     @managed("cm")
+    @coroutine
+    def _SelectExpandPath(self, path):
+        yield self.ExpandPath(path)
+        self._SelectExpandedPath(self.GetRootItem(), path)
+
+    @managed("cm")
     @queued_coroutine("cq")
     def SelectPath(self, path):
         yield self._SelectPath(os.path.normpath(path))
+
+    @managed("cm")
+    @queued_coroutine("cq")
+    def SelectExpandPath(self, path):
+        yield self._SelectExpandPath(os.path.normpath(path))
 
     def SavePerspective(self):
         p = {}

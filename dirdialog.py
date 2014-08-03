@@ -25,7 +25,7 @@ class DirDialog(wx.Dialog):
         self.dirtree = DirDialogTreeCtrl(self, filter)
         self.dirtree.SetTopLevel(toplevel)
         if select_path:
-            self.dirtree.SelectPath(select_path)
+            self.dirtree.SelectExpandPath(select_path)
 
         btnsizer = wx.StdDialogButtonSizer()
         btn_ok = wx.Button(self, wx.ID_OK)
