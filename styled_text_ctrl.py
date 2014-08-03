@@ -297,7 +297,8 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
             line[0].ljust(columns[0]) + "".join(x.strip().ljust(columns[j+1]) for j, x in enumerate(line[1:]))
             for i, line in enumerate(lines)
         ]
-        self.ReplaceSelectionAndSelect("\n".join(lines))
+        replace = "\n".join(line.rstrip() for line in lines)
+        self.ReplaceSelectionAndSelect(replace)
 
     def RemoveExtraSpace(self):
         replace_lines = []
