@@ -12,21 +12,21 @@ def atomic_write_file(path, data, mode="wb"):
             except OSError:
                 pass
             out.write(data)
-    except Exception:
+    except Exception as e:
         try:
             os.remove(temp)
         except Exception:
             pass
-        raise
+        raise e
     else:
         try:
             rename(temp, path)
-        except Exception:
+        except Exception as e:
             try:
                 os.remove(temp)
             except Exception:
                 pass
-            raise
+            raise e
 
 def read_file(path, mode="rb"):
     with open(path, mode) as f:
