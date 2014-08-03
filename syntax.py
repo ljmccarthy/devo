@@ -383,6 +383,59 @@ non_overridable nopass nullify only operator optional pass pointer private
 procedure protected public pure recursive result select sequence stop submodule
 sync sync sync target unlock use value volatile wait where while"""
 
+keywords_css = """\
+above absolute ActiveBorder ActiveCaption always AppWorkspace aqua armenian
+ascent auto avoid azimuth Background background background-attachment
+background-color background-image background-position background-repeat baseline
+baseline bbox behind below bidi-override black blink block blue bold bolder
+border border-bottom border-bottom-color border-bottom-style border-bottom-width
+border-collapse border-color border-color border-left border-left-color
+border-left-style border-left-width border-right border-right-color
+border-right-style border-right-width border-spacing border-style border-style
+border-top border-top-color border-top-style border-top-width border-width both
+bottom bottom ButtonFace ButtonHighlight ButtonShadow ButtonText cap-height
+capitalize caption caption-side CaptionText center center-left center-right
+centerline child circle cjk-ideographic clear clip close-quote code collapse
+color compact condensed content continuous counter-increment counter-reset crop
+cross crosshair cue cue-after cue-before cursor dashed decimal
+decimal-leading-zero default definition-src descent digits direction disc
+display dotted double e-resize elevation embed empty-cells expanded
+extra-condensed extra-expanded far-left far-right fast faster female fixed fixed
+float font font-family font-size font-size-adjust font-stretch font-style
+font-variant font-weight fuchsia georgian gray GrayText green groove hebrew
+height help hidden hide high higher Highlight HighlightText hiragana
+hiragana-iroha icon InactiveBorder InactiveCaption InactiveCaptionText
+InfoBackground InfoText inherit inline inline-table inset inside italic justify
+katakana katakana-iroha landscape large larger left left left-side leftwards
+letter-spacing level lighter lime line-height line-through list-item list-style
+list-style-image list-style-position list-style-type loud low lower lower-alpha
+lower-greek lower-latin lower-roman lowercase ltr male margin margin-bottom
+margin-left margin-right margin-top marker marker-offset marks maroon mathline
+max-height max-width medium medium medium medium Menu menu MenuText message-box
+middle min-height min-width mix move n-resize narrower navy ne-resize
+no-close-quote no-open-quote no-repeat no-wrap none normal nw-resize oblique
+olive once open-quote orphans outline outline-color outline-style outline-width
+outset outside overflow overline padding padding-bottom padding-left
+padding-right padding-top page page-break-after page-break-before
+page-break-inside panose-1 pause pause-after pause-before pitch pitch-range
+play-during pointer portrait position pre purple quotes red relative repeat
+repeat-x repeat-y richness ridge right right right-side rightwards rtl run-in
+s-resize scroll scroll Scrollbar se-resize semi-condensed semi-expanded separate
+show silent silver size slope slow slower small small-caps small-caption smaller
+soft solid speak speak-header speak-numeral speak-punctuation speech-rate
+spell-out square src static status-bar stemh stemv stress sub super sw-resize
+table table-caption table-cell table-column table-column-group
+table-footer-group table-header-group table-layout table-row table-row-group
+teal text text-align text-bottom text-decoration text-indent text-shadow
+text-top text-transform thick thin ThreeDDarkShadow ThreeDFace ThreeDHighlight
+ThreeDLightShadow ThreeDShadow top top topline transparent ultra-condensed
+ultra-expanded underline unicode-bidi unicode-range units-per-em upper-alpha
+upper-latin upper-roman uppercase vertical-align visibility visible voice-family
+volume w-resize wait white white-space wider widows width widths Window
+WindowFrame WindowText word-spacing x-fast x-height x-high x-large x-loud x-low
+x-slow x-small x-soft xx-large xx-small yellow z-index
+"""
+
 syntax_plain = Syntax("plain", "Plain Text", stc.STC_LEX_NULL, "*")
 
 syntax_list = [
@@ -396,6 +449,7 @@ syntax_list = [
     Syntax("html", "HTML", stc.STC_LEX_HTML, "*.html;*.htm"),
     Syntax("sgml", "SGML", stc.STC_LEX_HTML, "*.sgml"),
     Syntax("xml", "XML", stc.STC_LEX_XML, "*.xml;*.xhtml;*.xht;*.xslt;*.rdf;*.rss;*.atom;*.dbk;*.kml"),
+    Syntax("css", "CSS", stc.STC_LEX_CSS, "*.css", "", keywords_css),
     Syntax("perl", "Perl", stc.STC_LEX_PERL, "*.pl;*.pm;*.pod", "#", keywords_perl),
     Syntax("awk", "Awk", stc.STC_LEX_PERL, "*.awk", "#", keywords_awk),
     Syntax("bash", "Bash", stc.STC_LEX_BASH, "*.sh", "#", keywords_bash),
