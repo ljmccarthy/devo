@@ -307,6 +307,16 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
             replace_lines.append(indent + " ".join(line.split()))
         self.ReplaceSelectionAndSelect("\n".join(replace_lines))
 
+    def RemoveTrailingSpace(self):
+        self.SelectLines()
+        lines = [line.rstrip() for line in self.GetSelectedText().split("\n")]
+        self.ReplaceSelectionAndSelect("\n".join(lines))
+
+    def RemoveLeadingSpace(self):
+        self.SelectLines()
+        lines = [line.lstrip() for line in self.GetSelectedText().split("\n")]
+        self.ReplaceSelectionAndSelect("\n".join(lines))
+
     def TabsToSpaces(self):
         replace = self.GetSelectedText().expandtabs(self.GetTabWidth())
         self.ReplaceSelectionAndSelect(replace)

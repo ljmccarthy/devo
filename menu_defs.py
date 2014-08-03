@@ -37,10 +37,13 @@ edit_menu = Menu("&Edit", [
         MenuItem(ID.SHUFFLE_LINES, "S&huffle Lines"),
     ]),
     Menu("&Space", [
+        MenuItem(ID.TABS_TO_SPACES, "Convert &Tabs To Spaces"),
+        MenuSeparator,
+        MenuItem(ID.REMOVE_TRAILING_SPACE, "&Remove Trailing Space"),
+        MenuItem(ID.REMOVE_LEADING_SPACE, "Remove &Leading Space"),
+        MenuSeparator,
         MenuItem(ID.ALIGN_COLUMNS, "&Align Columns"),
         MenuItem(ID.REMOVE_EXTRA_SPACE, "Remove &Extra Space"),
-        MenuSeparator,
-        MenuItem(ID.TABS_TO_SPACES, "Convert &Tabs To Spaces"),
     ]),
     Menu("Case", [
         MenuItem(ID.LOWER_CASE, "&Lower Case", "Ctrl+Shift+U"),
