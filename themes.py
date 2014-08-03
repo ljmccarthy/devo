@@ -16,6 +16,8 @@ default_theme = [
     ("commentdoc",             "fore:#7F7F7F"),
     ("commentdockeyword",      "fore:#7F7F7F"),
     ("commentdockeyworderror", "fore:#7F7F7F"),
+    ("commentfunction",        "fore:#7F7F7F"),
+    ("commentmodule",          "fore:#7F7F7F"),
     ("commentline",            "fore:#7F7F7F"),
     ("commentlinedoc",         "fore:#7F7F7F"),
     ("decorator",              "fore:#7F7F00,bold"),

@@ -440,8 +440,37 @@ ultra-expanded underline unicode-bidi unicode-range units-per-em upper-alpha
 upper-latin upper-roman uppercase vertical-align visibility visible voice-family
 volume w-resize wait white white-space wider widows width widths Window
 WindowFrame WindowText word-spacing x-fast x-height x-high x-large x-loud x-low
-x-slow x-small x-soft xx-large xx-small yellow z-index
-"""
+x-slow x-small x-soft xx-large xx-small yellow z-index"""
+
+keywords_eiffel = """\
+alias all and any as bit boolean check class character clone create creation
+current debug deferred div do double else elseif end ensure equal expanded
+export external false feature forget from frozen general if implies indexing
+infix inherit inspect integer invariant is language like local loop mod name
+nochange none not obsolete old once or platform pointer prefix precursor real
+redefine rename require rescue result retry select separate string strip then
+true undefine unique until variant void when xor"""
+
+keywords_haskell = """\
+case ccall class data default deriving do dynamic else export forall foreign
+hiding if import in infix infixl infixr instance label let module newtype of
+prim safe stdcall then threadsafe type unsafe where"""
+
+keywords_ocaml = """\
+and as asr assert begin class constraint do done downto else end exception
+external false for fun function functor if in include inherit initializer land
+lazy let lor lsl lsr lxor match method mod module mutable new object of open or
+private rec sig struct then to true try type val virtual when while with"""
+
+keywords_sml = """\
+abstype and andalso as case datatype div do else end eqtype exception false fn
+fun functor handle if in include infix infixr let local mod nonfix not of op
+open orelse raise rec sharing sig signature struct structure then true type use
+val while with withtype"""
+
+keywords_erlang = """\
+after and andalso band begin bnot bor bsl bsr bxor case catch cond div end fun
+if let not of or orelse query receive rem try when xor"""
 
 syntax_plain = Syntax("plain", "Plain Text", stc.STC_LEX_NULL, "*")
 
@@ -464,7 +493,7 @@ syntax_list = [
     Syntax("sql", "SQL", stc.STC_LEX_SQL, "*.sql", "#", keywords_sql),
     Syntax("plsql", "PL/SQL", stc.STC_LEX_SQL, "*.spec;*.body;*.sps;*.spb;*.sf;*.sp", "#", keywords_plsql),
     Syntax("diff", "Diff", stc.STC_LEX_DIFF, "*.diff;*.patch"),
-    Syntax("makefile", "Makefile", stc.STC_LEX_MAKEFILE, "Makefile*;makefile*;GNUmakefile*;*.mk", "#",
+    Syntax("makefile", "Makefile", stc.STC_LEX_MAKEFILE, "Makefile*;makefile*;GNUmakefile*;*.mak;*.mk", "#",
            indent_width = 8, tab_width = 8, use_tabs = True),
     Syntax("batch", "Batch File", stc.STC_LEX_BATCH, "*.bat;*.cmd;*.nt", "REM ", keywords_batch),
     Syntax("scheme", "Scheme", stc.STC_LEX_LISP, "*.scm;*.ss", ";", keywords_scheme),
@@ -478,6 +507,11 @@ syntax_list = [
     Syntax("latex", "LaTeX", stc.STC_LEX_LATEX, "*.tex;*.sty", "%"),
     Syntax("fortran77", "FORTRAN 77", stc.STC_LEX_F77, "*.f;*.for", "*", keywords_fortran77),
     Syntax("fortran", "Fortran", stc.STC_LEX_FORTRAN, "*.f90;*.f95;*.f2k", "*", keywords_fortran),
+    Syntax("eiffel", "Eiffel", stc.STC_LEX_EIFFEL, "*.e", "--", keywords_eiffel),
+    Syntax("haskell", "Haskell", stc.STC_LEX_HASKELL, "*.hs", "--", keywords_haskell),
+    Syntax("ocaml", "OCaml", stc.STC_LEX_CAML, "*.ml;*.mli", "", keywords_ocaml),
+    Syntax("sml", "Standard ML", stc.STC_LEX_SML, "*.sml", "", keywords_sml),
+    Syntax("erlang", "Erlang", stc.STC_LEX_ERLANG, "*.erl;*.hrl", "%", keywords_erlang),
     syntax_plain,
 ]
 
