@@ -368,6 +368,21 @@ udpstreamport udptimeouts unlockbuffer until updategamma upper viewport vwait
 waitkey waitmouse waittimer wend while write writebyte writebytes writefile
 writefloat writeint writeline writepixel writepixelfast writeshort writestring"""
 
+keywords_fortran77 = """\
+assign backspace block data call close common continue data dimension do else
+else if end endfile endif entry equivalence external format function goto if
+implicit inquire intrinsic open parameter pause print program read return rewind
+rewrite save stop subroutine then write"""
+
+keywords_fortran = keywords_fortran77 + """
+abstract all allocatable allocate associate asynchronous bind block case class
+codimension concurrent contains contiguous critical cycle deallocate deferred do
+elemental elsewhere enum enumerator error exit extends final flush forall
+generic images import include intent interface lock memory module namelist
+non_overridable nopass nullify only operator optional pass pointer private
+procedure protected public pure recursive result select sequence stop submodule
+sync sync sync target unlock use value volatile wait where while"""
+
 syntax_plain = Syntax("plain", "Plain Text", stc.STC_LEX_NULL, "*")
 
 syntax_list = [
@@ -399,6 +414,8 @@ syntax_list = [
     Syntax("vb", "Visual Basic", stc.STC_LEX_VB, "*.vb;*.bas;*.frm;*.cls;*.ctl;*.pag;*.dsr;*.dob", "'", keywords_vb),
     Syntax("blitzbasic", "Blitz Basic", stc.STC_LEX_BLITZBASIC, "*.bb", "'", keywords_blitzbasic),
     Syntax("latex", "LaTeX", stc.STC_LEX_LATEX, "*.tex;*.sty", "%"),
+    Syntax("fortran77", "FORTRAN 77", stc.STC_LEX_F77, "*.f;*.for", "*", keywords_fortran77),
+    Syntax("fortran", "Fortran", stc.STC_LEX_FORTRAN, "*.f90;*.f95;*.f2k", "*", keywords_fortran),
     syntax_plain,
 ]
 

@@ -39,7 +39,7 @@ default_theme = [
     ("multicomment",           "fore:#7F7F7F"),
     ("number",                 "fore:#007F7F"),
     ("operator",               "fore:#000000,bold"),
-    ("position",               "fore:#000000,bold"),
+    ("position",               "fore:#007F7F,bold"),
     ("preprocessor",           "fore:#007F7F"),
     ("regex",                  "fore:#7F007F"),
     ("scalar",                 "fore:#7F0000"),
