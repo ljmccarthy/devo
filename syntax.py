@@ -472,6 +472,29 @@ keywords_erlang = """\
 after and andalso band begin bnot bor bsl bsr bxor case catch cond div end fun
 if let not of or orelse query receive rem try when xor"""
 
+keywords_tcl = """\
+after append array auto_execok auto_import auto_load auto_load_index
+auto_qualify beep bell bgerror binary bind bindtags bitmap break button canvas
+case catch cd checkbutton clipboard clock close colors concat console continue
+cursors dde default destroy echo else elseif encoding entry eof error eval event
+exec exit expr fblocked fconfigure fcopy file fileevent flush focus font for
+foreach format frame gets glob global grab grid history http if image incr info
+Inter-client interp join keysyms label labelframe lappend lindex linsert list
+listbox llength load loadTk lower lrange lreplace lsearch lset lsort memory menu
+menubutton message msgcat namespace open option options pack package panedwindow
+photo pid pkg::create pkg_mkIndex place Platform-specific proc puts pwd
+radiobutton raise re_syntax read regexp registry regsub rename resource return
+scale scan scrollbar seek selection send set socket source spinbox split string
+subst switch tclLog tclMacPkgSearch tclPkgSetup tclPkgUnknown tell text time tk
+tk_chooseColor tk_chooseDirectory tk_dialog tk_focusNext tk_getOpenFile
+tk_messageBox tk_optionMenu tk_popup tk_setPalette tkerror tkvars tkwait
+toplevel trace unknown unset update uplevel upvar variable vwait while winfo
+wish wm"""
+
+keywords_smalltalk = """\
+ifTrue: ifFalse: whileTrue: whileFalse: ifNil: ifNotNil: whileTrue whileFalse
+repeat isNil notNil"""
+
 syntax_plain = Syntax("plain", "Plain Text", stc.STC_LEX_NULL, "*")
 
 syntax_list = [
@@ -512,6 +535,8 @@ syntax_list = [
     Syntax("ocaml", "OCaml", stc.STC_LEX_CAML, "*.ml;*.mli", "", keywords_ocaml),
     Syntax("sml", "Standard ML", stc.STC_LEX_SML, "*.sml", "", keywords_sml),
     Syntax("erlang", "Erlang", stc.STC_LEX_ERLANG, "*.erl;*.hrl", "%", keywords_erlang),
+    Syntax("tcl", "TCL", stc.STC_LEX_TCL, "*.tcl;*.exp", "#", keywords_tcl),
+    Syntax("smalltalk", "Smalltalk", stc.STC_LEX_SMALLTALK, "*.st", '"', keywords_smalltalk),
     syntax_plain,
 ]
 
