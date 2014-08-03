@@ -373,13 +373,11 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     def MoveWindowToLeft(self, width=DEFAULT_WIDTH):
         display_rect = wx.Display(wx.Display.GetFromWindow(self)).GetClientArea()
         width = min(display_rect.width, width)
-        self.Restore()
         self.SetRect(wx.Rect(0, 0, width, display_rect.height))
 
     def MoveWindowToRight(self, width=DEFAULT_WIDTH):
         display_rect = wx.Display(wx.Display.GetFromWindow(self)).GetClientArea()
         width = min(display_rect.width, width)
-        self.Restore()
         self.SetRect(wx.Rect(display_rect.width - width, display_rect.y, width, display_rect.height))
 
     @managed("cm")
@@ -1094,6 +1092,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                 for editor in self.editors:
                     editor.RefreshStyle()
 
+                if self.IsMaximized() and self.settings["window_start_mode"] in ("left", "right"):
+                    self.Restore()
                 if self.settings["window_start_mode"] == "left":
                     self.MoveWindowToLeft(self.settings.get("window_start_width", self.Size.width))
                 elif self.settings["window_start_mode"] == "right":
