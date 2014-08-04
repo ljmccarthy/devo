@@ -41,6 +41,12 @@ reinterpret_cast return short signed sizeof static static_assert static_cast
 struct switch template this thread_local throw true try typedef typeid typename
 union unsigned using virtual void volatile wchar_t while xor xor_eq"""
 
+keywords_objc = """
+@autoreleasepool @catch @class @compatibility_alias @defs @dynamic @encode @end
+@finally @implementation @interface @optional @package @private @property
+@protected @protocol @public @required @selector @synchronized @synthesize
+@throw @try"""
+
 keywords_java = """\
 abstract continue for new switch assert default goto package synchronized
 boolean do if private this break double implements protected throw byte else
@@ -573,8 +579,8 @@ syntax_plain = Syntax("plain", "Plain Text", stc.STC_LEX_NULL, "*")
 syntax_list = [
     Syntax("c", "C", stc.STC_LEX_CPP, "*.c;*.h", "//", keywords_c),
     Syntax("cpp", "C++", stc.STC_LEX_CPP, "*.cpp;*.cxx;*.cc;*.hpp;*.hxx;*.hh", "//", keywords_cpp),
-    Syntax("objc", "Objective-C", stc.STC_LEX_CPP, "*.m", "//", keywords_c),
-    Syntax("objcpp", "Objective-C++", stc.STC_LEX_CPP, "*.mm", "//", keywords_cpp),
+    Syntax("objc", "Objective-C", stc.STC_LEX_CPP, "*.m", "//", keywords_c + keywords_objc),
+    Syntax("objcpp", "Objective-C++", stc.STC_LEX_CPP, "*.mm", "//", keywords_cpp + keywords_objc),
     Syntax("java", "Java", stc.STC_LEX_CPP, "*.java;*.jad;*.pde", "//", keywords_java),
     Syntax("csharp", "C#", stc.STC_LEX_CPP, "*.cs", "//", keywords_csharp),
     Syntax("javascript", "JavaScript", stc.STC_LEX_CPP, "*.js;*.es", "//", keywords_javascript),
