@@ -73,6 +73,9 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
         self.StyleSetSpec(wx.stc.STC_STYLE_DEFAULT, "")
         self.StyleClearAll()
 
+        self.IndicatorSetStyle(0, wx.stc.STC_INDIC_HIDDEN)
+        self.IndicatorSetStyle(1, wx.stc.STC_INDIC_HIDDEN)
+        self.IndicatorSetStyle(2, wx.stc.STC_INDIC_HIDDEN)
         self.MarkerDefine(MARKER_FIND, wx.stc.STC_MARK_BACKGROUND, background="#CCCCFF")
         self.MarkerDefine(MARKER_ERROR, wx.stc.STC_MARK_BACKGROUND, background="#FFCCCC")
 
