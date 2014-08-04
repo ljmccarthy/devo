@@ -30,5 +30,5 @@ default_theme = [
     ("stringref",    "fore:#000000"),
     ("symbol",       "fore:#7F0000"),
     ("tag",          "fore:#00007F,bold"),
-    ("tagattribute", "fore:#000000,bold"),
+    ("tagattribute", "fore:#007FA0"),
 ]

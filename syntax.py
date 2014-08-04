@@ -25,15 +25,15 @@ class Syntax(object):
                     yield (scilex_constant, style_spec)
 
 keywords_c = """\
-auto break case char const continue default do double else enum extern float
-for goto if inline int long register restrict return short signed sizeof
-static struct switch typedef union unsigned void volatile while _Alignas
-_Alignof _Atomic _Bool _Complex _Generic _Imaginary _Noreturn _Static_assert
-_Thread_local"""
+_Alignas _Alignof _Atomic _Bool _Complex _Generic _Imaginary _Noreturn
+_Static_assert _Thread_local auto break case char const continue default do
+double else enum extern float for goto if inline int long register restrict
+return short signed sizeof static struct switch typedef union unsigned void
+volatile while"""
 
 keywords_cpp = """\
 alignas alignof and and_eq asm auto bitand bitor bool break case catch char
-char16_t char32_t class compl const constexpr const_cast continue decltype
+char16_t char32_t class compl const const_cast constexpr continue decltype
 default delete do double dynamic_cast else enum explicit export extern false
 float for friend goto if inline int long mutable namespace new noexcept not
 not_eq nullptr operator or or_eq private protected public register
@@ -49,97 +49,78 @@ short try char final interface static void class finally long strictfp volatile
 const float native super while"""
 
 keywords_csharp = """\
-abstract as base bool break byte case catch char checked class const continue
-decimal default delegate do double else enum event explicit extern false finally
-fixed float for foreach goto if implicit in int interface internal is lock long
-namespace new null object operator out override params private protected public
-readonly ref return sbyte sealed short sizeof stackalloc static string struct
-switch this throw true try typeof uint ulong unchecked unsafe ushort using
-virtual void volatile while
-add alias ascending async await descending dynamic from get global group into
-join let orderby partial remove select set value var where yield"""
+abstract add alias as ascending async await base bool break byte case catch char
+checked class const continue decimal default delegate descending do double
+dynamic else enum event explicit extern false finally fixed float for foreach
+from get global goto group if implicit in int interface internal into is join
+let lock long namespace new null object operator orderby out override params
+partial private protected public readonly ref remove return sbyte sealed select
+set short sizeof stackalloc static string struct switch this throw true try
+typeof uint ulong unchecked unsafe ushort using value var virtual void volatile
+where while yield"""
 
 keywords_javascript = """\
 break case catch class const continue debugger default delete do else enum
 export extends finally for function if implements import in instanceof interface
 let new package private protected return static super switch this throw try
-typeof var void while with yield
-"""
+typeof var void while with yield"""
 
 keywords_python = """\
-and as assert break class continue def del elif else except exec finally for
-from global if import in is lambda not or pass print raise return try
-while with yield None True False"""
+False None True and as assert break class continue def del elif else except exec
+finally for from global if import in is lambda not or pass print raise return
+try while with yield"""
 
 keywords_perl = """\
-NULL __FILE__ __LINE__ __PACKAGE__ __DATA__ __END__ AUTOLOAD
-BEGIN CORE DESTROY END EQ GE GT INIT LE LT NE CHECK abs accept
-alarm and atan2 bind binmode bless caller chdir chmod chomp chop
-chown chr chroot close closedir cmp connect continue cos crypt
-dbmclose dbmopen defined delete die do dump each else elsif endgrent
-endhostent endnetent endprotoent endpwent endservent eof eq eval
-exec exists exit exp fcntl fileno flock for foreach fork format
-formline ge getc getgrent getgrgid getgrnam gethostbyaddr gethostbyname
-gethostent getlogin getnetbyaddr getnetbyname getnetent getpeername
-getpgrp getppid getpriority getprotobyname getprotobynumber getprotoent
-getpwent getpwnam getpwuid getservbyname getservbyport getservent
-getsockname getsockopt glob gmtime goto grep gt hex if index
-int ioctl join keys kill last lc lcfirst le length link listen
-local localtime lock log lstat lt map mkdir msgctl msgget msgrcv
-msgsnd my ne next no not oct open opendir or ord our pack package
-pipe pop pos print printf prototype push quotemeta qu
-rand read readdir readline readlink readpipe recv redo
-ref rename require reset return reverse rewinddir rindex rmdir
-scalar seek seekdir select semctl semget semop send setgrent
-sethostent setnetent setpgrp setpriority setprotoent setpwent
-setservent setsockopt shift shmctl shmget shmread shmwrite shutdown
-sin sleep socket socketpair sort splice split sprintf sqrt srand
-stat study sub substr symlink syscall sysopen sysread sysseek
-system syswrite tell telldir tie tied time times truncate
-uc ucfirst umask undef unless unlink unpack unshift untie until
-use utime values vec wait waitpid wantarray warn while write
-xor given when default break say state UNITCHECK __SUB__ fc"""
+__DATA__ __END__ __FILE__ __LINE__ __PACKAGE__ __SUB__ abs accept alarm and
+atan2 AUTOLOAD BEGIN bind binmode bless break caller chdir CHECK chmod chomp
+chop chown chr chroot close closedir cmp connect continue CORE cos crypt
+dbmclose dbmopen default defined delete DESTROY die do dump each else elsif END
+endgrent endhostent endnetent endprotoent endpwent endservent eof EQ eq eval
+exec exists exit exp fc fcntl fileno flock for foreach fork format formline GE
+ge getc getgrent getgrgid getgrnam gethostbyaddr gethostbyname gethostent
+getlogin getnetbyaddr getnetbyname getnetent getpeername getpgrp getppid
+getpriority getprotobyname getprotobynumber getprotoent getpwent getpwnam
+getpwuid getservbyname getservbyport getservent getsockname getsockopt given
+glob gmtime goto grep GT gt hex if index INIT int ioctl join keys kill last lc
+lcfirst LE le length link listen local localtime lock log lstat LT lt map mkdir
+msgctl msgget msgrcv msgsnd my NE ne next no not NULL oct open opendir or ord
+our pack package pipe pop pos print printf prototype push qu quotemeta rand read
+readdir readline readlink readpipe recv redo ref rename require reset return
+reverse rewinddir rindex rmdir say scalar seek seekdir select semctl semget
+semop send setgrent sethostent setnetent setpgrp setpriority setprotoent
+setpwent setservent setsockopt shift shmctl shmget shmread shmwrite shutdown sin
+sleep socket socketpair sort splice split sprintf sqrt srand stat state study
+sub substr symlink syscall sysopen sysread sysseek system syswrite tell telldir
+tie tied time times truncate uc ucfirst umask undef UNITCHECK unless unlink
+unpack unshift untie until use utime values vec wait waitpid wantarray warn when
+while write xor"""
 
 keywords_awk = """\
-BEGIN END
-if else while do for in break continue delete exit function return
-print printf sprintf
-system close getline next nextfile fflush
-atan2 cos exp int log rand sin sqrt srand
-asort asorti gensub sub gsub index length match split
-strtonum substr tolower toupper
-mktime strftime systime
-and compl lshift or rshift xor
-bindtextdomain dcgettext dcngettext
-ARGC ARGIND ARGV BINMODE CONVFMT ENVIRON ERRNO FIELDWIDTHS
-FILENAME FNR FS IGNORECASE LINT NF NR OFMT OFS ORS PROCINFO
-RS RT RSTART RLENGTH SUBSEP TEXTDOMAIN"""
+and ARGC ARGIND ARGV asort asorti atan2 BEGIN bindtextdomain BINMODE break close
+compl continue CONVFMT cos dcgettext dcngettext delete do else END ENVIRON ERRNO
+exit exp fflush FIELDWIDTHS FILENAME FNR for FS function gensub getline gsub if
+IGNORECASE in index int length LINT log lshift match mktime next nextfile NF NR
+OFMT OFS or ORS print printf PROCINFO rand return RLENGTH RS rshift RSTART RT
+sin split sprintf sqrt srand strftime strtonum sub SUBSEP substr system systime
+TEXTDOMAIN tolower toupper while xor"""
 
 keywords_bash = """\
-alias ar asa awk banner basename bash bc bdiff break
-bunzip2 bzip2 cal calendar case cat cc cd chmod cksum
-clear cmp col comm compress continue cp cpio crypt
-csplit ctags cut date dc dd declare deroff dev df diff diff3
-dircmp dirname do done du echo ed egrep elif else env
-esac eval ex exec exit expand export expr false fc
-fgrep fi file find fmt fold for function functions
-getconf getopt getopts grep gres hash head help
-history iconv id if in integer jobs join kill local lc
-let line ln logname look ls m4 mail mailx make
-man mkdir more mt mv newgrp nl nm nohup ntps od
-pack paste patch pathchk pax pcat perl pg pr print
-printf ps pwd read readonly red return rev rm rmdir
-sed select set sh shift size sleep sort spell
-split start stop strings strip stty sum suspend
-sync tail tar tee test then time times touch tr
-trap true tsort tty type typeset ulimit umask unalias
-uname uncompress unexpand uniq unpack unset until
-uudecode uuencode vi vim vpax wait wc whence which
-while who wpaste wstart xargs zcat
-chgrp chown chroot dir dircolors
-factor groups hostid install link md5sum mkfifo
-mknod nice pinky printenv ptx readlink seq
-sha1sum shred stat su tac unlink users vdir whoami yes"""
+alias ar asa awk banner basename bash bc bdiff break bunzip2 bzip2 cal calendar
+case cat cc cd chgrp chmod chown chroot cksum clear cmp col comm compress
+continue cp cpio crypt csplit ctags cut date dc dd declare deroff dev df diff
+diff3 dir dircmp dircolors dirname do done du echo ed egrep elif else env esac
+eval ex exec exit expand export expr factor false fc fgrep fi file find fmt fold
+for function functions getconf getopt getopts grep gres groups hash head help
+history hostid iconv id if in install integer jobs join kill lc let line link ln
+local logname look ls m4 mail mailx make man md5sum mkdir mkfifo mknod more mt
+mv newgrp nice nl nm nohup ntps od pack paste patch pathchk pax pcat perl pg
+pinky pr print printenv printf ps ptx pwd read readlink readonly red return rev
+rm rmdir sed select seq set sh sha1sum shift shred size sleep sort spell split
+start stat stop strings strip stty su sum suspend sync tac tail tar tee test
+then time times touch tr trap true tsort tty type typeset ulimit umask unalias
+uname uncompress unexpand uniq unlink unpack unset until users uudecode uuencode
+vdir vi vim vpax wait wc whence which while who whoami wpaste wstart xargs yes
+zcat"""
 
 keywords_sql = """\
 absolute action add admin after aggregate alias all allocate alter and any are
@@ -506,6 +487,87 @@ null object old_function or parent php_user_filter print private protected
 public real require require_once resource return static stdclass string switch
 this throw true try unset use var while xor"""
 
+keywords_d = """\
+abstract alias align asm assert auto body bool break byte case cast catch
+cdouble cent cfloat char class const continue creal dchar debug default delegate
+delete deprecated do double else enum export extern false final finally float
+for foreach foreach_reverse function goto idouble if ifloat import in inout int
+interface invariant ireal is lazy long mixin module new null out override
+package pragma private protected public real return scope short static struct
+super switch synchronized template this throw true try typedef typeid typeof
+ubyte ucent uint ulong union unittest ushort version void volatile wchar while
+with"""
+
+keywords_verilog = """\
+always and assign automatic begin buf bufif0 bufif1 case casex casez cell cmos
+config deassign default defparam design disable edge else end endcase endconfig
+endfunction endgenerate endmodule endprimitive endspecify endtable endtask event
+for force forever fork function generate genvar highz0 highz1 if ifnone incdir
+include initial inout input instance integer join large liblist library
+localparam macromodule medium module nand negedge nmos nor noshowcancelled not
+notif0 notif1 or output parameter pmos posedge primitive pull0 pull1 pulldown
+pullup pulsestyle_ondetect pulsestyle_onevent rcmos real realtime reg release
+repeat rnmos rpmos rtran rtranif0 rtranif1 scalared showcancelled signed small
+specify specparam strong0 strong1 supply0 supply1 table task time tran tranif0
+tranif1 tri tri0 tri1 triand trior trireg unsigned use uwire vectored wait
+wand weak0 weak1 while wire wor xnor xor"""
+
+keywords_vhdl = """\
+access after alias all architecture array assert attribute begin block body
+buffer bus case component configuration constant disconnect downto else elsif
+end entity exit file for function generate generic group guarded if impure in
+inertial inout is label library linkage literal loop map new next null of on
+open others out package port postponed procedure process pure range record
+register reject report return select severity shared signal subtype then to
+transport type unaffected units until use variable wait when while with"""
+
+keywords_r = """\
+if else repeat while function for in next break TRUE FALSE NULL NA Inf NaN"""
+
+keywords_yaml = """true false yes no"""
+
+keywords_vala = """\
+abstract as base bool break case catch char class const construct continue
+default delegate delete do dynamic else ensures enum errordomain extern false
+finally for foreach generic get if in int interface keywordclass2.vala=namespace
+lock new null out override owned private protected public ref requires return
+set signal sizeof static string struct switch this throw throws true try typeof
+unowned using value var virtual weak while yield yields"""
+
+keywords_go = """\
+bool break byte case chan complex128 complex64 const continue default defer else
+fallthrough false float32 float64 for func go goto if import int int16 int32
+int64 int8 interface len map nil package range return select string struct
+switch true type uint uint16 uint32 uint64 uint8 uintptr var"""
+
+keywords_pike = """\
+array break case catch class constant continue do else enum float for foreach
+function if import inherit int lambda mapping mixed multiset object program
+return static string switch typeof void while"""
+
+keywords_idl = """\
+__int3264 __int64 aggregatable allocate appobject arrays async async_uuid
+attribute auto_handle bindable boolean broadcast byte byte_count call_as
+callback char coclass code comm_status const context_handle
+context_handle_noserialize context_handle_serialize control cpp_quote
+custom decode default defaultbind defaultcollelem defaultvalue defaultvtable
+dispinterface displaybind dllname double dual enable_allocate encode endpoint
+entry enum error_status_t explicit_handle fault_status first_is float handle
+handle_t heap helpcontext helpfile helpstring helpstringcontext helpstringdll
+hidden hyper id idempotent ignore iid_as iid_is immediatebind implicit_handle
+import importlib in in_line include inout int interface last_is lcid length_is
+library licensed local long max_is maybe message methods midl_pragma
+midl_user_allocate midl_user_free min_is module ms_union native ncacn_at_dsp
+ncacn_dnet_nsp ncacn_http ncacn_ip_tcp ncacn_nb_ipx ncacn_nb_nb ncacn_nb_tcp
+ncacn_np ncacn_spx ncacn_vns_spp ncadg_ip_udp ncadg_ipx ncadg_mq ncalrpc nocode
+nonbrowsable noncreatable nonextensible noscript notify object odl oleautomation
+optimize optional out out_of_line pipe pointer_default pragma properties propget
+propput propputref ptr public range readonly ref represent_as requestedit
+restricted retval scriptable shape shared short signed size_is small source
+strict_context_handle string struct switch switch_is switch_type transmit_as
+typedef uidefault union unique unsigned user_marshal usesgetlasterror uuid
+v1_enum vararg version void wchar_t wire_marshal wstring"""
+
 syntax_plain = Syntax("plain", "Plain Text", stc.STC_LEX_NULL, "*")
 
 syntax_list = [
@@ -513,13 +575,13 @@ syntax_list = [
     Syntax("cpp", "C++", stc.STC_LEX_CPP, "*.cpp;*.cxx;*.cc;*.hpp;*.hxx;*.hh", "//", keywords_cpp),
     Syntax("objc", "Objective-C", stc.STC_LEX_CPP, "*.m", "//", keywords_c),
     Syntax("objcpp", "Objective-C++", stc.STC_LEX_CPP, "*.mm", "//", keywords_cpp),
-    Syntax("java", "Java", stc.STC_LEX_CPP, "*.java", "//", keywords_java),
+    Syntax("java", "Java", stc.STC_LEX_CPP, "*.java;*.jad;*.pde", "//", keywords_java),
     Syntax("csharp", "C#", stc.STC_LEX_CPP, "*.cs", "//", keywords_csharp),
     Syntax("javascript", "JavaScript", stc.STC_LEX_CPP, "*.js;*.es", "//", keywords_javascript),
     Syntax("python", "Python", stc.STC_LEX_PYTHON, "*.py", "#", keywords_python),
     Syntax("html", "HTML", stc.STC_LEX_HTML, "*.html;*.htm"),
     Syntax("sgml", "SGML", stc.STC_LEX_HTML, "*.sgml"),
-    Syntax("xml", "XML", stc.STC_LEX_XML, "*.xml;*.xhtml;*.xht;*.xslt;*.rdf;*.rss;*.atom;*.dbk;*.kml"),
+    Syntax("xml", "XML", stc.STC_LEX_XML, "*.xml;*.xhtml;*.xht;*.xslt;*.rdf;*.rss;*.atom;*.svg;*.dbk;*.kml"),
     Syntax("css", "CSS", stc.STC_LEX_CSS, "*.css", "", keywords_css),
     Syntax("perl", "Perl", stc.STC_LEX_PERL, "*.pl;*.pm;*.pod", "#", keywords_perl),
     Syntax("awk", "Awk", stc.STC_LEX_PERL, "*.awk", "#", keywords_awk),
@@ -549,6 +611,15 @@ syntax_list = [
     Syntax("tcl", "TCL", stc.STC_LEX_TCL, "*.tcl;*.exp", "#", keywords_tcl),
     Syntax("smalltalk", "Smalltalk", stc.STC_LEX_SMALLTALK, "*.st", '"', keywords_smalltalk),
     Syntax("php", "PHP", stc.STC_LEX_PHPSCRIPT, "*.php;*.php3;*.phtml", "//", keywords_php),
+    Syntax("d", "D", stc.STC_LEX_D, "*.d", "//", keywords_d),
+    Syntax("verilog", "Verilog", stc.STC_LEX_VERILOG, "*.v;*.vh", "//", keywords_verilog),
+    Syntax("vhdl", "VHDL", stc.STC_LEX_VHDL, "*.vhd;*.vhdl", "", keywords_vhdl),
+    Syntax("r", "R", stc.STC_LEX_R, "*.r;*.rsource;*.s", "#", keywords_r),
+    Syntax("yaml", "YAML", stc.STC_LEX_YAML, "*.yaml;*.yml", "#", keywords_yaml),
+    Syntax("vala", "Vala", stc.STC_LEX_CPP, "*.vala", "//", keywords_vala),
+    Syntax("go", "Go", stc.STC_LEX_CPP, "*.go", "//", keywords_go),
+    Syntax("pike", "Pike", stc.STC_LEX_CPP, "*.pike", "//", keywords_pike),
+    Syntax("idl", "IDL", stc.STC_LEX_CPP, "*.idl;*.odl", "//", keywords_idl),
     syntax_plain,
 ]
 
