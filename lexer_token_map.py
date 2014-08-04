@@ -92,7 +92,7 @@ lexer_tokens_matlab = {
     "operator":     [stc.STC_MATLAB_OPERATOR],
     "preprocessor": [stc.STC_MATLAB_COMMAND],
     "string":       [stc.STC_MATLAB_DOUBLEQUOTESTRING, stc.STC_MATLAB_STRING],
-},
+}
 
 lexer_tokens_fortran = {
     "comment":      [stc.STC_F_COMMENT],

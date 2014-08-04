@@ -16,6 +16,8 @@ class Syntax(object):
         self.tab_width = tab_width
         self.use_tabs = use_tabs
         self.keywords = keywords
+        self.file_regex = re.compile("^(%s)$" % "|".join(
+            re.escape(ext).replace("\\*", ".*") for ext in file_patterns.split(";")))
 
     def get_style_specs(self, theme):
         if self.lexer in lexer_token_map:
@@ -574,6 +576,18 @@ strict_context_handle string struct switch switch_is switch_type transmit_as
 typedef uidefault union unique unsigned user_marshal usesgetlasterror uuid
 v1_enum vararg version void wchar_t wire_marshal wstring"""
 
+keywords_matlab = """\
+break case catch continue else elseif end for function global if otherwise
+persistent return switch try while"""
+
+keywords_octave = """\
+__FILE__ __LINE__ break case catch classdef continue do else elseif end
+end_try_catch end_unwind_protect endclassdef endenumeration endevents endfor
+endif endmethods endparfor endproperties endswitch endwhile enumeration events
+for function endfunction get global if methods otherwise parfor persistent
+properties return set static switch try until unwind_protect
+unwind_protect_cleanup while"""
+
 syntax_plain = Syntax("plain", "Plain Text", stc.STC_LEX_NULL, "*")
 
 syntax_list = [
@@ -626,20 +640,15 @@ syntax_list = [
     Syntax("go", "Go", stc.STC_LEX_CPP, "*.go", "//", keywords_go),
     Syntax("pike", "Pike", stc.STC_LEX_CPP, "*.pike", "//", keywords_pike),
     Syntax("idl", "IDL", stc.STC_LEX_CPP, "*.idl;*.odl", "//", keywords_idl),
+    Syntax("octave", "Octave", stc.STC_LEX_OCTAVE, "*.m;*.m.octave", "#", keywords_octave),
+    Syntax("matlab", "Matlab", stc.STC_LEX_MATLAB, "*.m", "%", keywords_matlab),
     syntax_plain,
 ]
 
 syntax_dict = dict((syntax.name, syntax) for syntax in syntax_list)
 
-def filename_syntax_re():
-    patterns = []
-    for syntax in syntax_list:
-        ptn = "|".join(re.escape(ext).replace("\\*", ".*") for ext in syntax.file_patterns.split(";"))
-        ptn = "(?P<%s>^(%s)$)" % (syntax.name, ptn)
-        patterns.append(ptn)
-    return re.compile("%s" % "|".join(patterns))
-
-filename_syntax_re = filename_syntax_re()
-
 def syntax_from_filename(filename):
-    return syntax_dict[filename_syntax_re.match(os.path.basename(filename)).lastgroup]
+    for syntax in syntax_list:
+        if syntax.file_regex.match(os.path.basename(filename)):
+            return syntax
+    return syntax_plain
