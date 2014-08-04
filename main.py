@@ -55,6 +55,7 @@ class DevoApp(wx.App):
         self.first_drop = True
         self.mainframe = None
         self.listener = None
+        wx.Log_SetActiveTarget(wx.LogStderr())
 
     def OnInit(self):
         return True
