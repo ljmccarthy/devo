@@ -588,6 +588,55 @@ for function endfunction get global if methods otherwise parfor persistent
 properties return set static switch try until unwind_protect
 unwind_protect_cleanup while"""
 
+keywords_postscript = """\
+$error = == FontDirectory StandardEncoding UserObjects abs add aload
+anchorsearch and arc arcn arcto array ashow astore atan awidthshow begin bind
+bitshift bytesavailable cachestatus ceiling charpath clear cleardictstack
+cleartomark clip clippath closefile closepath concat concatmatrix copy copypage
+cos count countdictstack countexecstack counttomark currentcmykcolor
+currentcolorspace currentdash currentdict currentfile currentflat currentfont
+currentgray currenthsbcolor currentlinecap currentlinejoin currentlinewidth
+currentmatrix currentmiterlimit currentpagedevice currentpoint currentrgbcolor
+currentscreen currenttransfer cvi cvlit cvn cvr cvrs cvs cvx def defaultmatrix
+definefont dict dictstack div dtransform dup echo end eoclip eofill eq erasepage
+errordict exch exec execstack executeonly executive exit exp false file fill
+findfont flattenpath floor flush flushfile for forall ge get getinterval
+grestore grestoreall gsave gt idetmatrix idiv idtransform if ifelse image
+imagemask index initclip initgraphics initmatrix inustroke invertmatrix
+itransform known kshow le length lineto ln load log loop lt makefont mark matrix
+maxlength mod moveto mul ne neg newpath noaccess nor not null nulldevice or
+pathbbox pathforall pop print prompt pstack put putinterval quit rand rcheck
+rcurveto read readhexstring readline readonly readstring rectstroke repeat
+resetfile restore reversepath rlineto rmoveto roll rotate round rrand run save
+scale scalefont search setblackgeneration setcachedevice setcachelimit
+setcharwidth setcolorscreen setcolortransfer setdash setflat setfont setgray
+sethsbcolor setlinecap setlinejoin setlinewidth setmatrix setmiterlimit
+setpagedevice setrgbcolor setscreen settransfer setvmthreshold show showpage sin
+sqrt srand stack start status statusdict stop stopped store string stringwidth
+stroke strokepath sub systemdict token token transform translate true truncate
+type ueofill undefineresource userdict usertime version vmstatus wcheck where
+widthshow write writehexstring writestring xcheck xor"""
+
+keywords_cmake = """\
+add_custom_command add_custom_target add_definitions add_dependencies
+add_executable add_library add_subdirectory add_test aux_source_directory
+build_command build_name cmake_minimum_required configure_file
+create_test_sourcelist else elseif enable_language enable_testing endforeach
+endif endmacro endwhile exec_program execute_process export_library_dependencies
+file find_file find_library find_package find_path find_program fltk_wrap_ui
+foreach get_cmake_property get_directory_property get_filename_component
+get_source_file_property get_target_property get_test_property if include
+include_directories include_external_msproject include_regular_expression
+install install_files install_programs install_targets link_directories
+link_libraries list load_cache load_command macro make_directory
+mark_as_advanced math message option output_required_files project qt_wrap_cpp
+qt_wrap_ui remove remove_definitions separate_arguments set
+set_directory_properties set_source_files_properties set_target_properties
+set_tests_properties site_name source_group string subdir_depends subdirs
+target_link_libraries try_compile try_run use_mangled_mesa utility_source
+variable_requires vtk_make_instantiator vtk_wrap_java vtk_wrap_python
+vtk_wrap_tcl while write_file"""
+
 syntax_plain = Syntax("plain", "Plain Text", stc.STC_LEX_NULL, "*")
 
 syntax_list = [
@@ -642,6 +691,8 @@ syntax_list = [
     Syntax("idl", "IDL", stc.STC_LEX_CPP, "*.idl;*.odl", "//", keywords_idl),
     Syntax("octave", "Octave", stc.STC_LEX_OCTAVE, "*.m;*.m.octave", "#", keywords_octave),
     Syntax("matlab", "Matlab", stc.STC_LEX_MATLAB, "*.m", "%", keywords_matlab),
+    Syntax("postscript", "", stc.STC_LEX_PS, "*.ps", "%", keywords_postscript),
+    Syntax("cmake", "CMake", stc.STC_LEX_CMAKE, "CMakeLists.txt;*.cmake;*.cmake.in;*.ctest;*.ctest.in", "#", keywords_cmake),
     syntax_plain,
 ]
 

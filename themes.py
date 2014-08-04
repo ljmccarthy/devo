@@ -16,7 +16,7 @@ default_theme = [
     ("error",        "fore:#FF0000,bold"),
     ("identifier",   "fore:#000000"),
     ("keyword",      "fore:#00007F,bold"),
-    ("label",        "fore:#000000,bold"),
+    ("label",        "fore:#007FA0,bold"),
     ("math",         "fore:#0000FF"),
     ("mathblock",    "fore:#0000FF"),
     ("number",       "fore:#007F7F"),
