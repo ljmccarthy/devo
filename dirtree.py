@@ -63,8 +63,7 @@ class DirTreeMonitor(object):
         self.tree = tree
         self.monitor = monitor
         self.__lock = threading.Lock()
-        self.__to_add = []
-        self.__to_remove = []
+        self.__events = []
         self.__thread = threading.Thread(target=self.__monitor_update_thread)
         self.__thread.daemon = True
         self.__thread.start()
@@ -73,23 +72,21 @@ class DirTreeMonitor(object):
         while not is_dead_object(self.tree):
             events = self.monitor.read_events(timeout=1)
             if events:
-                to_add = [evt for evt in events if evt.action in (FSEvent.Attrib, FSEvent.Modify, FSEvent.Create, FSEvent.MoveTo)]
-                to_remove = [evt for evt in events if evt.action in (FSEvent.Delete, FSEvent.MoveFrom)]
                 with self.__lock:
-                    self.__to_add.extend(to_add)
-                    self.__to_remove.extend(to_remove)
+                    self.__events.extend(events)
                 if not is_dead_object(self.tree):
                     self.tree.sig_update_tree.signal()
         self.monitor.close()
         with self.__lock:
-            self.__to_add = []
-            self.__to_remove = []
+            self.__events = []
 
     def get_events(self):
         with self.__lock:
-            to_add, self.__to_add = self.__to_add, []
-            to_remove, self.__to_remove = self.__to_remove, []
-            return to_add, to_remove
+            events, self.__events = self.__events, []
+            return events
+
+add_events = (FSEvent.Attrib, FSEvent.Modify, FSEvent.Create, FSEvent.MoveTo)
+remove_events = (FSEvent.Delete, FSEvent.MoveFrom)
 
 class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
     def __init__(self, parent, filter=None, show_root=False):
@@ -160,19 +157,19 @@ class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
         if not self.updating:
             self.updating = True
             try:
-                to_add, to_remove = self.monitor_thread.get_events()
-                for evt in to_add:
-                    item = (yield evt.user.add(evt.name, self, self.monitor, self.filter))
-                    if item:
-                        if evt.name == self.select_later_name \
-                        and self.GetItemParent(item) == self.select_later_parent:
-                            if time.time() < self.select_later_time:
-                                self.SelectItem(item)
-                            self.select_later_name = None
-                            self.select_later_parent = None
-                            self.select_later_time = 0
-                for evt in to_remove:
-                    evt.user.remove(evt.name, self, self.monitor)
+                for evt in self.monitor_thread.get_events():
+                    if evt.action in add_events:
+                        item = (yield evt.user.add(evt.name, self, self.monitor, self.filter))
+                        if item:
+                            if evt.name == self.select_later_name \
+                            and self.GetItemParent(item) == self.select_later_parent:
+                                if time.time() < self.select_later_time:
+                                    self.SelectItem(item)
+                                self.select_later_name = None
+                                self.select_later_parent = None
+                                self.select_later_time = 0
+                    elif evt.action in remove_events:
+                        evt.user.remove(evt.name, self, self.monitor)
             finally:
                 self.updating = False
 
