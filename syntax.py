@@ -2,7 +2,7 @@ import os.path
 import re
 from wx import stc
 
-from sci_lexer_map import sci_lexer_map
+from lexer_token_map import lexer_token_map
 
 class Syntax(object):
     def __init__(self, name, description, lexer, file_patterns, comment_token="",
@@ -18,11 +18,11 @@ class Syntax(object):
         self.keywords = keywords
 
     def get_style_specs(self, theme):
-        if self.lexer in sci_lexer_map:
-            lexer_constants = sci_lexer_map[self.lexer]
+        if self.lexer in lexer_token_map:
+            token_map = lexer_token_map[self.lexer]
             for token_type_name, style_spec in theme:
-                if token_type_name in lexer_constants:
-                    yield (lexer_constants[token_type_name], style_spec)
+                for scilex_constant in token_map.get(token_type_name, []):
+                    yield (scilex_constant, style_spec)
 
 keywords_c = """\
 auto break case char const continue default do double else enum extern float
@@ -495,6 +495,17 @@ keywords_smalltalk = """\
 ifTrue: ifFalse: whileTrue: whileFalse: ifNil: ifNotNil: whileTrue whileFalse
 repeat isNil notNil"""
 
+keywords_php = """\
+__class__ __dir__ __file__ __function__ __line__ __method__ __namespace__
+__sleep __wakeup abstract and array as bool boolean break case catch cfunction
+class clone const continue declare default die directory do double echo else
+elseif empty enddeclare endfor endforeach endif endswitch endwhile eval
+exception exit extends false final float for foreach function global goto if
+implements include include_once int integer interface isset list namespace new
+null object old_function or parent php_user_filter print private protected
+public real require require_once resource return static stdclass string switch
+this throw true try unset use var while xor"""
+
 syntax_plain = Syntax("plain", "Plain Text", stc.STC_LEX_NULL, "*")
 
 syntax_list = [
@@ -537,6 +548,7 @@ syntax_list = [
     Syntax("erlang", "Erlang", stc.STC_LEX_ERLANG, "*.erl;*.hrl", "%", keywords_erlang),
     Syntax("tcl", "TCL", stc.STC_LEX_TCL, "*.tcl;*.exp", "#", keywords_tcl),
     Syntax("smalltalk", "Smalltalk", stc.STC_LEX_SMALLTALK, "*.st", '"', keywords_smalltalk),
+    Syntax("php", "PHP", stc.STC_LEX_PHPSCRIPT, "*.php;*.php3;*.phtml", "//", keywords_php),
     syntax_plain,
 ]
 
