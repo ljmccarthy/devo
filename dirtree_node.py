@@ -132,7 +132,7 @@ class FSNode(object):
                 if not self.watch:
                     self.watch = monitor.add_dir_watch(self.path, user=self)
                 for file_info in (yield async_call(listdir, self.path)):
-                    if filter(file_info):
+                    if file_info.node_type and filter(file_info):
                         self.insert(tree, file_info)
                 tree.SetItemImage(self.item, IM_FOLDER)
                 tree.SetItemHasChildren(self.item, tree.GetFirstChild(self.item)[0].IsOk())
