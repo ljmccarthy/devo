@@ -19,6 +19,13 @@ class FileInfo(collections.namedtuple("FileInfo", "filename dirpath stat_result 
     @property
     def is_dir(self):
         return stat.S_ISDIR(self.stat_result.st_mode)
+    @property
+    def node_type(self):
+        if stat.S_ISREG(self.stat_result.st_mode):
+            return 'f'
+        if stat.S_ISDIR(self.stat_result.st_mode):
+            return 'd'
+        return ''
 
 def get_file_info(dirpath, filename):
     path = os.path.join(dirpath, filename)
@@ -44,17 +51,25 @@ def listdir(dirpath):
     return result
 
 def dirtree_insert(tree, parent_item, text, image):
-    i = 0
     text_lower = text.lower()
-    for i, item in enumerate(iter_tree_children(tree, parent_item)):
+
+    # Optimise common case when expanding directory for the first time
+    item = tree.GetLastChild(parent_item)
+    if item.IsOk() and tree.GetItemText(item) < text_lower and (
+            image == IM_FILE or tree.GetItemImage(item) != IM_FILE):
+        return tree.AppendItem(parent_item, text, image)
+
+    # Search for the position to insert
+    for pos, item in enumerate(iter_tree_children(tree, parent_item)):
         item_text = tree.GetItemText(item)
         if item_text == text:
             return item
         if image != IM_FILE and tree.GetItemImage(item) == IM_FILE:
-            return tree.InsertItemBefore(parent_item, i, text, image)
+            return tree.InsertItemBefore(parent_item, pos, text, image)
         if item_text.lower() > text_lower:
             if not (image == IM_FILE and tree.GetItemImage(item) != IM_FILE):
-                return tree.InsertItemBefore(parent_item, i, text, image)
+                return tree.InsertItemBefore(parent_item, pos, text, image)
+
     return tree.AppendItem(parent_item, text, image)
 
 def dirtree_delete(tree, parent_item, text):
@@ -101,35 +116,26 @@ class FSNode(object):
         self.watch = None
         self.label = label or os.path.basename(path) or path
 
-    @coroutine
-    def _do_expand(self, tree, monitor, filter):
-        self.watch = monitor.add_dir_watch(self.path, user=self)
-        dirs = []
-        files = []            
-        for info in (yield async_call(listdir, self.path)):
-            if not filter(info):
-                continue
-            path = os.path.join(self.path, info.filename)
-            if info.is_file:
-                files.append(FSNode(path, 'f'))
-            elif info.is_dir:
-                dirs.append((FSNode(path, 'd'), info.listable))
-        for node, listable in dirs:
-            image = IM_FOLDER if listable else IM_FOLDER_DENIED
-            item = tree.AppendItem(self.item, node.label, image)
-            tree.SetItemNode(item, node)
-            tree.SetItemHasChildren(item, listable)
-        for node in files:
-            item = tree.AppendItem(self.item, node.label, IM_FILE)
-            tree.SetItemNode(item, node)
-        tree.SetItemImage(self.item, IM_FOLDER)
-        tree.SetItemHasChildren(self.item, tree.GetFirstChild(self.item)[0].IsOk())
+    def insert(self, tree, file_info):
+        node = FSNode(file_info.path, file_info.node_type)
+        image = IM_FILE if node.type == 'f' else IM_FOLDER if file_info.listable else IM_FOLDER_DENIED
+        item = dirtree_insert(tree, self.item, node.label, image)
+        tree.SetItemNode(item, node)
+        tree.SetItemHasChildren(item, node.type == 'd')
+        tree.SetItemHasChildren(self.item, True)
+        return item
 
     @coroutine
     def expand(self, tree, monitor, filter):
         if self.type == 'd' and not self.populated:
             try:
-                yield self._do_expand(tree, monitor, filter)
+                if not self.watch:
+                    self.watch = monitor.add_dir_watch(self.path, user=self)
+                for file_info in (yield async_call(listdir, self.path)):
+                    if filter(file_info):
+                        self.insert(tree, file_info)
+                tree.SetItemImage(self.item, IM_FOLDER)
+                tree.SetItemHasChildren(self.item, tree.GetFirstChild(self.item)[0].IsOk())
             except Exception:
                 self.populated = False
                 print traceback.format_exc()
@@ -144,24 +150,11 @@ class FSNode(object):
     @coroutine
     def add(self, name, tree, monitor, filter):
         try:
-            info = (yield async_call(get_file_info, self.path, name))
+            file_info = (yield async_call(get_file_info, self.path, name))
+            if file_info.node_type and filter(file_info):
+                yield self.insert(tree, file_info)
         except OSError as e:
-            return
-        if not filter(info):
-            return
-        if info.is_file:
-            type, image = 'f', IM_FILE
-        elif info.is_dir:
-            type, image = 'd', IM_FOLDER
-        else:
-            return
-        item = dirtree_insert(tree, self.item, name, image)
-        node = FSNode(info.path, type)
-        tree.SetItemNode(item, node)
-        if type == 'd':
-            tree.SetItemHasChildren(item, True)
-        tree.SetItemHasChildren(self.item, True)
-        yield item
+            pass
 
     def remove(self, name, tree, monitor):
         dirtree_delete(tree, self.item, name)
