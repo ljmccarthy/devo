@@ -128,7 +128,7 @@ def shorten_path(path):
 number_re = re.compile('(\d+)')
 
 def natural_order_split(s):
-    return tuple(int(x) if x.isdigit() else x.lower() for x in number_re.split(s))
+    return tuple(int(x) if x.isdigit() else x for x in number_re.split(s.lower()))
 
 def natural_order_key(s):
     return (natural_order_split(s), s.lower(), s)
