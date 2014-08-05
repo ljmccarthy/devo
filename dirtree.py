@@ -85,6 +85,11 @@ class DirTreeMonitor(object):
             events, self.__events = self.__events, []
             return events
 
+    def clear(self):
+        self.monitor.remove_all_watches()
+        with self.__lock:
+            self.__events = []
+
 add_events = (FSEvent.Attrib, FSEvent.Modify, FSEvent.Create, FSEvent.MoveTo)
 remove_events = (FSEvent.Delete, FSEvent.MoveFrom)
 
@@ -117,7 +122,6 @@ class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
         self.sig_update_tree.bind(self.UpdateFromFSMonitor)
         self.monitor = FSMonitor()
         self.monitor_thread = DirTreeMonitor(self, self.monitor)
-        self.updating = False
 
         self.imglist = wx.ImageList(16, 16)
         self.imglist.Add(load_bitmap("icons/folder.png"))
@@ -147,31 +151,25 @@ class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
         self.select_later_name = name
         self.select_later_time = time.time() + timeout
 
-    def UpdateFromFSMonitor(self):
-        if not self.updating:
-            self.DoUpdateFromFSMonitor()
+    def TrySelectLater(self, item, name):
+        if name == self.select_later_name \
+        and self.GetItemParent(item) == self.select_later_parent:
+            if time.time() < self.select_later_time:
+                self.SelectItem(item)
+            self.select_later_name = None
+            self.select_later_parent = None
+            self.select_later_time = 0
 
     @managed("cm")
     @coroutine
-    def DoUpdateFromFSMonitor(self):
-        if not self.updating:
-            self.updating = True
-            try:
-                for evt in self.monitor_thread.get_events():
-                    if evt.action in add_events:
-                        item = (yield evt.user.add(evt.name, self, self.monitor, self.filter))
-                        if item:
-                            if evt.name == self.select_later_name \
-                            and self.GetItemParent(item) == self.select_later_parent:
-                                if time.time() < self.select_later_time:
-                                    self.SelectItem(item)
-                                self.select_later_name = None
-                                self.select_later_parent = None
-                                self.select_later_time = 0
-                    elif evt.action in remove_events:
-                        evt.user.remove(evt.name, self, self.monitor)
-            finally:
-                self.updating = False
+    def UpdateFromFSMonitor(self):
+        for evt in self.monitor_thread.get_events():
+            if evt.action in add_events:
+                item = (yield evt.user.add(evt.name, self, self.monitor, self.filter))
+                if item:
+                    self.TrySelectLater(item, evt.name)
+            elif evt.action in remove_events:
+                evt.user.remove(evt.name, self, self.monitor)
 
     def OnItemExpanding(self, evt):
         node = self.GetEventNode(evt)
@@ -371,6 +369,7 @@ class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
     def SetTopLevel(self, toplevel=None):
         self.cm.cancel()
         self.cq.cancel()
+        self.monitor_thread.clear()
         self.DeleteAllItems()
         toplevel = toplevel or make_top_level()
         if len(toplevel) == 1:

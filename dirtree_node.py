@@ -7,7 +7,7 @@ import wx
 import fileutil
 from async import async_call, coroutine
 from dirtree_constants import *
-from util import iter_tree_children
+from util import iter_tree_children, natural_order_key
 
 class FileInfo(collections.namedtuple("FileInfo", "filename dirpath stat_result listable hidden")):
     @property
@@ -40,46 +40,56 @@ def get_file_info(dirpath, filename):
         listable = False
     return FileInfo(filename, dirpath, stat_result, listable, hidden)
 
-def listdir(dirpath):
+def list_dir_file_info_sorted(dirpath):
     result = []
     for filename in os.listdir(dirpath):
         try:
             result.append(get_file_info(dirpath, filename))
         except OSError:
             pass
-    result.sort(key=lambda info: info.filename.lower())
+    result.sort(key=lambda info: natural_order_key(info.filename))
     return result
 
-def dirtree_insert(tree, parent_item, text, image):
-    text_lower = text.lower()
-
+def dirtree_insert_node(tree, parent_item, node, image):
     # Optimise common case when expanding directory for the first time
     item = tree.GetLastChild(parent_item)
-    if item.IsOk() and tree.GetItemText(item) < text_lower and (
-            image == IM_FILE or tree.GetItemImage(item) != IM_FILE):
-        return tree.AppendItem(parent_item, text, image)
+    if item.IsOk() and tree.GetPyData(item) < node:
+        item = tree.AppendItem(parent_item, node.label, image)
+        tree.SetItemNode(item, node)
+        return item, node
 
     # Search for the position to insert
-    for pos, item in enumerate(iter_tree_children(tree, parent_item)):
-        item_text = tree.GetItemText(item)
-        if item_text == text:
-            return item
-        if image != IM_FILE and tree.GetItemImage(item) == IM_FILE:
-            return tree.InsertItemBefore(parent_item, pos, text, image)
-        if item_text.lower() > text_lower:
-            if not (image == IM_FILE and tree.GetItemImage(item) != IM_FILE):
-                return tree.InsertItemBefore(parent_item, pos, text, image)
+    for index, existing_item in enumerate(iter_tree_children(tree, parent_item)):
+        existing_node = tree.GetPyData(existing_item)
+        if node == existing_node:
+            return existing_item, existing_node
+        elif node < existing_node:
+            item = tree.InsertItemBefore(parent_item, index, node.label, image)
+            tree.SetItemNode(item, node)
+            return item, node
 
-    return tree.AppendItem(parent_item, text, image)
+    item = tree.AppendItem(parent_item, node.label, image)
+    tree.SetItemNode(item, node)
+    return item, node
+
+def dirtree_create_node(tree, parent_item, file_info):
+    node = FSNode(file_info.path, file_info.node_type)
+    image = IM_FILE if node.type == 'f' else IM_FOLDER if file_info.listable else IM_FOLDER_DENIED
+    item, node = dirtree_insert_node(tree, parent_item, node, image)
+    tree.SetItemHasChildren(item, node.type == 'd')
+    tree.SetItemHasChildren(parent_item, True)
+    return item
 
 def dirtree_delete(tree, parent_item, text):
     for item in iter_tree_children(tree, parent_item):
         if text == tree.GetItemText(item):
-            sel_item = tree.GetNextSibling(item)
-            if not sel_item.IsOk():
-                sel_item = tree.GetPrevSibling(item)
-            if sel_item.IsOk():
-                tree.SelectItem(sel_item)
+            select_item = tree.GetNextSibling(item)
+            if not select_item.IsOk():
+                select_item = tree.GetPrevSibling(item)
+                if not select_item.IsOk():
+                    select_item = tree.GetNextSibling(item)
+            if select_item.IsOk():
+                tree.SelectItem(select_item)
             tree.Delete(item)
             break
 
@@ -116,14 +126,33 @@ class FSNode(object):
         self.watch = None
         self.label = label or os.path.basename(path) or path
 
-    def insert(self, tree, file_info):
-        node = FSNode(file_info.path, file_info.node_type)
-        image = IM_FILE if node.type == 'f' else IM_FOLDER if file_info.listable else IM_FOLDER_DENIED
-        item = dirtree_insert(tree, self.item, node.label, image)
-        tree.SetItemNode(item, node)
-        tree.SetItemHasChildren(item, node.type == 'd')
-        tree.SetItemHasChildren(self.item, True)
-        return item
+    def __lt__(self, other):
+        if not isinstance(other, FSNode):
+            raise TypeError()
+        if self.type != other.type:
+            return self.type == 'd' and other.type == 'f'
+        return natural_order_key(self.label) < natural_order_key(other.label)
+
+    def __gt__(self, other):
+        if not isinstance(other, FSNode):
+            raise TypeError()
+        if self.type != other.type:
+            return self.type == 'f' and other.type == 'd'
+        return natural_order_key(self.label) > natural_order_key(other.label)
+
+    def __eq__(self, other):
+        if not isinstance(other, FSNode):
+            raise TypeError()
+        return self.type == other.type and self.label == other.label
+
+    def __ne__(self, other):
+        return not (self == other)
+
+    def __ge__(self, other):
+        return self == other or self > other
+
+    def __le__(self, other):
+        return self == other or self < other
 
     @coroutine
     def expand(self, tree, monitor, filter):
@@ -131,9 +160,9 @@ class FSNode(object):
             try:
                 if not self.watch:
                     self.watch = monitor.add_dir_watch(self.path, user=self)
-                for file_info in (yield async_call(listdir, self.path)):
+                for file_info in (yield async_call(list_dir_file_info_sorted, self.path)):
                     if file_info.node_type and filter(file_info):
-                        self.insert(tree, file_info)
+                        dirtree_create_node(tree, self.item, file_info)
                 tree.SetItemImage(self.item, IM_FOLDER)
                 tree.SetItemHasChildren(self.item, tree.GetFirstChild(self.item)[0].IsOk())
             except Exception:
@@ -152,7 +181,7 @@ class FSNode(object):
         try:
             file_info = (yield async_call(get_file_info, self.path, name))
             if file_info.node_type and filter(file_info):
-                yield self.insert(tree, file_info)
+                yield dirtree_create_node(tree, self.item, file_info)
         except OSError as e:
             pass
 
