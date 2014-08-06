@@ -10,7 +10,7 @@ from fileutil import atomic_write_file, read_file, mkpath
 from menu import MenuItem, MenuSeparator
 from signal_wx import Signal
 from styled_text_ctrl import StyledTextCtrl
-from util import clean_text, shorten_text
+from util import clean_text, shorten_text, set_clipboard_text
 
 def decode_text(text):
     try:
@@ -301,6 +301,7 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
         items = []
         if self.path:
             items.extend([
+                MenuItem(ID.COPY_FILE_PATH, "Copy File Path"),
                 MenuItem(ID.OPEN_CONTAINING_FOLDER, "Open Containing Folder"),
                 MenuItem(ID.OPEN_IN_WEB_VIEW, "Preview in Web View"),
                 MenuSeparator,
@@ -310,6 +311,10 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
             selected = shorten_text(selected, 40)
             items.append(MenuItem(ID.WEB_SEARCH, "Web Search for %s" % repr(selected)[1:]))
         return items
+
+    def CopyFilePath(self):
+        if self.path:
+            set_clipboard_text(self.path)
 
     def OpenContainingFolder(self):
         if self.path:

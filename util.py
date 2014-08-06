@@ -63,6 +63,14 @@ def get_top_level_focus():
             return focus
         focus = wx.GetTopLevelParent(focus)
 
+def set_clipboard_text(text):
+    wx.TheClipboard.Open()
+    try:
+        text_data = wx.TextDataObject(text)
+        return wx.TheClipboard.SetData(text_data)
+    finally:
+        wx.TheClipboard.Close()
+
 def new_id_range(n):
     first = wx.NewId()
     last = first + n
