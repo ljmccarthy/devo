@@ -40,7 +40,8 @@ class EditCommandDialog(wx.Dialog):
 
         self.field_name = wx.TextCtrl(self, value=command.get("name", ""))
         self.field_accel = wx.TextCtrl(self, value=command.get("accel", ""))
-        self.field_cmdline = wx.TextCtrl(self, value=command.get("cmdline", ""))
+        self.field_cmdline = wx.TextCtrl(self,
+            value=command.get("cmdline", ""), style = wx.TE_MULTILINE, size=(-1, 80))
         self.field_workdir = wx.TextCtrl(self, value=command.get("workdir", ""))
 
         self.field_before = wx.Choice(self,
@@ -56,11 +57,12 @@ class EditCommandDialog(wx.Dialog):
 
         grid = wx.FlexGridSizer(cols=2, vgap=5, hgap=5)
         grid.AddGrowableCol(1, 1)
+        grid.AddGrowableRow(2, 1)
         grid.Add(wx.StaticText(self, label="Name in Menu"), 0, wx.ALIGN_CENTER_VERTICAL)
         grid.Add(self.field_name, 0, wx.EXPAND)
         grid.Add(wx.StaticText(self, label="Accelerator Key"), 0, wx.ALIGN_CENTER_VERTICAL)
         grid.Add(self.field_accel, 0, wx.EXPAND)
-        grid.Add(wx.StaticText(self, label="Shell Command"), 0, wx.ALIGN_CENTER_VERTICAL)
+        grid.Add(wx.StaticText(self, label="Shell Commands"), 1, wx.TOP | wx.EXPAND, 5)
         grid.Add(self.field_cmdline, 0, wx.EXPAND)
         grid.Add(wx.StaticText(self, label="Working Directory"), 0, wx.ALIGN_CENTER_VERTICAL)
         grid.Add(self.field_workdir, 0, wx.EXPAND)
@@ -90,7 +92,6 @@ class EditCommandDialog(wx.Dialog):
         size = (max(500, self.Size.width), self.Size.height)
         self.SetSize(size)
         self.SetMinSize(size)
-        self.SetMaxSize(wx.Size(-1, self.Size.height))
         self.Centre()
 
         self.field_name.SetFocus()
