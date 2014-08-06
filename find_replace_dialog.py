@@ -139,6 +139,29 @@ class FindReplaceDetails(object):
         finally:
             editor.EndUndoAction()
 
+    def LoadPerspective(self, p):
+        try:
+            self.case = bool(p.get("case_sensitive", False))
+            self.reverse = bool(p.get("reverse", False))
+            self.regexp = bool(p.get("is_regex", False))
+            self.find = unicode(p.get("find", ""))
+            self.replace = unicode(p.get("replace", ""))
+            self.find_history = p.get("find_history", [])[:10]
+            self.replace_history = p.get("replace_history", [])[:10]
+        except Exception:
+            pass
+
+    def SavePerspective(self):
+        return {
+            "case_sensitive": self.case,
+            "reverse": self.reverse,
+            "is_regex": self.regexp,
+            "find": self.find,
+            "replace": self.replace,
+            "find_history": self.find_history[:],
+            "replace_history": self.replace_history[:],
+        }
+
 class FindReplaceDialog(wx.Dialog):
     def __init__(self, editor, filename="", details=None):
         title = "Find and Replace"

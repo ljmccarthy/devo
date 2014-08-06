@@ -23,6 +23,29 @@ class SearchDetails(object):
         self.path = path
         self.path_history = path_history
 
+    def LoadPerspective(self, p):
+        try:
+            self.case = bool(p.get("case_sensitive", False))
+            self.regexp = bool(p.get("is_regex", False))
+            self.find = str(p.get("find", ""))
+            self.find_history = p.get("find_history", [])[:10]
+            self.file_patterns = str(p.get("file_patterns"))
+            self.path = str(p.get("path", ""))
+            self.path_history = p.get("path_history")[:10]
+        except Exception:
+            pass
+
+    def SavePerspective(self):
+        return {
+            "case_sensitive": self.case,
+            "is_regex": self.regexp,
+            "find": self.find,
+            "find_history": self.find_history[:],
+            "file_patterns": self.file_patterns,
+            "path": self.path,
+            "path_history": self.path_history[:],
+        }
+
 class SearchDialog(wx.Dialog):
     def __init__(self, parent, details=None):
         style = wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
@@ -102,10 +125,13 @@ class SearchDialog(wx.Dialog):
 
     def GetDetails(self):
         return SearchDetails(
-            case = self.check_case.GetValue(), regexp = self.check_regexp.GetValue(),
-            find = self.find, find_history = get_combo_history(self.combo_find),
+            case = self.check_case.GetValue(),
+            regexp = self.check_regexp.GetValue(),
+            find = self.find,
+            find_history = get_combo_history(self.combo_find),
             file_patterns = self.combo_file_patterns.GetValue(),
-            path = self.path, path_history = self.dir_picker.GetHistory())
+            path = self.path,
+            path_history = self.dir_picker.GetHistory())
 
     def OnComboKeyDown(self, evt):
         if evt.KeyCode in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER):

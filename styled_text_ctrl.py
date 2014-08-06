@@ -356,7 +356,7 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
 
     def Find(self):
         selected = self.GetSelectedFirstLine()
-        find_details = self.env.find_details or FindReplaceDetails(find=selected)
+        find_details = self.env.find_details
         if selected:
             find_details.find = selected
             find_details.replace = ""

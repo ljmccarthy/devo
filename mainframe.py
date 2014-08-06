@@ -5,14 +5,15 @@ import aui
 import app_info, async, fileutil, ID
 from about_dialog import AboutDialog
 from async import async_call, coroutine, queued_coroutine, managed, CoroutineManager, CoroutineQueue
-from dialogs import dialogs
 from commands_dialog import CommandsDialog
+from dialogs import dialogs
 from dirtree import DirNode
 from dirtree_filter import DirTreeFilter
 from edit_project_dialog import EditProjectDialog
 from editor import Editor
 from editor_dirtree import EditorDirTreeCtrl
 from file_monitor import FileMonitor
+from find_replace_dialog import FindReplaceDetails
 from lru import LruQueue
 from menu import MenuItem
 from menu_defs import menubar
@@ -22,8 +23,8 @@ from resources import load_icon_bundle
 from search_ctrl import SearchCtrl
 from search_dialog import SearchDetails, SearchDialog
 from settings import read_settings, write_settings
-from styled_text_ctrl import StyledTextCtrl, MARKER_FIND, MARKER_ERROR
 from shell import run_shell_command
+from styled_text_ctrl import StyledTextCtrl, MARKER_FIND, MARKER_ERROR
 from terminal_ctrl import TerminalCtrl
 from util import frozen_window, is_text_file, new_id_range, shorten_path
 from view_settings_dialog import ViewSettingsDialog, get_font_from_settings
@@ -165,8 +166,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.updated_paths = set()
         self.deleted_paths = set()
         self.reloading = False
-        self.find_details = None
-        self.search_details = None
+        self.find_details = FindReplaceDetails()
+        self.search_details = SearchDetails()
         self.editor_focus = None
         self.editor_highlight = [None, None]
         self.editor_font = get_font_from_settings({})
@@ -428,6 +429,12 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         if "dialogs" in self.settings:
             dialogs.load_state(self.settings["dialogs"])
 
+        if "find_details" in self.settings:
+            self.find_details.LoadPerspective(self.settings["find_details"])
+
+        if "search_details" in self.settings:
+            self.search_details.LoadPerspective(self.settings["search_details"])
+
         success = True
         if args.project:
             success = (yield self.OpenProject(args.project))
@@ -460,6 +467,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.settings["last_project"] = self.project_root
         self.settings["recent_files"] = list(self.recent_files)
         self.settings["dialogs"] = dialogs.save_state()
+        self.settings["find_details"] = self.find_details.SavePerspective()
+        self.settings["search_details"] = self.search_details.SavePerspective()
         self.settings["window_rect"] = self.Rect.Get()
         self.settings["window_state"] = "fullscreen" if self.IsFullScreen() else "maximized" if self.IsMaximized() else "normal"
         try:
@@ -585,6 +594,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.project_root = project_root
         self.project_filename = make_project_filename(project_root)
         self.session_filename = make_session_filename(project_root)
+        self.search_details.path = project_root
         project.setdefault("name", os.path.basename(project_root))
         self.project_info[project_root] = project
 
@@ -947,23 +957,21 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             self.SetHighlightedEditor(editor, line, marker_type)
 
     def Search(self, find=None, path=None):
-        details = self.search_details or SearchDetails()
-
         if find is not None:
-            details.find = find
+            self.search_details.find = find
         else:
             selection = self.GetCurrentSelection()
             if selection:
-                details.find = selection
-                details.case = False
-                details.regexp = False
+                self.search_details.find = selection
+                self.search_details.case = False
+                self.search_details.regexp = False
 
         if path is not None:
-            details.path = path
-        else:
-            details.path = self.project_root
+            self.search_details.path = path
+        elif not self.search_details.path.strip():
+            self.search_details.path = self.project_root
 
-        dlg = SearchDialog(self, details)
+        dlg = SearchDialog(self, self.search_details)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 self.search_details = dlg.GetDetails()
