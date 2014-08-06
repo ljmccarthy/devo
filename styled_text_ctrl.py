@@ -11,7 +11,7 @@ from go_to_line_dialog import GoToLineDialog
 from menu_defs import edit_menu
 from syntax import syntax_from_filename, syntax_plain
 from themes import default_theme
-from util import clean_text, clean_strip_text, unique
+from util import clean_text, clean_strip_text, unique, split_seperators_outside_quotes
 
 MARKER_FIND = 0
 MARKER_ERROR = 1
@@ -302,10 +302,7 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
 
     def AlignColumns(self):
         self.SelectLines()
-        lines = self.GetSelectedText().split("\n")
-        regex = re.compile("([,:])")
-        lines = [regex.split(line) for line in lines]
-        lines = [[line[i] + line[i+1] for i in xrange(0, len(line)-1, 2)] + [line[-1]] for line in lines]
+        lines = [split_seperators_outside_quotes(line) for line in self.GetSelectedText().split("\n")]
         columns = []
         for line in lines:
             for i, col_text in enumerate(line):

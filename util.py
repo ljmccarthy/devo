@@ -173,3 +173,22 @@ def file_patterns_to_regex(file_patterns):
 
 def compile_file_patterns(file_patterns):
     return re.compile(file_patterns_to_regex(file_patterns))
+
+re_quoted_string = re.compile(r"(\"(?:\\\"|[^\"])*\"|'(?:\\'|[^'])*')")
+
+separators = ",;:"
+
+re_quoted_string_or_sep = re.compile(r"(\"(?:\\\"|[^\"])*\"|'(?:\\'|[^'])*'|[%s])" % separators)
+
+def split_with_quotes(s):
+    """Split string without splitting embedded quoted strings."""
+    return [x.strip() for x in re_quoted_string.split(s) if x.strip()]
+
+def split_seperators_outside_quotes(s):
+    result = []
+    for x in re_quoted_string_or_sep.split(s):
+        if result and (x in separators or result[-1][-1] not in separators):
+            result[-1] = result[-1] + x
+        else:
+            result.append(x)
+    return result
