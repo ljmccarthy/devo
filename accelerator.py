@@ -58,7 +58,7 @@ def parse_accelerator(s):
         for modname in parts[:-1]:
             mod |= modifier_bits[modname]
     except KeyError as e:
-        raise ValueError("Invalid modifier name: %s" % e.args[0])
+        raise ValueError("Invalid modifier name: %r" % e.args[0])
     keyname = parts[-1]
     key = None
     if len(keyname) == 1:
@@ -67,7 +67,7 @@ def parse_accelerator(s):
     else:
         key = key_codes.get(keyname)
     if key is None:
-        raise ValueError("Invalid key name: %s" % keyname)
+        raise ValueError("Invalid key name: %r" % keyname)
     return key, mod
 
 def unparse_accelerator(key, mod):
