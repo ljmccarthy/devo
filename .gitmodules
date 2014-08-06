@@ -1,0 +1,3 @@
+[submodule "fsmonitor"]
+	path = fsmonitor
+	url = https://github.com/shaurz/fsmonitor.git
