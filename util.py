@@ -165,3 +165,11 @@ def unique(xs):
             seen.add(x)
             result.append(x)
     return result
+
+def file_patterns_to_regex(file_patterns):
+    return "^(%s)$" % "|".join(
+        re.escape(ext).replace("\\*", ".*").replace("\\?", ".")
+        for ext in file_patterns.split(";"))
+
+def compile_file_patterns(file_patterns):
+    return re.compile(file_patterns_to_regex(file_patterns))

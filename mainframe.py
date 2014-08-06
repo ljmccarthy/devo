@@ -967,7 +967,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 self.search_details = dlg.GetDetails()
-                self.search.find(self.search_details, filter=self.filter)
+                self.search.find(self.search_details)
                 self.ShowPane(self.search,
                     title = "Search for '%s' in %s" % (self.search_details.find, self.search_details.path))
         finally:

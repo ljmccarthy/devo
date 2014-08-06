@@ -4,7 +4,7 @@ from async import async_call
 from search import Search, make_matcher
 from styled_text_ctrl import MARKER_FIND
 from thread_output_ctrl import ThreadOutputCtrl
-from util import get_text_extent
+from util import get_text_extent, compile_file_patterns
 
 if sys.platform == "win32":
     r_path_start = re.compile(r"^[A-Za-z]:\\")
@@ -105,15 +105,26 @@ class SearchCtrl(wx.Panel):
         if self.finder:
             self.finder.stop()
 
-    def find(self, details, filter=None):
+    def find(self, details):
         self.stop()
 
         matcher = make_matcher(details.find,
             case_sensitive=details.case, is_regexp=details.regexp)
 
+        def dir_filter(file_info):
+            return not file_info.hidden
+
+        if details.file_patterns.strip():
+            file_pattern_re = compile_file_patterns(details.file_patterns)
+            def file_filter(file_info):
+                return bool(not file_info.hidden and file_pattern_re.match(file_info.filename))
+        else:
+            def file_filter(file_info):
+                return not file_info.hidden
+
         self.start_time = time.time()
         self.details = details
-        self.finder = Search(details.path, matcher, output=self, filter=filter)
+        self.finder = Search(details.path, matcher, output=self, file_filter=file_filter, dir_filter=dir_filter)
         async_call(self.finder.search)
         self.Clear()
         self.output.start()

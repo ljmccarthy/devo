@@ -3,6 +3,7 @@ import re
 from wx import stc
 
 from lexer_token_map import lexer_token_map
+from util import compile_file_patterns
 
 class Syntax(object):
     def __init__(self, name, description, lexer, file_patterns, comment_token="",
@@ -16,8 +17,7 @@ class Syntax(object):
         self.tab_width = tab_width
         self.use_tabs = use_tabs
         self.keywords = keywords
-        self.file_regex = re.compile("^(%s)$" % "|".join(
-            re.escape(ext).replace("\\*", ".*") for ext in file_patterns.split(";")))
+        self.file_regex = compile_file_patterns(file_patterns)
 
     def get_style_specs(self, theme):
         if self.lexer in lexer_token_map:

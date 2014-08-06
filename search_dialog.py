@@ -1,15 +1,25 @@
+import sys
 import os
 import wx
 from file_picker import DirPicker
 from util import get_combo_history
 
+file_pattern_choices = [
+    "*",
+    "*.py",
+    "*.c;*.cc;*.cxx;*.cpp;*.h;*.hh;*.hxx;*.hpp;*.m;*.mm",
+    "*.txt;*.text;*.rst;*.md;*.markdown",
+    "*.html;*.htm;*.xml;*.xhtml;*.xht",
+]
+
 class SearchDetails(object):
     def __init__(self, case=False, regexp=False, find="", find_history=(),
-                 path="", path_history=()):
+                 file_patterns="*", path="", path_history=()):
         self.case = case
         self.regexp = regexp
         self.find = find
         self.find_history = find_history
+        self.file_patterns = file_patterns
         self.path = path
         self.path_history = path_history
 
@@ -20,14 +30,18 @@ class SearchDialog(wx.Dialog):
 
         combo_style = wx.TE_PROCESS_ENTER if wx.Platform == "__WXMAC__" else 0
         self.combo_find = wx.ComboBox(self, size=(300, -1), style=combo_style)
+        self.combo_file_patterns = wx.ComboBox(
+            self, size=(300, -1), value="*", choices=file_pattern_choices, style=combo_style)
         self.dir_picker = DirPicker(self, size=(300, -1), combo=True)
         self.check_case = wx.CheckBox(self, wx.ID_ANY, "&Case sensitive")
         self.check_regexp = wx.CheckBox(self, label="Regular e&xpression")
 
         grid = wx.FlexGridSizer(cols=2, vgap=5, hgap=5)
         grid.AddGrowableCol(1, 1)
-        grid.Add(wx.StaticText(self, label="Find"), 0, wx.ALIGN_CENTRE_VERTICAL)
+        grid.Add(wx.StaticText(self, label="Find Text"), 0, wx.ALIGN_CENTRE_VERTICAL)
         grid.Add(self.combo_find, 0, wx.EXPAND)
+        grid.Add(wx.StaticText(self, label="File Patterns"), 0, wx.ALIGN_CENTRE_VERTICAL)
+        grid.Add(self.combo_file_patterns, 0, wx.EXPAND)
         grid.Add(wx.StaticText(self, label="Directory"), 0, wx.ALIGN_CENTRE_VERTICAL)
         grid.Add(self.dir_picker, 0, wx.EXPAND)
         grid.AddSpacer(0)
@@ -57,6 +71,7 @@ class SearchDialog(wx.Dialog):
         if details is not None:
             self.combo_find.SetItems(details.find_history)
             self.combo_find.SetValue(details.find)
+            self.combo_file_patterns.SetValue(details.file_patterns)
             self.dir_picker.SetHistory(details.path_history)
             self.dir_picker.SetValue(details.path)
             self.check_case.SetValue(details.case)
@@ -89,6 +104,7 @@ class SearchDialog(wx.Dialog):
         return SearchDetails(
             case = self.check_case.GetValue(), regexp = self.check_regexp.GetValue(),
             find = self.find, find_history = get_combo_history(self.combo_find),
+            file_patterns = self.combo_file_patterns.GetValue(),
             path = self.path, path_history = self.dir_picker.GetHistory())
 
     def OnComboKeyDown(self, evt):

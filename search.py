@@ -9,11 +9,12 @@ def null_filter(info):
     return True
 
 class Search(object):
-    def __init__(self, path, match, output, filter=None):
+    def __init__(self, path, match, output, file_filter=null_filter, dir_filter=null_filter):
         self.path = path
         self.match = match
         self.output = output
-        self.filter = filter or null_filter
+        self.file_filter = file_filter
+        self.dir_filter = dir_filter
         self.encoding = "utf-8"
         self.quit = False
 
@@ -58,11 +59,10 @@ class Search(object):
             raise SearchAborted()
         try:
             info = get_file_info(dirpath, name)
-            if self.filter(info):
-                if info.is_file:
-                    self._search_file(info.path)
-                elif info.is_dir:
-                    self._search_dir(info.path)
+            if info.is_file and self.file_filter(info):
+                self._search_file(info.path)
+            elif info.is_dir and self.dir_filter(info):
+                self._search_dir(info.path)
         except OSError:
             pass
 
