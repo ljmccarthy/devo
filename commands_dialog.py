@@ -14,8 +14,8 @@ command_help = """\
 Commands may use the following special variables:
 </p>
 <table>
-    <tr><td>$FILE</td><td>Current file</td></tr>
-    <tr><td>$DIR</td><td>Directory of current file</td></tr>
+    <tr><td>$FILEPATH</td><td>Current file name (full path)</td></tr>
+    <tr><td>$DIRNAME</td><td>Directory of current file</td></tr>
     <tr><td>$BASENAME</td><td>Base filename of current file</td></tr>
     <tr><td>$PROJECT_DIR</td><td>Project directory</td></tr>
 </table>
@@ -24,7 +24,8 @@ Commands may use the following special variables:
 def check_variables(s):
     try:
         string.Template(s).substitute(
-            FILE="", DIR="", BASENAME="", PROJECT_DIR="")
+            FILEPATH="", DIRNAME="", BASENAME="", PROJECT_DIR="",
+            FILE="", DIR="")
     except KeyError as e:
         raise Exception("Unknown variable name: %s" % e.args)
     except ValueError as e:
@@ -144,14 +145,15 @@ class EditCommandDialog(wx.Dialog):
         evt.Skip()
 
     def OnHelp(self, evt):
+        pos = (self.Position.x - 420, self.Position.y)
+        size = (400, 250)
         if not self.help_frame:
-            pos = (self.Position.x - 420, self.Position.y)
-            self.help_frame = HtmlFrame(
-                self, command_help, title="Edit Command Help",
-                pos=pos, size=(400, 250))
+            self.help_frame = HtmlFrame(self, command_help, title="Edit Command Help", pos=pos, size=size)
+            self.help_frame.Show()
             self.help_frame.Bind(wx.EVT_CLOSE, self.OnHelpFrameClose)
-        self.help_frame.Show()
-        self.help_frame.Raise()
+        else:
+            frame, self.help_frame = self.help_frame, None
+            frame.Destroy()
 
     def OnHelpFrameClose(self, evt):
         if self.help_frame:
