@@ -145,7 +145,7 @@ class SearchCtrl(wx.Panel):
     def add_line(self, finder, line_num, line):
         if len(line) > self.max_line_length:
             line = line[:self.max_line_length] + "..."
-        self.output.write("  %d: %s\n" % (line_num, line))
+        self.output.write(" %5d: %s\n" % (line_num, line))
 
     def end_file(self, finder):
         self.output.write("\n")
