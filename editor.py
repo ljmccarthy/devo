@@ -270,6 +270,7 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
 
     def OnStcUpdateUI(self, evt):
         self.sig_status_changed.signal(self)
+        evt.Skip()
 
     def OnDropFiles(self, x, y, filenames):
         for filename in filenames:

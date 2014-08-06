@@ -17,11 +17,15 @@ MARKER_FIND = 0
 MARKER_ERROR = 1
 
 default_styles = [
-    (wx.stc.STC_STYLE_DEFAULT,    ""),
-    (wx.stc.STC_STYLE_LINENUMBER, "back:#C0C0C0"),
-    (wx.stc.STC_STYLE_BRACELIGHT, "fore:#FFFFFF,back:#0000FF,bold"),
-    (wx.stc.STC_STYLE_BRACEBAD,   "fore:#000000,back:#FF0000,bold"),
+    (wx.stc.STC_STYLE_DEFAULT,     ""),
+    (wx.stc.STC_STYLE_LINENUMBER,  "back:#C0C0C0"),
+    (wx.stc.STC_STYLE_BRACELIGHT,  "fore:#000000,back:#CCCCCC,bold"),
+    (wx.stc.STC_STYLE_BRACEBAD,    "fore:#000000,back:#FFCCCC,bold"),
+    (wx.stc.STC_STYLE_CONTROLCHAR, ""),
+    (wx.stc.STC_STYLE_INDENTGUIDE, ""),
 ]
+
+brace_chars = "[]{}()"
 
 class StyledTextCtrl(wx.stc.StyledTextCtrl):
     name = ""
@@ -37,6 +41,7 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
         self.Bind(wx.EVT_KEY_DOWN, self.__OnKeyDown)
         self.Bind(wx.EVT_CONTEXT_MENU, self.__OnContextMenu)
         self.Bind(wx.stc.EVT_STC_CHANGE, self.__OnChange)
+        self.Bind(wx.stc.EVT_STC_UPDATEUI, self.__OnUpdateUI)
 
     def ShouldFilterKeyEvent(self, evt):
         key = evt.GetKeyCode()
@@ -58,6 +63,19 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
         # Assumes that all styles use the same fixed-width font.
         max_len = max(self.LineLength(line) for line in xrange(self.GetLineCount()))
         self.SetScrollWidth((max_len + 1) * self.TextWidth(wx.stc.STC_STYLE_DEFAULT, "_"))
+
+    def __OnUpdateUI(self, evt):
+        pos = self.GetCurrentPos()
+        if pos > 0 and unichr(self.GetCharAt(pos - 1)) in brace_chars:
+            pos -= 1
+        if unichr(self.GetCharAt(pos)) in brace_chars:
+            matching_pos = self.BraceMatch(pos)
+            if matching_pos != -1:
+                self.BraceHighlight(pos, matching_pos)
+            else:
+                self.BraceBadLight(pos)
+        else:
+            self.BraceHighlight(-1, -1)
 
     def RefreshStyle(self):
         font = self.env.editor_font
