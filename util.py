@@ -63,6 +63,16 @@ def get_top_level_focus():
             return focus
         focus = wx.GetTopLevelParent(focus)
 
+def get_clipboard_text():
+    wx.TheClipboard.Open()
+    try:
+        text_data = wx.TextDataObject()
+        if wx.TheClipboard.GetData(text_data):
+            return text_data.GetText()
+        return ""
+    finally:
+        wx.TheClipboard.Close()
+
 def set_clipboard_text(text):
     wx.TheClipboard.Open()
     try:

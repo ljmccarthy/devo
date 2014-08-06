@@ -11,7 +11,7 @@ from go_to_line_dialog import GoToLineDialog
 from menu_defs import edit_menu
 from syntax import syntax_from_filename, syntax_plain
 from themes import default_theme
-from util import clean_text, clean_strip_text, unique, split_seperators_outside_quotes
+from util import clean_text, clean_strip_text, unique, split_seperators_outside_quotes, get_clipboard_text
 
 MARKER_FIND = 0
 MARKER_ERROR = 1
@@ -139,14 +139,9 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
     CanFindPrev = CanFindNext
 
     def Paste(self):
-        wx.TheClipboard.Open()
-        try:
-            text_data = wx.TextDataObject()
-            if wx.TheClipboard.GetData(text_data):
-                text = clean_strip_text(text_data.GetText())
-                self.ReplaceSelection(text)
-        finally:
-            wx.TheClipboard.Close()
+        text = get_clipboard_text()
+        if text:
+            self.ReplaceSelection(clean_strip_text(text))
 
     def IsEmpty(self):
         return self.GetTextLength() == 0
