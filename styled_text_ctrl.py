@@ -65,6 +65,9 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
         self.SetScrollWidth((max_len + 1) * self.TextWidth(wx.stc.STC_STYLE_DEFAULT, "_"))
 
     def __OnUpdateUI(self, evt):
+        if self.HasSelection():
+            self.BraceHighlight(-1, -1)
+            return
         pos = self.GetCurrentPos()
         if pos > 0 and unichr(self.GetCharAt(pos - 1)) in brace_chars:
             pos -= 1
