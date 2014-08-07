@@ -6,7 +6,7 @@ def run(*args, **kwargs):
     subprocess.check_call(args, **kwargs)
 
 def get_submodules():
-    run("git", "submodule", "update", "--init")
+    run("git", "submodule", "update")
 
 def get_aui():
     if os.path.isdir("aui"):
