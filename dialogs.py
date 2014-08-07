@@ -28,9 +28,9 @@ class Dialogs(object):
     def info(self, parent, message, caption=""):
         self.message_dialog(parent, message, caption, wx.OK | wx.ICON_INFORMATION)
 
-    def yes_no(self, parent, message, caption=""):
+    def yes_no(self, parent, message, caption="", icon_style=wx.ICON_QUESTION):
         return self.message_dialog(parent, message, caption,
-            wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION) == wx.ID_YES
+            wx.YES_NO | wx.NO_DEFAULT | icon_style) == wx.ID_YES
 
     def _get_file_dialog(self, parent, message, path, wildcard, context, style):
         if wx.Platform == "__WXMAC__":

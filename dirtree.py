@@ -267,6 +267,10 @@ class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
         del evt
         if self.expanding_all:
             return
+        if not dialogs.yes_no(self,
+                "Expanding all folders may take a long time. Continue?",
+                icon_style=wx.ICON_WARNING):
+            return
         self.expanding_all = True
         try:
             for item in iter_tree_breadth_first(self, self.GetRootItem()):
