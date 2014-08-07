@@ -22,7 +22,7 @@ default_styles = [
     (wx.stc.STC_STYLE_BRACELIGHT,  "fore:#000000,back:#CCCCCC,bold"),
     (wx.stc.STC_STYLE_BRACEBAD,    "fore:#000000,back:#FFCCCC,bold"),
     (wx.stc.STC_STYLE_CONTROLCHAR, ""),
-    (wx.stc.STC_STYLE_INDENTGUIDE, ""),
+    (wx.stc.STC_STYLE_INDENTGUIDE, "fore:#CCCCCC"),
 ]
 
 brace_chars = "[]{}()"
