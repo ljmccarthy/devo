@@ -1,4 +1,4 @@
-import os, string, traceback, errno, shutil, webbrowser
+import sys, os, string, traceback, errno, shutil, webbrowser
 import wx
 
 import aui
@@ -1012,19 +1012,22 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     def OnUpdate_ConfigureProjectCommands(self, evt):
         evt.Enable(bool(self.project_filename))
 
-    def RunCommand(self, cmdline, workdir=None, detach=False, killable=True):
+    def RunCommand(self, cmdline, workdir=None, detach=False, killable=True, title=""):
         workdir = workdir or None
         if detach:
             run_shell_command(cmdline, pipe_output=False, cwd=workdir, killable=False)
         else:
             try:
                 self.terminal.run(cmdline, cwd=workdir, killable=killable)
-                self.ShowPane(self.terminal, title=cmdline)
+                if not title:
+                    command_sep = " && " if sys.platform == "win32" else "; "
+                    title = command_sep.join(x.strip() for x in cmdline.split("\n") if x.strip())
+                self.ShowPane(self.terminal, title=title)
             except Exception as e:
                 dialogs.error(self, "Error executing command:\n\n%s" % traceback.format_exc())
 
     @managed("cm")
-    @coroutine    
+    @coroutine
     def DoUserCommand(self, command):
         editor = self.GetCurrentEditorTab()
         current_file = editor.path if editor else ""
