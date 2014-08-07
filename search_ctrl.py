@@ -101,6 +101,9 @@ class SearchCtrl(wx.Panel):
 
         evt.Skip()
 
+    def ClearHighlight(self, marker_type):
+        self.output.ClearHighlight(marker_type)
+
     def stop(self):
         if self.finder:
             self.finder.stop()

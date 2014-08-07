@@ -99,6 +99,9 @@ class TerminalCtrl(wx.Panel):
             return
         evt.Skip()
 
+    def ClearHighlight(self, marker_type):
+        self.output.ClearHighlight(marker_type)
+
     def set_status(self, status):
         self.status_label.SetLabel(status.replace("&", "&&"))
         self.Layout()

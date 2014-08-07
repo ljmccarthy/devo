@@ -946,6 +946,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         if self.editor_highlight[marker_type]:
             self.editor_highlight[marker_type].ClearHighlight(marker_type)
             self.editor_highlight[marker_type] = None
+            self.search.ClearHighlight(marker_type)
+            self.terminal.ClearHighlight(marker_type)
 
     def SetHighlightedEditor(self, editor, line, marker_type):
         self.ClearHighlight(marker_type)
