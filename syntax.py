@@ -691,7 +691,7 @@ syntax_list = [
     Syntax("idl", "IDL", stc.STC_LEX_CPP, "*.idl;*.odl", "//", keywords_idl),
     Syntax("octave", "Octave", stc.STC_LEX_OCTAVE, "*.m;*.m.octave", "#", keywords_octave),
     Syntax("matlab", "Matlab", stc.STC_LEX_MATLAB, "*.m", "%", keywords_matlab),
-    Syntax("postscript", "", stc.STC_LEX_PS, "*.ps", "%", keywords_postscript),
+    Syntax("postscript", "PostScript", stc.STC_LEX_PS, "*.ps", "%", keywords_postscript),
     Syntax("cmake", "CMake", stc.STC_LEX_CMAKE, "CMakeLists.txt;*.cmake;*.cmake.in;*.ctest;*.ctest.in", "#", keywords_cmake),
     syntax_plain,
 ]
