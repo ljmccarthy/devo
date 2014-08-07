@@ -31,7 +31,7 @@ def make_environment(env=None, cwd=None):
 
 def run_shell_command(cmdline, pipe_output=True, env=None, cwd=None, killable=True, **kwargs):
     if sys.platform == "win32":
-        args = cmdline
+        args = " && ".join(command.strip() for command in cmdline.split("\n") if command.strip())
     else:
         args = [os.environ.get("SHELL", "/bin/sh")]
 
