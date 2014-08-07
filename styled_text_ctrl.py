@@ -178,7 +178,11 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
         return xrange(start_line, end_line + 1)
 
     def SetLineSelection(self, start_line, end_line):
-        self.SetSelection(self.PositionFromLine(start_line), self.GetLineEndPosition(end_line) - 1)
+        self.SetSelection(self.PositionFromLine(start_line), self.GetLineEndPosition(end_line))
+
+    def SelectLines(self):
+        start, end = self.GetSelection()
+        self.SetLineSelection(self.LineFromPosition(start), self.LineFromPosition(end))
 
     def Indent(self):
         self.BeginUndoAction()
@@ -257,13 +261,6 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
         replace_lines.extend(indent + x for x in rest.split())
         replace = "\n".join(replace_lines)
         self.ReplaceSelectionAndSelect(replace)
-
-    def SelectLines(self):
-        start, end = self.GetSelection()
-        start = self.PositionFromLine(self.LineFromPosition(start))
-        end_line = self.LineFromPosition(end)
-        end = self.PositionFromLine(end_line) + self.GetLineLength(end_line)
-        self.SetSelection(start, end)
 
     def SortLines(self):
         self.SelectLines()
