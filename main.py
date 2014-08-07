@@ -134,6 +134,11 @@ class DevoApp(wx.App):
             self.log_file.flush()
 
 def main():
+    if sys.platform == "win32":
+        import win32api
+        SEM_FAILCRITICALERRORS = 1
+        win32api.SetErrorMode(SEM_FAILCRITICALERRORS)
+
     if sys.platform == "darwin" and hasattr(sys, "frozen"):
         args = []
     else:
