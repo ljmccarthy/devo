@@ -28,7 +28,7 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
     def __init__(self, parent, env, path=""):
         StyledTextCtrl.__init__(self, parent, env)
         wx.FileDropTarget.__init__(self)
-        self.SetDropTarget(None)
+        self.SetDropTarget(self)
 
         self.path = path
         self.file_encoding = "utf-8"
@@ -51,10 +51,6 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
         self.Bind(wx.stc.EVT_STC_SAVEPOINTLEFT, self.OnSavePointLeft)
         self.Bind(wx.stc.EVT_STC_SAVEPOINTREACHED, self.OnSavePointReached)
         self.Bind(wx.stc.EVT_STC_UPDATEUI, self.OnStcUpdateUI)
-
-    def GetModify(self):
-        return (not self.GetReadOnly()) and (
-                self.modified_externally or super(Editor, self).GetModify())
 
     @property
     def name(self):
@@ -84,6 +80,14 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
     def status_text_syntax(self):
         return "Syntax: " + self.syntax.description
 
+    @property
+    def dialog_parent(self):
+        return wx.GetTopLevelParent(self)
+
+    def GetModify(self):
+        return (not self.GetReadOnly()) and (
+                self.modified_externally or super(Editor, self).GetModify())
+
     def SetModified(self):
         self.modified_externally = True
         self.sig_title_changed.signal(self)
@@ -91,7 +95,7 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
     @coroutine
     def TryClose(self):
         if self.modified:
-            result = dialogs.ask_save_changes(wx.GetApp().GetTopWindow(), self.path)
+            result = dialogs.ask_save_changes(self.dialog_parent, self.path)
             if result == wx.ID_YES:
                 try:
                     save_result = (yield self.Save())
@@ -156,7 +160,7 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
             self.EmptyUndoBuffer()
             yield True
         except Exception as e:
-            dialogs.error(self, "Error opening file:\n\n%s" % e)
+            dialogs.error(self.dialog_parent, "Error opening file:\n\n%s" % e)
             yield False
 
     @coroutine
@@ -200,7 +204,7 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
             try:
                 yield self.WriteFile(path)
             except Exception as exn:
-                dialogs.error(self, "Error saving file '%s'\n\n%s" % (path, exn))
+                dialogs.error(self.dialog_parent, "Error saving file '%s'\n\n%s" % (path, exn))
                 raise
             else:
                 self.SetPath(path)
@@ -222,9 +226,10 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
         if self.path:
             try:
                 yield self.WriteFile(self.path)
+                self.env.add_monitor_path(self.path)
                 yield True
             except Exception as exn:
-                dialogs.error(self, "Error saving file '%s'\n\n%s" % (self.path, exn))
+                dialogs.error(self.dialog_parent, "Error saving file '%s'\n\n%s" % (self.path, exn))
                 raise
         else:
             yield (yield self.SaveAsInSameTab())
@@ -279,7 +284,7 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
 
     @coroutine
     def OnModifiedExternally(self):
-        if dialogs.ask_reload(self, os.path.basename(self.path)):
+        if dialogs.ask_reload(self.dialog_parent, os.path.basename(self.path)):
             yield self.Reload()
         else:
             self.SetModified()
@@ -287,13 +292,13 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
     @coroutine
     def OnUnloadedExternally(self):
         if os.path.exists(self.path):
-            if dialogs.ask_reload(self, os.path.basename(self.path)):
+            if dialogs.ask_reload(self.dialog_parent, os.path.basename(self.path)):
                 yield self.Reload()
             else:
                 self.SetModified()
         else:
-            if dialogs.ask_unload(self, os.path.basename(self.path)):
-                yield self.env.close_view(self)
+            if dialogs.ask_unload(self.dialog_parent, os.path.basename(self.path)):
+                self.env.close_view(self)
             else:
                 self.SetModified()
 
