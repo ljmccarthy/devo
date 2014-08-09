@@ -1,7 +1,7 @@
 # Maintainer: Luke McCarthy <luke@iogopro.co.uk>
 
 pkgname=devo
-pkgver=1.2.0
+pkgver=1.3.0
 pkgrel=1
 pkgdesc="Text editing devolved"
 arch=('i686' 'x86_64' 'armv6' 'armv6h' 'armv7' 'armv7h')
@@ -21,7 +21,7 @@ changelog=
 noextract=()
 source=(https://github.com/shaurz/${pkgname}/archive/v${pkgver}.tar.gz
         ${pkgname}.install)
-md5sums=(c5ec98de7b5d2e447cca33cbdb058d8c
+md5sums=(17c2e2a3b2abd51b5a8d9b26a84467d9
          46a0eb07686a7d96206499e94c0452ba)
 
 build() {
