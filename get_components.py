@@ -6,7 +6,10 @@ def run(*args, **kwargs):
     subprocess.check_call(args, **kwargs)
 
 def get_submodules():
-    run("git", "submodule", "update", "--init")
+    if os.path.isdir(".git"):
+        run("git", "submodule", "update", "--init")
+    else:
+        run("git", "clone", "https://github.com/shaurz/fsmonitor.git")
 
 def get_aui():
     if os.path.isdir("aui"):
