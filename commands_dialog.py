@@ -174,6 +174,7 @@ class EditCommandDialog(wx.Dialog):
         self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateUI_DisableWhenDetached, self.field_killable)
         self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateUI_DisableWhenDetached, self.field_stdin)
         self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateUI_DisableWhenDetached, self.field_stdout)
+        self.Bind(wx.EVT_MOVE, self.OnMove)
 
     _fields = (
         ("name", get_non_empty_string),
@@ -201,13 +202,15 @@ class EditCommandDialog(wx.Dialog):
         evt.Skip()
 
     def OnHelp(self, evt):
-        pos = (self.Position.x - 420, self.Position.y)
-        size = (400, 420)
         if not self.help_frame:
-            self.help_frame = HtmlPopup(self, command_help)
-        self.help_frame.SetPosition(pos)
-        self.help_frame.SetSize(size)
+            pos = (self.Position.x - 420, self.Position.y)
+            size = (400, 420)
+            self.help_frame = HtmlPopup(self, command_help, pos=pos, size=size)
         self.help_frame.Show(not self.help_frame.IsShown())
+
+    def OnMove(self, evt):
+        if self.help_frame:
+            self.help_frame.SetPosition((self.Position.x - 420, self.Position.y))
 
     def OnUpdateUI_DisableWhenDetached(self, evt):
         evt.Enable(not self.field_detach.Value)
