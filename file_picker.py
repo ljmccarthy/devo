@@ -48,6 +48,9 @@ class FilePicker(wx.Panel):
     def SetHistory(self, history):
         self.path_ctrl.SetItems(history)
 
+    Value = property(GetValue, SetValue)
+    History = property(GetHistory, SetHistory)
+
 def FileOpenPicker(parent, size=(100, -1), value="", combo=False):
     return FilePicker(parent, dialogs.get_file_to_open, size, value, combo)
 

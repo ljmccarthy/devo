@@ -2,6 +2,7 @@ import string
 import wx
 from accelerator import parse_accelerator, unparse_accelerator
 from dialogs import dialogs
+from file_picker import DirPicker
 from html_frame import HtmlFrame
 
 command_help = """\
@@ -99,7 +100,7 @@ class EditCommandDialog(wx.Dialog):
         self.field_accel = wx.TextCtrl(self, value=command.get("accel", ""))
         self.field_cmdline = wx.TextCtrl(self,
             value=command.get("cmdline", ""), style = wx.TE_MULTILINE, size=(-1, 80))
-        self.field_workdir = wx.TextCtrl(self, value=command.get("workdir", ""))
+        self.field_workdir = DirPicker(self, value=command.get("workdir", ""))
 
         self.field_stdin = wx.Choice(self, choices=list(x[0] for x in stdin_options))
         self.field_stdin.SetSelection(stdin_option_indices.get(command.get("stdin", ""), 0))
