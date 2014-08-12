@@ -762,10 +762,16 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             self.AddPage(preview, index=index)
             return preview
 
-    def _FindPath(self, path, views):
-        for view in views:
-            if view.path == path:
-                return view
+    if sys.platform == "win32":
+        def _FindPath(self, path, views):
+            for view in views:
+                if view.path.lower() == path.lower():
+                    return view
+    else:
+        def _FindPath(self, path, views):
+            for view in views:
+                if view.path == path:
+                    return view
 
     def FindEditor(self, path):
         return self._FindPath(path, self.editors)
