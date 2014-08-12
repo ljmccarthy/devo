@@ -31,11 +31,60 @@ def check_variables(s):
     except ValueError as e:
         raise Exception("Variable name missing after $")
 
+before_options = [
+    ("Do Nothing", "do_nothing"),
+    ("Save Current File", "save_current_file"),
+    ("Save All Files", "save_all_files"),
+]
+
+stdin_options = [
+    ("No Input", "none"),
+    ("Send Current Selection", "current_selection"),
+    ("Send Current File", "current_file"),
+]
+
+stdout_options = [
+    ("Show In Terminal", "show_in_terminal"),
+    ("Replace Current Selection", "replace_selection"),
+    ("Send To New Tab", "new_editor"),
+]
+
+before_option_indices = {x[1]: i for i, x in enumerate(before_options)}
+stdin_option_indices = {x[1]: i for i, x in enumerate(stdin_options)}
+stdout_option_indices = {x[1]: i for i, x in enumerate(stdout_options)}
+
+def get_value(ctrl):
+    return ctrl.Value
+
+def get_non_empty_string(ctrl):
+    value = ctrl.Value.strip()
+    if not value:
+        raise Exception("Field is required.")
+    return value
+
+def get_accel(ctrl):
+    value = ctrl.Value.strip()
+    return value and unparse_accelerator(*parse_accelerator(value))
+
+def get_workdir(ctrl):
+    value = ctrl.Value.strip()
+    check_variables(value)
+    return value
+
+def get_string_selection(ctrl):
+    return ctrl.GetStringSelection()
+
+def get_choice_option(options):
+    def getter(ctrl):
+        return options[ctrl.Selection][1]
+    return getter
+
 class EditCommandDialog(wx.Dialog):
     def __init__(self, parent, command={}, title="Edit Command"):
         style = wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
         wx.Dialog.__init__(self, parent, title=title, style=style)
 
+        self.command = command.copy()
         self.help_frame = None
 
         self.field_name = wx.TextCtrl(self, value=command.get("name", ""))
@@ -44,10 +93,20 @@ class EditCommandDialog(wx.Dialog):
             value=command.get("cmdline", ""), style = wx.TE_MULTILINE, size=(-1, 80))
         self.field_workdir = wx.TextCtrl(self, value=command.get("workdir", ""))
 
-        self.field_before = wx.Choice(self,
-            choices=["Do Nothing", "Save Current File", "Save All Files"])
-        if not self.field_before.SetStringSelection(command.get("before", "")):
-            self.field_before.SetSelection(0)
+        self.field_stdin = wx.Choice(self, choices=list(x[0] for x in stdin_options))
+        self.field_stdin.SetSelection(stdin_option_indices.get(command.get("stdin", ""), 0))
+
+        self.field_stdout = wx.Choice(self, choices=list(x[0] for x in stdout_options))
+        self.field_stdout.SetSelection(stdout_option_indices.get(command.get("stdout", ""), 0))
+
+        self.field_before = wx.Choice(self, choices=list(x[0] for x in before_options))
+        self.field_before_exec = self.field_before
+        if "before_exec" in command:
+            self.field_before.SetSelection(before_option_indices.get(command.get("before_exec", ""), 0))
+        else:
+            # Backwards compatibility
+            if not self.field_before.SetStringSelection(command.get("before", "")):
+                self.field_before.SetSelection(0)
 
         self.field_detach = wx.CheckBox(self, label="Detach Process")
         self.field_detach.SetValue(command.get("detach", False))
@@ -66,6 +125,10 @@ class EditCommandDialog(wx.Dialog):
         grid.Add(self.field_cmdline, 0, wx.EXPAND)
         grid.Add(wx.StaticText(self, label="Working Directory"), 0, wx.ALIGN_CENTER_VERTICAL)
         grid.Add(self.field_workdir, 0, wx.EXPAND)
+        grid.Add(wx.StaticText(self, label="Standard Input"), 0, wx.ALIGN_CENTER_VERTICAL)
+        grid.Add(self.field_stdin, 0, wx.EXPAND)
+        grid.Add(wx.StaticText(self, label="Standard Output"), 0, wx.ALIGN_CENTER_VERTICAL)
+        grid.Add(self.field_stdout, 0, wx.EXPAND)
         grid.Add(wx.StaticText(self, label="Before Executing"), 0, wx.ALIGN_CENTER_VERTICAL)
         grid.Add(self.field_before, 0, wx.EXPAND)
         grid.AddSpacer(0)
@@ -100,49 +163,29 @@ class EditCommandDialog(wx.Dialog):
         self.Bind(wx.EVT_BUTTON, self.OnHelp, id=wx.ID_HELP)
         self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateKillable, self.field_killable)
 
-    def _GetValue(self, ctrl):
-        return ctrl.Value
-
-    def _GetNonEmptyString(self, ctrl):
-        value = ctrl.Value.strip()
-        if not value:
-            raise Exception("Field is required.")
-        return value
-
-    def _GetAccel(self, ctrl):
-        value = ctrl.Value.strip()
-        return value and unparse_accelerator(*parse_accelerator(value))
-
-    def _GetWorkDir(self, ctrl):
-        value = ctrl.Value.strip()
-        check_variables(value)
-        return value
-
-    def _GetStringSelection(self, ctrl):
-        return ctrl.GetStringSelection()
-
     _fields = (
-        ("name", _GetNonEmptyString),
-        ("accel", _GetAccel),
-        ("cmdline", _GetNonEmptyString),
-        ("workdir", _GetWorkDir),
-        ("before", _GetStringSelection),
-        ("detach", _GetValue),
-        ("killable", _GetValue),
+        ("name", get_non_empty_string),
+        ("accel", get_accel),
+        ("cmdline", get_non_empty_string),
+        ("workdir", get_workdir),
+        ("stdin", get_choice_option(stdin_options)),
+        ("stdout", get_choice_option(stdout_options)),
+        ("before", get_string_selection),  # Backwards compatibility
+        ("before_exec", get_choice_option(before_options)),
+        ("detach", get_value),
+        ("killable", get_value),
     )
 
     def OnOK(self, evt):
-        command = {}
-        for field_name, getter_method in self._fields:
+        for field_name, getter_func in self._fields:
             ctrl = getattr(self, "field_" + field_name)
             try:
-                value = getter_method(self, ctrl)
+                value = getter_func(ctrl)
             except Exception as e:
                 ctrl.SetFocus()
                 dialogs.error(self, "Error: %s" % e)
                 return
-            command[field_name] = value
-        self.command = command
+            self.command[field_name] = value
         evt.Skip()
 
     def OnHelp(self, evt):
@@ -281,4 +324,5 @@ class CommandsDialog(wx.Dialog):
 if __name__ == "__main__":
     app = wx.App()
     dlg = CommandsDialog(None)
-    dlg.ShowModal()
+    if dlg.ShowModal() == wx.ID_OK:
+        print dlg.GetCommands()
