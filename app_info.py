@@ -21,3 +21,5 @@ company_name = "Iogopro Software"
 url = "https://github.com/shaurz/devo"
 
 bug_report_url = "https://github.com/shaurz/devo/issues"
+
+latest_release_url = "https://github.com/shaurz/devo/releases/latest"

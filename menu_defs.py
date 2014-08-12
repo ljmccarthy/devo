@@ -97,7 +97,8 @@ menubar = MenuBar([
         MenuItem(ID.VIEW_SETTINGS, "&Settings..."),
     ]),
     Menu("&Help", [
-        MenuItem(ID.REPORT_BUG, "Report Bug"),
+        MenuItem(ID.REPORT_BUG, "&Report Bug"),
+        MenuItem(ID.GET_LATEST_VERSION, "&Get Latest Version"),
         MenuSeparator,
         MenuItem(ID.ABOUT, "&About %s..." % app_info.name),
     ]),

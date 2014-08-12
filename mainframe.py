@@ -277,6 +277,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.Bind(wx.EVT_MENU, self.OnShowPaneSearch, id=ID.SHOW_PANE_SEARCH)
         self.Bind(wx.EVT_MENU, self.OnFullScreen, id=ID.FULL_SCREEN)
         self.Bind(wx.EVT_MENU, self.OnReportBug, id=ID.REPORT_BUG)
+        self.Bind(wx.EVT_MENU, self.OnGetLatestVersion, id=ID.GET_LATEST_VERSION)
         self.Bind(wx.EVT_MENU, self.OnAboutBox, id=ID.ABOUT)
 
         self.Bind(wx.EVT_UPDATE_UI, self.UpdateUI_HasEditorTab, id=ID.CLOSE)
@@ -1205,6 +1206,9 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
 
     def OnReportBug(self, evt):
         webbrowser.open_new_tab(app_info.bug_report_url)
+
+    def OnGetLatestVersion(self, evt):
+        webbrowser.open_new_tab(app_info.latest_release_url)
 
     def OnAboutBox(self, evt):
         dlg = AboutDialog(self, self.env)
