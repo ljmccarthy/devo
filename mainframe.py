@@ -1045,6 +1045,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             DIRNAME = dirname,
             BASENAME = basename,
             PROJECT_DIR = self.project_root,
+            SELECTION = editor.GetSelectedText() if editor else "",
             # Old names
             FILE = current_file,
             DIR = os.path.dirname(current_file),

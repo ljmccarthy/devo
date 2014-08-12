@@ -14,10 +14,11 @@ command_help = """\
 Commands may use the following special variables:
 </p>
 <table>
-    <tr><td>$FILEPATH</td><td>Current file name (full path)</td></tr>
-    <tr><td>$DIRNAME</td><td>Directory of current file</td></tr>
-    <tr><td>$BASENAME</td><td>Base filename of current file</td></tr>
-    <tr><td>$PROJECT_DIR</td><td>Project directory</td></tr>
+    <tr><td>$FILEPATH</td><td>Current file name (full path).</td></tr>
+    <tr><td>$DIRNAME</td><td>Directory of current file.</td></tr>
+    <tr><td>$BASENAME</td><td>Base filename of current file.</td></tr>
+    <tr><td>$PROJECT_DIR</td><td>Project directory.</td></tr>
+    <tr><td>$SELECTION</td><td>Current selected text.</td></tr>
 </table>
 """
 
@@ -25,7 +26,7 @@ def check_variables(s):
     try:
         string.Template(s).substitute(
             FILEPATH="", DIRNAME="", BASENAME="", PROJECT_DIR="",
-            FILE="", DIR="")
+            SELECTION="", FILE="", DIR="")
     except KeyError as e:
         raise Exception("Unknown variable name: %s" % e.args)
     except ValueError as e:

@@ -29,13 +29,23 @@ def make_environment(env=None, cwd=None):
 
     return env
 
+shell_prelude = {
+    "darwin": """\
+source ~/.bash_profile\n' \
+export PATH="${PATH}:/usr/local/bin:/usr/X11/bin"
+%s
+""",
+}
+
 def run_shell_command(cmdline, pipe_output=True, combine_stderr=True, env=None, cwd=None, killable=True, **kwargs):
     if sys.platform == "win32":
         args = " && ".join(command.strip() for command in cmdline.split("\n") if command.strip())
     else:
-        args = [os.environ.get("SHELL", "/bin/sh")]
+        cmdline = shell_prelude.get(sys.platform, "%s") % cmdline
+        args = [os.environ.get("SHELL", "/bin/sh"), "-c", cmdline]
 
-    process = (KillablePopen if killable else Popen)(args,
+    return (KillablePopen if killable else Popen)(
+        args = args,
         stdin = subprocess.PIPE,
         stdout = subprocess.PIPE if pipe_output else None,
         stderr = (subprocess.STDOUT if combine_stderr else subprocess.PIPE) if pipe_output else None,
@@ -45,12 +55,3 @@ def run_shell_command(cmdline, pipe_output=True, combine_stderr=True, env=None, 
         cwd = cwd,
         env = make_environment(env, cwd),
         **kwargs)
-
-    if sys.platform != "win32":
-        if sys.platform == "darwin":
-            process.stdin.write(
-                'source ~/.bash_profile;' +
-                'export PATH="${PATH}:/usr/local/bin:/usr/X11/bin";')
-        process.stdin.write("exec %s\n" % cmdline)
-
-    return process
