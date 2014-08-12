@@ -36,7 +36,7 @@ def run_shell_command(cmdline, pipe_output=True, env=None, cwd=None, killable=Tr
         args = [os.environ.get("SHELL", "/bin/sh")]
 
     process = (KillablePopen if killable else Popen)(args,
-        stdin = subprocess.PIPE if sys.platform != "win32" else None,
+        stdin = subprocess.PIPE,
         stdout = subprocess.PIPE if pipe_output else None,
         stderr = subprocess.STDOUT if pipe_output else None,
         bufsize = 1,
@@ -51,7 +51,6 @@ def run_shell_command(cmdline, pipe_output=True, env=None, cwd=None, killable=Tr
             process.stdin.write(
                 'source ~/.bash_profile;' +
                 'export PATH="${PATH}:/usr/local/bin:/usr/X11/bin";')
-        process.stdin.write(cmdline)
-        process.stdin.close()
+        process.stdin.write("exec %s\n" % cmdline)
 
     return process

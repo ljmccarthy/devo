@@ -1012,13 +1012,13 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     def OnUpdate_ConfigureProjectCommands(self, evt):
         evt.Enable(bool(self.project_filename))
 
-    def RunCommand(self, cmdline, workdir=None, detach=False, killable=True, title=""):
+    def RunCommand(self, cmdline, workdir=None, stdin=None, detach=False, killable=True, title=""):
         workdir = workdir or None
         if detach:
             run_shell_command(cmdline, pipe_output=False, cwd=workdir, killable=False)
         else:
             try:
-                self.terminal.run(cmdline, cwd=workdir, killable=killable)
+                self.terminal.run(cmdline, cwd=workdir, stdin=stdin, killable=killable)
                 if not title:
                     command_sep = " && " if sys.platform == "win32" else "; "
                     title = command_sep.join(x.strip() for x in cmdline.split("\n") if x.strip())
@@ -1028,8 +1028,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
 
     @managed("cm")
     @coroutine
-    def DoUserCommand(self, command):
-        editor = self.GetCurrentEditorTab()
+    def DoUserCommand(self, command, editor):
         current_file = editor.path if editor else ""
         dirname = os.path.dirname(current_file)
         basename = os.path.basename(current_file)
@@ -1060,7 +1059,15 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         detach = command.get("detach", False)
         killable = command.get("killable", True)
 
-        self.RunCommand(cmdline, workdir, detach, killable)
+        stdin = None
+        if editor:
+            stdin_option = command.get("stdin", "none")
+            if stdin_option == "current_selection":
+                stdin = editor.GetSelectedText()
+            elif stdin_option == "current_file":
+                stdin = editor.GetText()
+
+        self.RunCommand(cmdline, workdir=workdir, stdin=stdin, detach=detach, killable=killable)
         yield True
 
     def GetSharedCommandById(self, id):
@@ -1077,24 +1084,30 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
 
     def OnSharedCommand(self, evt):
         command = self.GetSharedCommandById(evt.GetId())
-        if command:
-            self.DoUserCommand(command)
+        editor = self.GetCurrentEditorTab()
+        if command and isinstance(editor, Editor):
+            self.DoUserCommand(command, editor)
 
     def OnProjectCommand(self, evt):
         command = self.GetProjectCommandById(evt.GetId())
-        if command:
-            self.DoUserCommand(command)
+        editor = self.GetCurrentEditorTab()
+        if command and isinstance(editor, Editor):
+            self.DoUserCommand(command, editor)
 
-    def ShouldEnabledCommand(self, command):
+    def ShouldEnableCommand(self, command):
         return bool(command and (not self.terminal.is_running or command.get("detach", False)))
+
+    def HasCurrentEditorWithPath(self):
+        editor = self.GetCurrentEditorTab()
+        return bool(isinstance(editor, Editor) and editor.path)
 
     def OnUpdateUI_SharedCommand(self, evt):
         command = self.GetSharedCommandById(evt.GetId())
-        evt.Enable(self.ShouldEnabledCommand(command))
+        evt.Enable(self.ShouldEnableCommand(command) and self.HasCurrentEditorWithPath())
 
     def OnUpdateUI_ProjectCommand(self, evt):
         command = self.GetProjectCommandById(evt.GetId())
-        evt.Enable(self.ShouldEnabledCommand(command))
+        evt.Enable(self.ShouldEnableCommand(command) and self.HasCurrentEditorWithPath())
 
     def OnSelectProject(self, evt):
         index = evt.GetId() - self.project_first_id

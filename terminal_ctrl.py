@@ -110,12 +110,12 @@ class TerminalCtrl(wx.Panel):
     def is_running(self):
         return bool(self.process)
 
-    def run(self, cmdline, env=None, cwd=None, killable=True):
+    def run(self, cmdline, env=None, cwd=None, stdin=None, killable=True):
         if self.process:
             return
 
         self.process = run_shell_command(cmdline, env=env, cwd=cwd, killable=killable)
-        self.thread = threading.Thread(target=self.__thread, args=(self.process,))
+        self.thread = threading.Thread(target=self.__thread, args=(self.process, stdin))
         self.thread.start()
 
         self.cmdline = cmdline
@@ -132,9 +132,12 @@ class TerminalCtrl(wx.Panel):
         if self.process:
             self.process.kill()
 
-    def __thread(self, process):
+    def __thread(self, process, stdin=None):
         rc = None
         try:
+            if stdin is not None:
+                process.stdin.write(stdin)
+            process.stdin.close()
             while True:
                 line = process.stdout.readline()
                 if not line:
