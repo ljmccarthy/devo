@@ -1051,6 +1051,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             BASENAME = basename,
             PROJECT_DIR = self.project_root,
             SELECTION = editor.GetSelectedText() if editor else "",
+            SELECTION_LINE = editor.GetSelectedText().split("\n", 1)[0] if editor else "",
+            DEVO_CONFIG_DIR = self.config_dir,
             # Old names
             FILE = current_file,
             DIR = os.path.dirname(current_file),

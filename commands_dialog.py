@@ -6,6 +6,7 @@ from file_picker import DirPicker
 from html_frame import HtmlFrame
 
 command_help = """\
+<b>Edit Command Help</b>
 <p>Accelerator keys may use modifers, for example:</p>
 <ul>
     <li>Alt+Shift+X</li>
@@ -15,13 +16,15 @@ command_help = """\
 Commands may use the following special variables:
 </p>
 <table>
-    <tr><td>$FILEPATH</td><td>Current file name (full path).</td></tr>
-    <tr><td>$DIRNAME</td><td>Directory of current file.</td></tr>
-    <tr><td>$BASENAME</td><td>Base filename of current file.</td></tr>
-    <tr><td>$PROJECT_DIR</td><td>Project directory.</td></tr>
-    <tr><td>$SELECTION</td><td>Currently selected text.</td></tr>
+    <tr><td><code>$FILEPATH</code></td><td>Current file name (full path).</td></tr>
+    <tr><td><code>$DIRNAME</code></td><td>Directory of current file.</td></tr>
+    <tr><td><code>$BASENAME</code></td><td>Base filename of current file.</td></tr>
+    <tr><td><code>$PROJECT_DIR</code></td><td>Project directory.</td></tr>
+    <tr><td><code>$SELECTION</code></td><td>Currently selected text.</td></tr>
+    <tr><td><code>$SELECTION_LINE</code></td><td>Currently selected text (first line).</td></tr>
+    <tr><td><code>$DEVO_CONFIG_DIR</code></td><td>Devo configuration directory.</td></tr>
 </table>
-<p>To send multi-line selections to the input of one particular command, do this:</p>
+<p>To send multi-line selections to the input of one particular command (Unix shells only):</p>
 <pre>
   cat &lt;&lt;EOF
   $SELECTION
@@ -199,7 +202,7 @@ class EditCommandDialog(wx.Dialog):
 
     def OnHelp(self, evt):
         pos = (self.Position.x - 420, self.Position.y)
-        size = (400, 370)
+        size = (420, 450)
         if not self.help_frame:
             self.help_frame = HtmlFrame(self, command_help, title="Edit Command Help", pos=pos, size=size)
             self.help_frame.Show()
