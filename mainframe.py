@@ -151,7 +151,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                 "icons/devo-icon-%s.png" % size for size in (16, 24, 32, 48, 64, 128, 256)))
 
         self.recent_file_first_id, self.recent_file_last_id = new_id_range(MAX_RECENT_FILES)
-        self.shared_command_first_id, self.shared_command_last_id = new_id_range(100)
+        self.global_command_first_id, self.global_command_last_id = new_id_range(100)
         self.project_command_first_id, self.project_command_last_id = new_id_range(100)
         self.project_first_id, self.project_last_id = new_id_range(100)
 
@@ -265,12 +265,12 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.Bind(wx.EVT_MENU_RANGE, self.OnSelectProject,
                   id=self.project_first_id, id2=self.project_last_id)
 
-        self.Bind(wx.EVT_MENU_RANGE, self.OnSharedCommand,
-                  id=self.shared_command_first_id, id2=self.shared_command_last_id)
+        self.Bind(wx.EVT_MENU_RANGE, self.OnGlobalCommand,
+                  id=self.global_command_first_id, id2=self.global_command_last_id)
         self.Bind(wx.EVT_MENU_RANGE, self.OnProjectCommand,
                   id=self.project_command_first_id, id2=self.project_command_last_id)
-        self.Bind(wx.EVT_UPDATE_UI_RANGE, self.OnUpdateUI_SharedCommand,
-                  id=self.shared_command_first_id, id2=self.shared_command_last_id)
+        self.Bind(wx.EVT_UPDATE_UI_RANGE, self.OnUpdateUI_GlobalCommand,
+                  id=self.global_command_first_id, id2=self.global_command_last_id)
         self.Bind(wx.EVT_UPDATE_UI_RANGE, self.OnUpdateUI_ProjectCommand,
                   id=self.project_command_first_id, id2=self.project_command_last_id)
 
@@ -318,7 +318,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         project_commands = self.project.get("commands", [])
         return {
             "global_commands" : [
-                MenuItem(i + self.shared_command_first_id, command["name"], command["accel"])
+                MenuItem(i + self.global_command_first_id, command["name"], command["accel"])
                 for i, command in enumerate(global_commands)
             ],
             "project_commands" : [
@@ -1078,15 +1078,16 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         stdout = None
         stdout_option = command.get("stdout", "")
         if stdout_option == "replace_selection":
-            stdout = editor.GetSelectionWriter()
+            if editor:
+                stdout = editor.GetSelectionWriter()
         elif stdout_option == "new_editor":
             stdout = NewEditorWriter(self.env)
 
         self.RunCommand(cmdline, workdir=workdir, stdin=stdin, stdout=stdout, detach=detach, killable=killable)
         yield True
 
-    def GetSharedCommandById(self, id):
-        index = id - self.shared_command_first_id
+    def GetGlobalCommandById(self, id):
+        index = id - self.global_command_first_id
         commands = self.settings.get("commands", [])
         if 0 <= index < len(commands):
             return commands[index]
@@ -1097,8 +1098,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         if 0 <= index < len(commands):
             return commands[index]
 
-    def OnSharedCommand(self, evt):
-        command = self.GetSharedCommandById(evt.GetId())
+    def OnGlobalCommand(self, evt):
+        command = self.GetGlobalCommandById(evt.GetId())
         editor = self.GetCurrentEditorTab()
         if command and isinstance(editor, Editor):
             self.DoUserCommand(command, editor)
@@ -1112,17 +1113,13 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     def ShouldEnableCommand(self, command):
         return bool(command and (not self.terminal.is_running or command.get("detach", False)))
 
-    def HasCurrentEditorWithPath(self):
-        editor = self.GetCurrentEditorTab()
-        return bool(isinstance(editor, Editor) and editor.path)
-
-    def OnUpdateUI_SharedCommand(self, evt):
-        command = self.GetSharedCommandById(evt.GetId())
-        evt.Enable(self.ShouldEnableCommand(command) and self.HasCurrentEditorWithPath())
+    def OnUpdateUI_GlobalCommand(self, evt):
+        command = self.GetGlobalCommandById(evt.GetId())
+        evt.Enable(self.ShouldEnableCommand(command))
 
     def OnUpdateUI_ProjectCommand(self, evt):
         command = self.GetProjectCommandById(evt.GetId())
-        evt.Enable(self.ShouldEnableCommand(command) and self.HasCurrentEditorWithPath())
+        evt.Enable(self.ShouldEnableCommand(command))
 
     def OnSelectProject(self, evt):
         index = evt.GetId() - self.project_first_id
