@@ -5,7 +5,7 @@ import aui
 import app_info, async, fileutil, ID
 from about_dialog import AboutDialog
 from async import async_call, coroutine, queued_coroutine, managed, CoroutineManager, CoroutineQueue
-from commands_dialog import CommandsDialog
+from commands_dialog import CommandsDialog, before_options
 from dialogs import dialogs
 from dirtree import DirNode
 from dirtree_filter import DirTreeFilter
@@ -1056,11 +1056,14 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         workdir = string.Template(workdir).safe_substitute(env)
         workdir = os.path.join(self.project_root or dirname or os.path.expanduser("~"), workdir)
 
-        before = command.get("before", "")
-        if before == "Save Current File":
+        before_exec = command.get("before_exec", "")
+        if not before_exec:
+            # Backwards compatibility
+            before_exec = dict(before_options).get(command.get("before", ""))
+        if before_exec == "save_current_file":
             if editor and editor.path and editor.modified and not (yield editor.Save()):
                 yield False
-        elif before == "Save All Files":
+        elif before_exec == "save_all_files":
             for editor in self.editors:
                 if editor.path and editor.modified and not (yield editor.Save()):
                     yield False
