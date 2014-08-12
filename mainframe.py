@@ -1039,11 +1039,13 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
 
     @managed("cm")
     @coroutine
-    def DoUserCommand(self, command, editor):
+    def DoUserCommand(self, command):
+        editor = self.GetCurrentEditorTab()
         current_file = editor.path if editor else ""
         dirname = os.path.dirname(current_file)
         basename = os.path.basename(current_file)
-        env = dict(
+        env = os.environ.copy()
+        env.update(
             FILEPATH = current_file,
             DIRNAME = dirname,
             BASENAME = basename,
@@ -1053,11 +1055,20 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             FILE = current_file,
             DIR = os.path.dirname(current_file),
         )
+
         cmdline = string.Template(command["cmdline"]).safe_substitute(env)
         cmdline = cmdline.encode("utf-8")
+
         workdir = os.path.expanduser(command.get("workdir", ""))
         workdir = string.Template(workdir).safe_substitute(env)
         workdir = os.path.join(self.project_root or dirname or os.path.expanduser("~"), workdir)
+
+        if not os.path.isdir(workdir):
+            if os.path.exists(workdir):
+                dialogs.error(self, "Error: %s is not a directory." % workdir)
+            else:
+                dialogs.error(self, "Error: %s does not exist." % workdir)
+            yield False
 
         save_option = command.get("save", "")
         if not save_option:
@@ -1110,15 +1121,13 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
 
     def OnGlobalCommand(self, evt):
         command = self.GetGlobalCommandById(evt.GetId())
-        editor = self.GetCurrentEditorTab()
-        if command and isinstance(editor, Editor):
-            self.DoUserCommand(command, editor)
+        if command:
+            self.DoUserCommand(command)
 
     def OnProjectCommand(self, evt):
         command = self.GetProjectCommandById(evt.GetId())
-        editor = self.GetCurrentEditorTab()
-        if command and isinstance(editor, Editor):
-            self.DoUserCommand(command, editor)
+        if command:
+            self.DoUserCommand(command)
 
     def ShouldEnableCommand(self, command):
         return bool(command and (not self.terminal.is_running or command.get("detach", False)))

@@ -31,11 +31,9 @@ Commands may use the following special variables:
 
 def check_variables(s):
     try:
-        string.Template(s).substitute(
-            FILEPATH="", DIRNAME="", BASENAME="", PROJECT_DIR="",
-            SELECTION="", FILE="", DIR="")
+        string.Template(s).substitute()
     except KeyError as e:
-        raise Exception("Unknown variable name: %s" % e.args)
+        pass
     except ValueError as e:
         raise Exception("Variable name missing after $")
 
