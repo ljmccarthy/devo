@@ -38,8 +38,8 @@ def check_variables(s):
     except ValueError as e:
         raise Exception("Variable name missing after $")
 
-before_options = [
-    ("Do Nothing", "do_nothing"),
+save_options = [
+    ("Do Not Save", "do_not_save"),
     ("Save Current File", "save_current_file"),
     ("Save All Files", "save_all_files"),
 ]
@@ -57,7 +57,7 @@ stdout_options = [
     ("Send To New Editor", "new_editor"),
 ]
 
-before_option_indices = {x[1]: i for i, x in enumerate(before_options)}
+save_option_indices = {x[1]: i for i, x in enumerate(save_options)}
 stdin_option_indices = {x[1]: i for i, x in enumerate(stdin_options)}
 stdout_option_indices = {x[1]: i for i, x in enumerate(stdout_options)}
 
@@ -107,14 +107,14 @@ class EditCommandDialog(wx.Dialog):
         self.field_stdout = wx.Choice(self, choices=list(x[0] for x in stdout_options))
         self.field_stdout.SetSelection(stdout_option_indices.get(command.get("stdout", ""), 0))
 
-        self.field_before = wx.Choice(self, choices=list(x[0] for x in before_options))
-        self.field_before_exec = self.field_before
-        if "before_exec" in command:
-            self.field_before.SetSelection(before_option_indices.get(command.get("before_exec", ""), 0))
+        self.field_save = wx.Choice(self, choices=list(x[0] for x in save_options))
+        self.field_before = self.field_save
+        if "save" in command:
+            self.field_save.SetSelection(save_option_indices.get(command.get("save", ""), 0))
         else:
             # Backwards compatibility
-            if not self.field_before.SetStringSelection(command.get("before", "")):
-                self.field_before.SetSelection(0)
+            if not self.field_save.SetStringSelection(command.get("before", "")):
+                self.field_save.SetSelection(0)
 
         self.field_detach = wx.CheckBox(self, label="Detach Process")
         self.field_detach.SetValue(command.get("detach", False))
@@ -138,7 +138,7 @@ class EditCommandDialog(wx.Dialog):
         grid.Add(wx.StaticText(self, label="Standard Output"), 0, wx.ALIGN_CENTER_VERTICAL)
         grid.Add(self.field_stdout, 0, wx.EXPAND)
         grid.Add(wx.StaticText(self, label="Before Executing"), 0, wx.ALIGN_CENTER_VERTICAL)
-        grid.Add(self.field_before, 0, wx.EXPAND)
+        grid.Add(self.field_save, 0, wx.EXPAND)
         grid.AddSpacer(0)
         flag_sizer = wx.BoxSizer(wx.VERTICAL)
         flag_sizer.Add(self.field_detach, 1, wx.EXPAND)
@@ -181,7 +181,7 @@ class EditCommandDialog(wx.Dialog):
         ("stdin", get_choice_option(stdin_options)),
         ("stdout", get_choice_option(stdout_options)),
         ("before", get_string_selection),  # Backwards compatibility
-        ("before_exec", get_choice_option(before_options)),
+        ("save", get_choice_option(save_options)),
         ("detach", get_value),
         ("killable", get_value),
     )
