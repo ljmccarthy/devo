@@ -178,7 +178,6 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.editor_focus = None
         self.editor_highlight = [None, None]
         self.editor_font = get_font_from_settings({})
-        self.menu_open = False
         self.closing = False
         self.closed = False
 
@@ -202,8 +201,6 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.Bind(wx.EVT_CLOSE, self.OnClose)
         self.Bind(wx.EVT_ACTIVATE, self.OnActivate)
         self.Bind(wx.EVT_CHILD_FOCUS, self.OnChildFocus)
-        self.Bind(wx.EVT_MENU_OPEN, self.OnMenuOpen)
-        self.Bind(wx.EVT_MENU_CLOSE, self.OnMenuClose)
         self.Bind(aui.EVT_AUI_PANE_CLOSE, self.OnPaneClose)
         self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CLOSE, self.OnPageClose)
         self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnPageChanged)
@@ -1244,14 +1241,6 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                 self.editor_focus = focus
                 return
             focus = focus.Parent
-
-    def OnMenuOpen(self, evt):
-        evt.Skip()
-        self.menu_open = True
-
-    def OnMenuClose(self, evt):
-        evt.Skip()
-        self.menu_open = False
 
     def OnFilesChanged(self, updated_paths, deleted_paths):
         for path in updated_paths:

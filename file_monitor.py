@@ -58,8 +58,6 @@ class FileMonitor(wx.EvtHandler):
         if self.top_level_focus:
             if get_top_level_focus() is not self.top_level_focus:
                 return
-            #if self.top_level_focus.menu_open:
-            #    return
 
         updated_paths = []
         deleted_paths = []
