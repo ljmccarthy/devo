@@ -18,8 +18,14 @@ Commands may use the following special variables:
     <tr><td>$DIRNAME</td><td>Directory of current file.</td></tr>
     <tr><td>$BASENAME</td><td>Base filename of current file.</td></tr>
     <tr><td>$PROJECT_DIR</td><td>Project directory.</td></tr>
-    <tr><td>$SELECTION</td><td>Current selected text.</td></tr>
+    <tr><td>$SELECTION</td><td>Currently selected text.</td></tr>
 </table>
+<p>To send multi-line selections to the input of one particular command, do this:</p>
+<pre>
+  cat &lt;&lt;EOF
+  $SELECTION
+  EOF
+</pre>
 """
 
 def check_variables(s):
@@ -191,7 +197,7 @@ class EditCommandDialog(wx.Dialog):
 
     def OnHelp(self, evt):
         pos = (self.Position.x - 420, self.Position.y)
-        size = (400, 250)
+        size = (400, 370)
         if not self.help_frame:
             self.help_frame = HtmlFrame(self, command_help, title="Edit Command Help", pos=pos, size=size)
             self.help_frame.Show()
