@@ -1031,10 +1031,12 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     def DoUserCommand(self, command):
         editor = self.GetCurrentEditorTab()
         current_file = editor.path if editor else ""
+        dirname = os.path.dirname(current_file)
+        basename = os.path.basename(current_file)
         env = dict(
             FILEPATH = current_file,
-            DIRNAME = os.path.dirname(current_file),
-            BASENAME = os.path.basename(current_file),
+            DIRNAME = dirname,
+            BASENAME = basename,
             PROJECT_DIR = self.project_root,
             # Old names
             FILE = current_file,
@@ -1044,7 +1046,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         cmdline = cmdline.encode("utf-8")
         workdir = os.path.expanduser(command.get("workdir", ""))
         workdir = string.Template(workdir).safe_substitute(env)
-        workdir = os.path.join(self.project_root or os.path.expanduser("~"), workdir)
+        workdir = os.path.join(self.project_root or dirname or os.path.expanduser("~"), workdir)
 
         before = command.get("before", "")
         if before == "Save Current File":
