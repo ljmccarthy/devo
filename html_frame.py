@@ -1,20 +1,33 @@
 import wx, wx.html
 
-class HtmlFrame(wx.Frame):
-    def __init__(self, parent, page="", title="", pos=wx.DefaultPosition, size=wx.DefaultSize):
-        style = wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT
+class HtmlPopup(wx.PopupWindow):
+    def __init__(self, parent, page="", pos=wx.DefaultPosition, size=wx.DefaultSize):
         if size == wx.DefaultSize:
             size = (500, 300)
-        wx.Frame.__init__(self, parent, title=title, pos=pos, size=size, style=style)
+        super(HtmlPopup, self).__init__(parent)
+        self.SetPosition(pos)
+        self.SetSize(size)
+        self.SetMinSize((100, 100))
+
         self.html = wx.html.HtmlWindow(self)
         self.html.SetPage(page)
         sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(self.html, 1, wx.EXPAND)
+        sizer.Add(self.html, 1, wx.EXPAND|wx.ALL, 1)
         self.SetSizer(sizer)
-        self.SetMinSize((100, 100))
+
+        self.Bind(wx.EVT_PAINT, self.OnPaint)
+
+    def OnPaint(self, evt):
+        width, height = self.ClientSize
+        dc = wx.PaintDC(self)
+        dc.BeginDrawing()
+        dc.Clear()
+        dc.SetPen(wx.BLACK_PEN)
+        dc.DrawRectangle(0, 0, width, height)
+        dc.EndDrawing()
 
 if __name__ == "__main__":
     app = wx.App()
-    dlg = HtmlFrame(None, "<h1>Hello, <i>World</i></h1>", title="Hello")
+    dlg = HtmlPopup(None, "<h1>Hello, <i>World</i></h1>")
     dlg.Show()
     app.MainLoop()

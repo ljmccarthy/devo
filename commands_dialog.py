@@ -3,11 +3,11 @@ import wx
 from accelerator import parse_accelerator, unparse_accelerator
 from dialogs import dialogs
 from file_picker import DirPicker
-from html_frame import HtmlFrame
+from html_frame import HtmlPopup
 
 command_help = """\
 <b>Edit Command Help</b>
-<p>Accelerator keys may use modifers, for example:</p>
+<p>Example accelerator keys:</p>
 <ul>
     <li>Alt+Shift+X</li>
     <li>Ctrl+F10</li>
@@ -202,19 +202,10 @@ class EditCommandDialog(wx.Dialog):
 
     def OnHelp(self, evt):
         pos = (self.Position.x - 420, self.Position.y)
-        size = (420, 450)
+        size = (400, 420)
         if not self.help_frame:
-            self.help_frame = HtmlFrame(self, command_help, title="Edit Command Help", pos=pos, size=size)
-            self.help_frame.Show()
-            self.help_frame.Bind(wx.EVT_CLOSE, self.OnHelpFrameClose)
-        else:
-            frame, self.help_frame = self.help_frame, None
-            frame.Destroy()
-
-    def OnHelpFrameClose(self, evt):
-        if self.help_frame:
-            frame, self.help_frame = self.help_frame, None
-            frame.Destroy()
+            self.help_frame = HtmlPopup(self, command_help, pos=pos, size=size)
+        self.help_frame.Show(not self.help_frame.IsShown())
 
     def OnUpdateUI_DisableWhenDetached(self, evt):
         evt.Enable(not self.field_detach.Value)
