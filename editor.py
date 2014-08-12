@@ -27,10 +27,12 @@ def encode_text(text, encoding):
 class EditorSelectionWriter(object):
     def __init__(self, editor):
         self.editor = editor
+        self.selection = editor.GetSelection()
         self.editor.SetReadOnly(True)
 
     def write(self, s):
         self.editor.SetReadOnly(False)
+        self.editor.SetSelection(*self.selection)
         self.editor.ReplaceSelection(s)
 
 class Editor(StyledTextCtrl, wx.FileDropTarget):
