@@ -1076,6 +1076,9 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
             stdin_option = command.get("stdin", "")
             if stdin_option == "current_selection":
                 stdin = editor.GetSelectedText()
+            elif stdin_option == "current_selection_lines":
+                editor.SelectLines()
+                stdin = editor.GetSelectedText()
             elif stdin_option == "current_file":
                 stdin = editor.GetText()
 

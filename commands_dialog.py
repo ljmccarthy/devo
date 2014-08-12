@@ -46,8 +46,9 @@ before_options = [
 
 stdin_options = [
     ("No Input", "none"),
-    ("Send Current Selection", "current_selection"),
-    ("Send Current File", "current_file"),
+    ("Current Selection", "current_selection"),
+    ("Current Selection (Lines)", "current_selection_lines"),
+    ("Current File", "current_file"),
 ]
 
 stdout_options = [

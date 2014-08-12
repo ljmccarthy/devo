@@ -33,7 +33,7 @@ class EditorSelectionWriter(object):
     def write(self, s):
         self.editor.SetReadOnly(False)
         self.editor.SetSelection(*self.selection)
-        self.editor.ReplaceSelection(s)
+        self.editor.ReplaceSelectionAndSelect(s)
 
 class Editor(StyledTextCtrl, wx.FileDropTarget):
     def __init__(self, parent, env, path=""):
