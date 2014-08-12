@@ -613,13 +613,16 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     @managed("cm")
     @coroutine
     def OpenNewProject(self, project, project_root):
-        if (yield self.SaveProject()):
-            if os.path.exists(make_project_filename(project_root)):
-                yield self.OpenProject(project_root, update=project)
-            else:
-                self.SetProject(project, project_root)
-                yield self.SaveProject()
-                yield self.SaveSettings()
+        if not fileutil.can_use_directory(project_root):
+            dialogs.error(self, "Error: Insufficient permissions to use %s" % project_root)
+        else:
+            if (yield self.SaveProject()):
+                if os.path.exists(make_project_filename(project_root)):
+                    yield self.OpenProject(project_root, update=project)
+                else:
+                    self.SetProject(project, project_root)
+                    yield self.SaveProject()
+                    yield self.SaveSettings()
 
     def _ShowLoadProjectError(self, exn, filename, ask_remove=True):
         self.Show()
@@ -638,10 +641,19 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     @coroutine
     def OpenProject(self, project_root, update={}):
         project_root = os.path.realpath(project_root)
+        project_filename = make_project_filename(project_root)
+
+        if not fileutil.can_use_directory(project_root):
+            dialogs.error(self, "Error: Insufficient permissions to use %s" % project_root)
+            yield False
+        if not fileutil.can_use_file(project_filename):
+            dialogs.error(self, "Error: Insufficient permissions to use %s" % project_filename)
+            yield False
+
         newly_added = project_root not in self.project_info
         if (yield self.SaveProject()):
             try:
-                project = (yield async_call(read_settings, make_project_filename(project_root)))
+                project = (yield async_call(read_settings, project_filename))
                 project.update(update)
                 self.SetProject(project, project_root)
                 try:

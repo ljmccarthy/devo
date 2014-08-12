@@ -1,5 +1,7 @@
 import os
 import wx
+
+import fileutil
 from file_picker import DirPicker
 
 class NewProjectDialog(wx.Dialog):
@@ -37,7 +39,8 @@ class NewProjectDialog(wx.Dialog):
         self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateUI_OK, id=wx.ID_OK)
 
     def OnUpdateUI_OK(self, evt):
-        evt.Enable(bool(self.GetName()) and os.path.isdir(self.GetRoot()))
+        root = self.GetRoot()
+        evt.Enable(bool(self.GetName() and os.path.isdir(root) and fileutil.can_use_directory(root)))
 
     def GetName(self):
         return self.text_name.GetValue().strip()

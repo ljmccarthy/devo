@@ -81,6 +81,12 @@ def mount_point(path):
         path = os.path.join(path, "..")
     return path
 
+def can_use_directory(path):
+    return os.access(path, os.R_OK | os.W_OK | os.X_OK)
+
+def can_use_file(path):
+    return os.access(path, os.R_OK | os.W_OK)
+
 @coroutine
 def shell_remove(path, parent=None):
     if ask_delete_file(parent, path):
