@@ -204,7 +204,9 @@ class EditCommandDialog(wx.Dialog):
         pos = (self.Position.x - 420, self.Position.y)
         size = (400, 420)
         if not self.help_frame:
-            self.help_frame = HtmlPopup(self, command_help, pos=pos, size=size)
+            self.help_frame = HtmlPopup(self, command_help)
+        self.help_frame.SetPosition(pos)
+        self.help_frame.SetSize(size)
         self.help_frame.Show(not self.help_frame.IsShown())
 
     def OnUpdateUI_DisableWhenDetached(self, evt):
