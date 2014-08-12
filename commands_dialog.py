@@ -168,7 +168,9 @@ class EditCommandDialog(wx.Dialog):
 
         self.Bind(wx.EVT_BUTTON, self.OnOK, id=wx.ID_OK)
         self.Bind(wx.EVT_BUTTON, self.OnHelp, id=wx.ID_HELP)
-        self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateKillable, self.field_killable)
+        self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateUI_DisableWhenDetached, self.field_killable)
+        self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateUI_DisableWhenDetached, self.field_stdin)
+        self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateUI_DisableWhenDetached, self.field_stdout)
 
     _fields = (
         ("name", get_non_empty_string),
@@ -211,7 +213,7 @@ class EditCommandDialog(wx.Dialog):
             frame, self.help_frame = self.help_frame, None
             frame.Destroy()
 
-    def OnUpdateKillable(self, evt):
+    def OnUpdateUI_DisableWhenDetached(self, evt):
         evt.Enable(not self.field_detach.Value)
 
 class CommandsDialog(wx.Dialog):
