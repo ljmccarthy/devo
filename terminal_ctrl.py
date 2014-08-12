@@ -144,14 +144,13 @@ class TerminalCtrl(wx.Panel):
                 line = process.stdout.readline()
                 if not line:
                     break
-                line = line.decode("utf-8", "replace")
-                self.output.write(line)
+                self.output.write(line.decode("utf-8", "replace"))
                 if buffer:
                     buffer.write(line)
             rc = process.wait()
         finally:
             if buffer:
-                s = buffer.getvalue()
+                s = buffer.getvalue().decode("utf-8", "replace")
                 buffer.close()
                 wx.CallAfter(stdout.write, s)
             try:
