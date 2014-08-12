@@ -29,7 +29,7 @@ def make_environment(env=None, cwd=None):
 
     return env
 
-def run_shell_command(cmdline, pipe_output=True, env=None, cwd=None, killable=True, **kwargs):
+def run_shell_command(cmdline, pipe_output=True, combine_stderr=True, env=None, cwd=None, killable=True, **kwargs):
     if sys.platform == "win32":
         args = " && ".join(command.strip() for command in cmdline.split("\n") if command.strip())
     else:
@@ -38,7 +38,7 @@ def run_shell_command(cmdline, pipe_output=True, env=None, cwd=None, killable=Tr
     process = (KillablePopen if killable else Popen)(args,
         stdin = subprocess.PIPE,
         stdout = subprocess.PIPE if pipe_output else None,
-        stderr = subprocess.STDOUT if pipe_output else None,
+        stderr = (subprocess.STDOUT if combine_stderr else subprocess.PIPE) if pipe_output else None,
         bufsize = 1,
         close_fds = (sys.platform != "win32"),
         shell = (sys.platform == "win32"),

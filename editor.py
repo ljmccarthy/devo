@@ -24,6 +24,15 @@ def encode_text(text, encoding):
     except UnicodeEncodeError:
         return text.encode("utf-8"), "utf-8"
 
+class EditorSelectionWriter(object):
+    def __init__(self, editor):
+        self.editor = editor
+        self.editor.SetReadOnly(True)
+
+    def write(self, s):
+        self.editor.SetReadOnly(False)
+        self.editor.ReplaceSelection(s)
+
 class Editor(StyledTextCtrl, wx.FileDropTarget):
     def __init__(self, parent, env, path=""):
         StyledTextCtrl.__init__(self, parent, env)
@@ -334,6 +343,10 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
         if selected:
             url = "https://www.google.com/search?" + urlencode([("q", selected)])
             self.env.open_web_view(url)
+
+    def GetSelectionWriter(self):
+        if not self.GetReadOnly():
+            return EditorSelectionWriter(self)
 
     def SavePerspective(self):
         p = {

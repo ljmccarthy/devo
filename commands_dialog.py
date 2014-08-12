@@ -46,7 +46,7 @@ stdin_options = [
 stdout_options = [
     ("Show In Terminal", "show_in_terminal"),
     ("Replace Current Selection", "replace_selection"),
-    ("Send To New Tab", "new_editor"),
+    ("Send To New Editor", "new_editor"),
 ]
 
 before_option_indices = {x[1]: i for i, x in enumerate(before_options)}

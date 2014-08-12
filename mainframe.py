@@ -111,6 +111,13 @@ class AppEnv(object):
     def editor_font(self):
         return self._mainframe.editor_font
 
+class NewEditorWriter(object):
+    def __init__(self, env):
+        self.env = env
+
+    def write(self, s):
+        self.env.open_text(s)
+
 MAX_RECENT_FILES = 20
 
 DEFAULT_WIDTH = 1200
@@ -1012,17 +1019,18 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     def OnUpdate_ConfigureProjectCommands(self, evt):
         evt.Enable(bool(self.project_filename))
 
-    def RunCommand(self, cmdline, workdir=None, stdin=None, detach=False, killable=True, title=""):
+    def RunCommand(self, cmdline, workdir=None, stdin=None, stdout=None, detach=False, killable=True, title=""):
         workdir = workdir or None
         if detach:
             run_shell_command(cmdline, pipe_output=False, cwd=workdir, killable=False)
         else:
             try:
-                self.terminal.run(cmdline, cwd=workdir, stdin=stdin, killable=killable)
+                self.terminal.run(cmdline, cwd=workdir, stdin=stdin, stdout=stdout, killable=killable)
                 if not title:
                     command_sep = " && " if sys.platform == "win32" else "; "
                     title = command_sep.join(x.strip() for x in cmdline.split("\n") if x.strip())
-                self.ShowPane(self.terminal, title=title)
+                if not stdout:
+                    self.ShowPane(self.terminal, title=title)
             except Exception as e:
                 dialogs.error(self, "Error executing command:\n\n%s" % traceback.format_exc())
 
@@ -1061,13 +1069,20 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
 
         stdin = None
         if editor:
-            stdin_option = command.get("stdin", "none")
+            stdin_option = command.get("stdin", "")
             if stdin_option == "current_selection":
                 stdin = editor.GetSelectedText()
             elif stdin_option == "current_file":
                 stdin = editor.GetText()
 
-        self.RunCommand(cmdline, workdir=workdir, stdin=stdin, detach=detach, killable=killable)
+        stdout = None
+        stdout_option = command.get("stdout", "")
+        if stdout_option == "replace_selection":
+            stdout = editor.GetSelectionWriter()
+        elif stdout_option == "new_editor":
+            stdout = NewEditorWriter(self.env)
+
+        self.RunCommand(cmdline, workdir=workdir, stdin=stdin, stdout=stdout, detach=detach, killable=killable)
         yield True
 
     def GetSharedCommandById(self, id):

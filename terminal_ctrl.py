@@ -1,5 +1,6 @@
 import os, re, threading
 import wx
+from cStringIO import StringIO
 
 from dialogs import dialogs
 from killableprocess import Popen as KillablePopen
@@ -110,12 +111,12 @@ class TerminalCtrl(wx.Panel):
     def is_running(self):
         return bool(self.process)
 
-    def run(self, cmdline, env=None, cwd=None, stdin=None, killable=True):
+    def run(self, cmdline, env=None, cwd=None, stdin=None, stdout=None, killable=True):
         if self.process:
             return
 
         self.process = run_shell_command(cmdline, env=env, cwd=cwd, killable=killable)
-        self.thread = threading.Thread(target=self.__thread, args=(self.process, stdin))
+        self.thread = threading.Thread(target=self.__thread, args=(self.process, stdin, stdout))
         self.thread.start()
 
         self.cmdline = cmdline
@@ -132,8 +133,9 @@ class TerminalCtrl(wx.Panel):
         if self.process:
             self.process.kill()
 
-    def __thread(self, process, stdin=None):
+    def __thread(self, process, stdin=None, stdout=None):
         rc = None
+        buffer = StringIO() if stdout else None
         try:
             if stdin is not None:
                 process.stdin.write(stdin)
@@ -142,7 +144,14 @@ class TerminalCtrl(wx.Panel):
                 line = process.stdout.readline()
                 if not line:
                     break
-                self.output.write(line.decode("utf-8", "replace"))
+                line = line.decode("utf-8", "replace")
+                self.output.write(line)
+                if buffer:
+                    buffer.write(line)
+            if buffer:
+                s = buffer.getvalue()
+                buffer.close()
+                wx.CallAfter(stdout.write, s)
             rc = process.wait()
         finally:
             try:
