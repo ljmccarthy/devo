@@ -214,8 +214,8 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
             path = os.path.realpath(path)
             try:
                 yield self.WriteFile(path)
-            except Exception as exn:
-                dialogs.error(self.dialog_parent, "Error saving file '%s'\n\n%s" % (path, exn))
+            except Exception as e:
+                dialogs.error(self.dialog_parent, "Error saving file '%s'\n\n%s" % (path, e))
                 raise
             else:
                 self.SetPath(path)
@@ -223,14 +223,25 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
         yield False
 
     @coroutine
-    def SaveAs(self):
+    def SaveAsInNewTab(self):
         path = self.env.get_file_to_save(path=os.path.dirname(self.path))
         if path:
             path = os.path.realpath(path)
             editor = self.env.new_editor(path)
             editor.SetText(self.GetText())
-            yield editor.WriteFile(path)
-            editor.SetPath(path)
+            try:
+                yield editor.WriteFile(path)
+            except Exception as e:
+                dialogs.error(self.dialog_parent, "Error saving file '%s'\n\n%s" % (path, e))
+                raise
+            else:
+                editor.SetPath(path)
+
+    def SaveAs(self):
+        if self.path:
+            return self.SaveAsInNewTab()
+        else:
+            return self.SaveAsInSameTab()
 
     @coroutine
     def Save(self):
@@ -239,8 +250,8 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
                 yield self.WriteFile(self.path)
                 self.env.add_monitor_path(self.path)
                 yield True
-            except Exception as exn:
-                dialogs.error(self.dialog_parent, "Error saving file '%s'\n\n%s" % (self.path, exn))
+            except Exception as e:
+                dialogs.error(self.dialog_parent, "Error saving file '%s'\n\n%s" % (self.path, e))
                 raise
         else:
             yield (yield self.SaveAsInSameTab())
