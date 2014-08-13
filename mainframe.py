@@ -57,6 +57,9 @@ class AppEnv(object):
     def open_static_text(self, title, text):
         return self._mainframe.OpenStaticEditor(title, text)
 
+    def show_terminal(self):
+        self._mainframe.ShowPane(self._mainframe.terminal)
+
     def add_recent_file(self, path):
         self._mainframe.AddRecentFile(path)
 

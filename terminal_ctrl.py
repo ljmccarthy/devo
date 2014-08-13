@@ -149,7 +149,7 @@ class TerminalCtrl(wx.Panel):
                     buffer.write(line)
             rc = process.wait()
         finally:
-            if buffer:
+            if buffer and rc == 0:
                 s = buffer.getvalue().decode("utf-8", "replace")
                 buffer.close()
                 wx.CallAfter(stdout.write, s)
@@ -159,6 +159,8 @@ class TerminalCtrl(wx.Panel):
                 pass
 
     def __thread_exit(self, process, rc):
+        if rc != 0:
+            self.env.show_terminal()
         self.set_status("Process terminated%s" % (
             " with return code %d" % rc if rc is not None else ""))
         if self.process is process:
