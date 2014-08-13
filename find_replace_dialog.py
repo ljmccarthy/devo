@@ -78,11 +78,7 @@ class FindReplaceDetails(object):
         text = _get_selected_or_target_text(editor, target)
         if text:
             if self.regexp:
-                try:
-                    repl = self.rx_find.sub(self.replace, text, 1)
-                except re.error as e:
-                    dialogs.error(editor, "Replace error:\n\n" + str(e).capitalize())
-                    return False
+                repl = self.rx_find.sub(self.replace, text, 1)
             else:
                 repl = self.replace
             if target:
@@ -254,27 +250,39 @@ class FindReplaceDialog(wx.Dialog):
 
     def OnFind(self, evt):
         details = self.GetFindDetails(True)
-        if details and not details.Find(self.editor):
-            dialogs.info(self, "Pattern not found: '%s'" % details.find, "Find")
+        if details:
+            try:
+                if not details.Find(self.editor):
+                    dialogs.info(self, "Pattern not found: '%s'" % details.find, "Find")
+            except re.error as e:
+                dialogs.error(self, "Error: %s." % str(e).capitalize())
 
     def OnReplace(self, evt):
         details = self.GetFindDetails(True)
-        if details and not details.Replace(self.editor):
-            dialogs.info(self, "Pattern not found: '%s'" % details.find, "Replace")
+        if details:
+            try:
+                if not details.Replace(self.editor):
+                    dialogs.info(self, "Pattern not found: '%s'" % details.find, "Replace")
+            except re.error as e:
+                dialogs.error(self, "Error: %s." % str(e).capitalize())
 
     def OnReplaceAll(self, evt):
         details = self.GetFindDetails(True)
         if not details:
             return
-        count = details.ReplaceAll(self.editor)
-        if count > 0:
-            dialogs.info(self,
-                "Replaced %d instances of '%s'" % (count, details.find),
-                "Replace All")
+        try:
+            count = details.ReplaceAll(self.editor)
+        except re.error as e:
+            dialogs.error(self, "Error: %s." % str(e).capitalize())
         else:
-            dialogs.info(self,
-                "Pattern not found: '%s'" % details.find,
-                "Replace All")
+            if count > 0:
+                dialogs.info(self,
+                    "Replaced %d instances of '%s'" % (count, details.find),
+                    "Replace All")
+            else:
+                dialogs.info(self,
+                    "Pattern not found: '%s'" % details.find,
+                    "Replace All")
 
     def OnUpdateFind(self, evt):
         evt.Enable(bool(self.combo_find.GetValue()))
@@ -291,5 +299,5 @@ class FindReplaceDialog(wx.Dialog):
                 regexp = self.check_regexp.GetValue())
         except re.error as e:
             if show_error:
-                dialogs.error(self.editor,
-                    "Invalid regular expression:\n\n" + str(e).capitalize())
+                dialogs.error(self,
+                    "Invalid regular expression: %s." % str(e).capitalize())
