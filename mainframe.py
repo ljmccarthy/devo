@@ -473,15 +473,15 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     @managed("cm")
     @coroutine
     def SaveSettings(self):
-        self.settings["projects"] = sorted(self.project_info)
-        self.settings["last_project"] = self.project_root
-        self.settings["recent_files"] = list(self.recent_files)
-        self.settings["dialogs"] = dialogs.save_state()
-        self.settings["find_details"] = self.find_details.SavePerspective()
-        self.settings["search_details"] = self.search_details.SavePerspective()
-        self.settings["window_rect"] = self.Rect.Get()
-        self.settings["window_state"] = "fullscreen" if self.IsFullScreen() else "maximized" if self.IsMaximized() else "normal"
         try:
+            self.settings["projects"] = sorted(self.project_info)
+            self.settings["last_project"] = self.project_root
+            self.settings["recent_files"] = list(self.recent_files)
+            self.settings["dialogs"] = dialogs.save_state()
+            self.settings["find_details"] = self.find_details.SavePerspective()
+            self.settings["search_details"] = self.search_details.SavePerspective()
+            self.settings["window_rect"] = self.Rect.Get()
+            self.settings["window_state"] = "fullscreen" if self.IsFullScreen() else "maximized" if self.IsMaximized() else "normal"
             yield async_call(write_settings, self.settings_filename, self.settings)
             yield True
         except Exception as e:
