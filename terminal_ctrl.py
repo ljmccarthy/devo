@@ -154,6 +154,8 @@ class TerminalCtrl(wx.Panel):
                 buffer.close()
                 if rc == 0:
                     wx.CallAfter(stdout.write, s)
+                else:
+                    wx.CallAfter(stdout.close)
             try:
                 wx.CallAfter(self.__thread_exit, process, rc)
             except wx.PyDeadObjectError:

@@ -35,6 +35,9 @@ class EditorSelectionWriter(object):
         self.editor.SetSelection(*self.selection)
         self.editor.ReplaceSelectionAndSelect(s)
 
+    def close(self):
+        self.editor.SetReadOnly(False)
+
 class EditorAllTextWriter(object):
     def __init__(self, editor):
         self.editor = editor
@@ -45,6 +48,9 @@ class EditorAllTextWriter(object):
         line_num = self.editor.GetFirstVisibleLine()
         self.editor.SetText(s)
         self.editor.ScrollToLine(line_num)
+
+    def close(self):
+        self.editor.SetReadOnly(False)
 
 class Editor(StyledTextCtrl, wx.FileDropTarget):
     def __init__(self, parent, env, path=""):
