@@ -36,7 +36,12 @@ class NewProjectDialog(wx.Dialog):
         self.SetMaxSize((-1, self.Size.height))
         self.text_name.SetFocus()
 
+        self.Bind(wx.EVT_TEXT, self.OnRootChanged, self.fp_root.path_ctrl)
         self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateUI_OK, id=wx.ID_OK)
+
+    def OnRootChanged(self, evt):
+        if not self.text_name.Value:
+            self.text_name.Value = os.path.basename(self.fp_root.GetValue())
 
     def OnUpdateUI_OK(self, evt):
         root = self.GetRoot()
