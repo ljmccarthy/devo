@@ -368,7 +368,6 @@ class StyledTextCtrl(wx.stc.StyledTextCtrl):
         dlg = FindReplaceDialog(self, self.name, find_details)
         try:
             dlg.ShowModal()
-            self.env.find_details = dlg.GetFindDetails()
         finally:
             dlg.Destroy()
             self.SetFocus()
