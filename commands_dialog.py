@@ -35,7 +35,7 @@ Commands may use the following special variables:
 """
 
 commands_ext = ".json"
-commands_wildcard = "Devo Commands|*%s" % commands_ext
+commands_wildcard = "Devo Commands (*%s)|*%s" % (commands_ext, commands_ext)
 
 def check_variables(s):
     try:
@@ -60,7 +60,7 @@ stdin_options = [
 
 stdout_options = [
     ("Show In Terminal", "show_in_terminal"),
-    ("Replace Current Selection", "replace_selection"),
+    ("Replace Selection", "replace_selection"),
     ("Replace Current File", "replace_current_file"),
     ("Send To New Editor", "new_editor"),
 ]
