@@ -363,7 +363,7 @@ class CommandsDialog(wx.Dialog):
                         if isinstance(command, dict) and "name" in command:
                             self.cmdlist.Append(command["name"], command)
             except Exception as e:
-                dialogs.error(self, "Error importing commands file: %s" % e)
+                dialogs.error(self, "Error importing commands file:\n\n%s" % e)
 
     def OnExport(self, evt):
         path = dialogs.get_file_to_save(self, wildcard=commands_wildcard, context="commands")
@@ -374,7 +374,7 @@ class CommandsDialog(wx.Dialog):
                 commands = clean_commands(self.GetCommands())
                 write_settings(path, commands)
             except Exception as e:
-                dialogs.error(self, "Error exporting commands file: %s" % e)
+                dialogs.error(self, "Error exporting commands file:\n\n%s" % e)
 
     def OnUpdateHasSelection(self, evt):
         evt.Enable(self.cmdlist.GetSelection() != wx.NOT_FOUND)
