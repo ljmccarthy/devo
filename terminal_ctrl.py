@@ -149,10 +149,11 @@ class TerminalCtrl(wx.Panel):
                     buffer.write(line)
             rc = process.wait()
         finally:
-            if buffer and rc == 0:
+            if buffer:
                 s = buffer.getvalue().decode("utf-8", "replace")
                 buffer.close()
-                wx.CallAfter(stdout.write, s)
+                if rc == 0:
+                    wx.CallAfter(stdout.write, s)
             try:
                 wx.CallAfter(self.__thread_exit, process, rc)
             except wx.PyDeadObjectError:
