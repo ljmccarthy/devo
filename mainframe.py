@@ -1111,12 +1111,15 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
                 stdin = editor.GetSelectedText()
             elif stdin_option == "current_file":
                 stdin = editor.GetText()
+        if isinstance(stdin, unicode):
+            stdin = stdin.encode("utf-8")
 
         stdout = None
         stdout_option = command.get("stdout", "")
-        if stdout_option == "replace_selection":
-            if editor:
-                stdout = editor.GetSelectionWriter()
+        if stdout_option == "replace_selection" and editor:
+            stdout = editor.GetSelectionWriter()
+        elif stdout_option == "replace_current_file" and editor:
+            stdout = editor.GetAllTextWriter()
         elif stdout_option == "new_editor":
             stdout = NewEditorWriter(self.env)
 

@@ -35,6 +35,17 @@ class EditorSelectionWriter(object):
         self.editor.SetSelection(*self.selection)
         self.editor.ReplaceSelectionAndSelect(s)
 
+class EditorAllTextWriter(object):
+    def __init__(self, editor):
+        self.editor = editor
+        self.editor.SetReadOnly(True)
+
+    def write(self, s):
+        self.editor.SetReadOnly(False)
+        line_num = self.editor.GetFirstVisibleLine()
+        self.editor.SetText(s)
+        self.editor.ScrollToLine(line_num)
+
 class Editor(StyledTextCtrl, wx.FileDropTarget):
     def __init__(self, parent, env, path=""):
         StyledTextCtrl.__init__(self, parent, env)
@@ -360,6 +371,10 @@ class Editor(StyledTextCtrl, wx.FileDropTarget):
     def GetSelectionWriter(self):
         if not self.GetReadOnly():
             return EditorSelectionWriter(self)
+
+    def GetAllTextWriter(self):
+        if not self.GetReadOnly():
+            return EditorAllTextWriter(self)
 
     def SavePerspective(self):
         p = {

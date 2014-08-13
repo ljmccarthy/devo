@@ -61,6 +61,7 @@ stdin_options = [
 stdout_options = [
     ("Show In Terminal", "show_in_terminal"),
     ("Replace Current Selection", "replace_selection"),
+    ("Replace Current File", "replace_current_file"),
     ("Send To New Editor", "new_editor"),
 ]
 
