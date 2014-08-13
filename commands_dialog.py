@@ -1,9 +1,11 @@
 import string
 import wx
+
 from accelerator import parse_accelerator, unparse_accelerator
 from dialogs import dialogs
 from file_picker import DirPicker
 from html_frame import HtmlPopup
+from settings import read_settings, write_settings
 
 command_help = """\
 <b>Edit Command Help</b>
@@ -31,6 +33,9 @@ Commands may use the following special variables:
   EOF
 </pre>
 """
+
+commands_ext = ".json"
+commands_wildcard = "Devo Commands|*%s" % commands_ext
 
 def check_variables(s):
     try:
@@ -215,6 +220,16 @@ class EditCommandDialog(wx.Dialog):
     def OnUpdateUI_DisableWhenDetached(self, evt):
         evt.Enable(not self.field_detach.Value)
 
+def clean_commands(commands):
+    commands = [command.copy() for command in commands]
+    before_dict = dict(save_options)
+    for command in commands:
+        if "before" in command:
+            if "save" not in command:
+                command["save"] = before_dict.get(command["before"], "do_not_save")
+            del command["before"]
+    return commands
+
 class CommandsDialog(wx.Dialog):
     def __init__(self, parent, commands=[], title="Configure Commands"):
         style = wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
@@ -227,6 +242,8 @@ class CommandsDialog(wx.Dialog):
         btn_remove = wx.Button(self, label="&Remove")
         btn_move_up = wx.Button(self, label="Move &Up")
         btn_move_down = wx.Button(self, label="Move &Down")
+        btn_import = wx.Button(self, label="&Import...")
+        btn_export = wx.Button(self, label="E&xport...")
 
         for command in commands:
             self.cmdlist.Append(command["name"], command)
@@ -242,6 +259,10 @@ class CommandsDialog(wx.Dialog):
         right_sizer.Add(btn_move_up, 0, wx.EXPAND)
         right_sizer.AddSpacer(spacer)
         right_sizer.Add(btn_move_down, 0, wx.EXPAND)
+        right_sizer.AddSpacer(spacer * 3)
+        right_sizer.Add(btn_import, 0, wx.EXPAND)
+        right_sizer.AddSpacer(spacer)
+        right_sizer.Add(btn_export, 0, wx.EXPAND)
         right_sizer.AddStretchSpacer()
         main_sizer = wx.BoxSizer(wx.HORIZONTAL)
         main_sizer.Add(self.cmdlist, 1, wx.EXPAND | wx.ALL, spacer)
@@ -269,10 +290,13 @@ class CommandsDialog(wx.Dialog):
         self.Bind(wx.EVT_BUTTON, self.OnRemove, btn_remove)
         self.Bind(wx.EVT_BUTTON, self.OnMoveUp, btn_move_up)
         self.Bind(wx.EVT_BUTTON, self.OnMoveDown, btn_move_down)
+        self.Bind(wx.EVT_BUTTON, self.OnImport, btn_import)
+        self.Bind(wx.EVT_BUTTON, self.OnExport, btn_export)
         self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateHasSelection, btn_edit)
         self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateHasSelection, btn_remove)
         self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateHasSelection, btn_move_up)
         self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateHasSelection, btn_move_down)
+        self.Bind(wx.EVT_UPDATE_UI, self.OnUpdateHasAnyCommands, btn_export)
 
     def _GetCommand(self, i):
         return self.cmdlist.GetClientData(i)
@@ -310,6 +334,10 @@ class CommandsDialog(wx.Dialog):
         selection = self.cmdlist.GetSelection()
         if selection != wx.NOT_FOUND:
             self.cmdlist.Delete(selection)
+            if selection >= self.cmdlist.Count:
+                selection = selection - 1
+            if selection < self.cmdlist.Count:
+                self.cmdlist.SetSelection(selection)
 
     def OnMoveUp(self, evt):
         selection = self.cmdlist.GetSelection()
@@ -323,8 +351,36 @@ class CommandsDialog(wx.Dialog):
             self._SwapCommands(selection, selection + 1)
             self.cmdlist.SetSelection(selection + 1)
 
-    def OnUpdateHasSelection(self, ui):
-        ui.Enable(self.cmdlist.GetSelection() != wx.NOT_FOUND)
+    def OnImport(self, evt):
+        path = dialogs.get_file_to_open(self, wildcard=commands_wildcard, context="commands")
+        if path:
+            try:
+                commands = read_settings(path)
+                if isinstance(commands, dict):
+                    commands = commands.get("commands", [])
+                if isinstance(commands, list):
+                    for command in commands:
+                        if isinstance(command, dict) and "name" in command:
+                            self.cmdlist.Append(command["name"], command)
+            except Exception as e:
+                dialogs.error(self, "Error importing commands file: %s" % e)
+
+    def OnExport(self, evt):
+        path = dialogs.get_file_to_save(self, wildcard=commands_wildcard, context="commands")
+        if path:
+            if not path.endswith(commands_ext) and "." not in path:
+                path = path + commands_ext
+            try:
+                commands = clean_commands(self.GetCommands())
+                write_settings(path, commands)
+            except Exception as e:
+                dialogs.error(self, "Error exporting commands file: %s" % e)
+
+    def OnUpdateHasSelection(self, evt):
+        evt.Enable(self.cmdlist.GetSelection() != wx.NOT_FOUND)
+
+    def OnUpdateHasAnyCommands(self, evt):
+        evt.Enable(self.cmdlist.Count > 0)
 
     def GetCommands(self):
         return [self.cmdlist.GetClientData(i) for i in xrange(self.cmdlist.GetCount())]
