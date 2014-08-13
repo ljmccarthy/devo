@@ -31,6 +31,7 @@ edit_menu = Menu("&Edit", [
         MenuSeparator,
         MenuItem(ID.SORT_LINES, "S&ort Lines"),
         MenuItem(ID.SORT_LINES_CASE_INSENSITIVE, "Sort Lines (Case &Insensitive)"),
+        MenuItem(ID.SORT_LINES_NATURAL_ORDER, "Sort Lines (&Natural Order)"),
         MenuItem(ID.UNIQUE_LINES, "&Unique Lines"),
         MenuSeparator,
         MenuItem(ID.REVERSE_LINES, "&Reverse Lines"),

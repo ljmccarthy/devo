@@ -234,6 +234,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.BindEditorAction(ID.SPLIT_LINES, "SplitLines", "HasSelection")
         self.BindEditorAction(ID.SORT_LINES, "SortLines", "HasSelection")
         self.BindEditorAction(ID.SORT_LINES_CASE_INSENSITIVE, "SortLinesCaseInsensitive", "HasSelection")
+        self.BindEditorAction(ID.SORT_LINES_NATURAL_ORDER, "SortLinesNaturalOrder", "HasSelection")
         self.BindEditorAction(ID.UNIQUE_LINES, "UniqueLines", "HasSelection")
         self.BindEditorAction(ID.REVERSE_LINES, "ReverseLines", "HasSelection")
         self.BindEditorAction(ID.SHUFFLE_LINES, "ShuffleLines", "HasSelection")
