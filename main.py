@@ -34,19 +34,21 @@ class DevoArgs(object):
     def __init__(self, args, cwd):
         self.raw_args = args
 
-        opts, args = getopt.gnu_getopt(args, "", ["project=", "new-instance"])
+        opts, args = getopt.gnu_getopt(args, "", ["project=", "new-instance", "no-fork"])
 
-        project = None
-        new_instance = False
+        self.project = None
+        self.new_instance = False
+        self.fork = True
+
         for opt, arg in opts:
             if opt == "--project":
-                project = arg
+                self.project = arg
             elif opt == "--new-instance":
-                new_instance = True
+                self.new_instance = True
+            elif opt == "--no-fork":
+                self.fork = False
 
         self.filenames = [os.path.join(cwd, filename) for filename in args]
-        self.project = project
-        self.new_instance = new_instance
 
 class DevoApp(wx.App):
     def __init__(self):
@@ -150,7 +152,7 @@ def main():
         sys.stderr.write("devo: error: %s\n" % e)
         sys.exit(1)
 
-    if sys.platform not in ("win32", "darwin"):
+    if args.fork and sys.platform not in ("win32", "darwin"):
         if os.fork() != 0:
             os._exit(0)
 
