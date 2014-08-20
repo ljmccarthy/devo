@@ -163,6 +163,7 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.project_filename = ""
         self.session_filename = ""
 
+        self.save_settings = not args.new_instance
         self.settings = {}
         self.project = {}
         self.project_root = ""
@@ -473,6 +474,8 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     @managed("cm")
     @coroutine
     def SaveSettings(self):
+        if not self.save_settings:
+            yield True
         try:
             self.settings["projects"] = sorted(self.project_info)
             self.settings["last_project"] = self.project_root
