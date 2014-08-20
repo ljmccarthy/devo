@@ -73,7 +73,9 @@ keywords_javascript = """\
 break case catch class const continue debugger default delete do else enum
 export extends finally for function if implements import in instanceof interface
 let new package private protected return static super switch this throw try
-typeof var void while with yield"""
+typeof var void while with yield false true null"""
+
+keywords_json = """false true null"""
 
 keywords_python = """\
 False None True and as assert break class continue def del elif else except exec
@@ -649,6 +651,7 @@ syntax_list = [
     Syntax("java", "Java", stc.STC_LEX_CPP, "*.java;*.jad;*.pde", "//", keywords_java),
     Syntax("csharp", "C#", stc.STC_LEX_CPP, "*.cs", "//", keywords_csharp),
     Syntax("javascript", "JavaScript", stc.STC_LEX_CPP, "*.js;*.es", "//", keywords_javascript),
+    Syntax("json", "JSON", stc.STC_LEX_CPP, "*.json", "//", keywords_json),
     Syntax("python", "Python", stc.STC_LEX_PYTHON, "*.py", "#", keywords_python),
     Syntax("html", "HTML", stc.STC_LEX_HTML, "*.html;*.htm"),
     Syntax("sgml", "SGML", stc.STC_LEX_HTML, "*.sgml"),
