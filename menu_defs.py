@@ -89,6 +89,8 @@ menubar = MenuBar([
         MenuHook("project_commands"),
     ]),
     Menu("&View", [
+        MenuItem(ID.NEW_WINDOW, "New &Window", "Ctrl+N"),
+        MenuSeparator,
         MenuItem(ID.FULL_SCREEN, "&Full Screen", "F11", kind=MenuItem.CHECK),
         MenuSeparator,
         MenuItem(ID.SHOW_PANE_FILE_BROWSER, "Show File &Browser", "Ctrl+1", kind=MenuItem.CHECK),

@@ -1,4 +1,5 @@
 __all__ = """\
+NEW_WINDOW
 FIND_NEXT
 FIND_PREV
 SEARCH

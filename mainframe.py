@@ -1,4 +1,4 @@
-import sys, os, string, traceback, errno, shutil, webbrowser
+import sys, os, string, traceback, errno, shutil, subprocess, webbrowser
 import wx
 
 import aui
@@ -276,11 +276,12 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
         self.Bind(wx.EVT_UPDATE_UI_RANGE, self.OnUpdateUI_ProjectCommand,
                   id=self.project_command_first_id, id2=self.project_command_last_id)
 
-        self.Bind(wx.EVT_MENU, self.OnViewSettings, id=ID.VIEW_SETTINGS)
+        self.Bind(wx.EVT_MENU, self.OnNewWindow, id=ID.NEW_WINDOW)
+        self.Bind(wx.EVT_MENU, self.OnFullScreen, id=ID.FULL_SCREEN)
         self.Bind(wx.EVT_MENU, self.OnShowPaneFileBrowser, id=ID.SHOW_PANE_FILE_BROWSER)
         self.Bind(wx.EVT_MENU, self.OnShowPaneTerminal, id=ID.SHOW_PANE_TERMINAL)
         self.Bind(wx.EVT_MENU, self.OnShowPaneSearch, id=ID.SHOW_PANE_SEARCH)
-        self.Bind(wx.EVT_MENU, self.OnFullScreen, id=ID.FULL_SCREEN)
+        self.Bind(wx.EVT_MENU, self.OnViewSettings, id=ID.VIEW_SETTINGS)
         self.Bind(wx.EVT_MENU, self.OnReportBug, id=ID.REPORT_BUG)
         self.Bind(wx.EVT_MENU, self.OnGetLatestVersion, id=ID.GET_LATEST_VERSION)
         self.Bind(wx.EVT_MENU, self.OnAboutBox, id=ID.ABOUT)
@@ -1221,6 +1222,9 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     def OnUpdateUI_ShowPaneSearch(self, evt):
         evt.Enable(True)
         evt.Check(self.search.IsShown())
+
+    def OnNewWindow(self, evt):
+        subprocess.Popen([sys.executable, "--new-instance"], close_fds=True)
 
     def OnFullScreen(self, evt):
         self.ShowFullScreen(not self.IsFullScreen())
