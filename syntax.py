@@ -17,6 +17,8 @@ class Syntax(object):
         self.tab_width = tab_width
         self.use_tabs = use_tabs
         self.keywords = keywords
+        file_patterns_list = file_patterns.split(";")
+        file_patterns = ";".join(file_patterns_list + [ext + ".in" for ext in file_patterns_list])
         self.file_regex = compile_file_patterns(file_patterns)
 
     def get_style_specs(self, theme):
