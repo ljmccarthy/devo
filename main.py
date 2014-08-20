@@ -1,11 +1,13 @@
 #!/usr/bin/env python2
 
-import sys, os, getopt, traceback
+import sys, os, getopt, traceback, warnings
 
 if not hasattr(sys, "frozen"):
     module_dir = os.path.dirname(os.path.realpath(__file__))
     os.chdir(module_dir)
     sys.path.append(os.path.join(module_dir, "..", "fsmonitor"))
+else:
+    warnings.filterwarnings("ignore")
 
 import wx
 from async import coroutine
