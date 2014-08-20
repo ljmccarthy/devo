@@ -13,10 +13,11 @@ file_pattern_choices = [
 ]
 
 class SearchDetails(object):
-    def __init__(self, case=False, regexp=False, find="", find_history=(),
+    def __init__(self, case=False, regexp=False, hidden=False, find="", find_history=(),
                  file_patterns="*", path="", path_history=()):
         self.case = case
         self.regexp = regexp
+        self.hidden = hidden
         self.find = find
         self.find_history = find_history
         self.file_patterns = file_patterns
@@ -27,6 +28,7 @@ class SearchDetails(object):
         try:
             self.case = bool(p.get("case_sensitive", False))
             self.regexp = bool(p.get("is_regex", False))
+            self.hidden = bool(p.get("hidden", False))
             self.find = str(p.get("find", ""))
             self.find_history = p.get("find_history", [])[:10]
             self.file_patterns = str(p.get("file_patterns"))
@@ -39,6 +41,7 @@ class SearchDetails(object):
         return {
             "case_sensitive": self.case,
             "is_regex": self.regexp,
+            "hidden": self.hidden,
             "find": self.find,
             "find_history": self.find_history[:],
             "file_patterns": self.file_patterns,
@@ -58,6 +61,7 @@ class SearchDialog(wx.Dialog):
         self.dir_picker = DirPicker(self, size=(300, -1), combo=True)
         self.check_case = wx.CheckBox(self, wx.ID_ANY, "&Case sensitive")
         self.check_regexp = wx.CheckBox(self, label="Regular e&xpression")
+        self.check_hidden = wx.CheckBox(self, label="Search &hidden files and folders")
 
         grid = wx.FlexGridSizer(cols=2, vgap=5, hgap=5)
         grid.AddGrowableCol(1, 1)
@@ -71,6 +75,7 @@ class SearchDialog(wx.Dialog):
         chksizer = wx.BoxSizer(wx.VERTICAL)
         chksizer.Add(self.check_case, 0, wx.ALL, 2)
         chksizer.Add(self.check_regexp, 0, wx.ALL, 2)
+        chksizer.Add(self.check_hidden, 0, wx.ALL, 2)
         grid.Add(chksizer)
 
         btn_search = wx.Button(self, wx.ID_OK, label="&Search")
@@ -99,6 +104,7 @@ class SearchDialog(wx.Dialog):
             self.dir_picker.SetValue(details.path)
             self.check_case.SetValue(details.case)
             self.check_regexp.SetValue(details.regexp)
+            self.check_hidden.SetValue(details.hidden)
 
         self.combo_find.SetFocus()
         self.combo_find.SetMark(0, len(self.combo_find.GetValue()))
@@ -127,6 +133,7 @@ class SearchDialog(wx.Dialog):
         return SearchDetails(
             case = self.check_case.GetValue(),
             regexp = self.check_regexp.GetValue(),
+            hidden = self.check_hidden.GetValue(),
             find = self.find,
             find_history = get_combo_history(self.combo_find),
             file_patterns = self.combo_file_patterns.GetValue(),

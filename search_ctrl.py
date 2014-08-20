@@ -1,6 +1,7 @@
 import sys, re, time
 import wx
 from async import async_call
+from dirtree_filter import re_hidden_files, re_hidden_dirs
 from search import Search, make_matcher
 from styled_text_ctrl import MARKER_FIND
 from thread_output_ctrl import ThreadOutputCtrl
@@ -114,16 +115,32 @@ class SearchCtrl(wx.Panel):
         matcher = make_matcher(details.find,
             case_sensitive=details.case, is_regexp=details.regexp)
 
-        def dir_filter(file_info):
-            return not file_info.hidden
+        if details.hidden:
+            def dir_filter(info):
+                return True
+        else:
+            def dir_filter(info):
+                return bool(not info.hidden
+                    and not re_hidden_dirs.match(info.filename))
 
         if details.file_patterns.strip():
             file_pattern_re = compile_file_patterns(details.file_patterns)
-            def file_filter(file_info):
-                return bool(not file_info.hidden and file_pattern_re.match(file_info.filename))
+            if details.hidden:
+                def file_filter(info):
+                    return bool(file_pattern_re.match(info.filename))
+            else:
+                def file_filter(info):
+                    return bool(not info.hidden
+                        and not re_hidden_files.match(info.filename)
+                        and file_pattern_re.match(info.filename))
         else:
-            def file_filter(file_info):
-                return not file_info.hidden
+            if details.hidden:
+                def file_filter(info):
+                    return True
+            else:
+                def file_filter(info):
+                    return bool(not info.hidden
+                        and not re_hidden_files.match(info.filename))
 
         self.start_time = time.time()
         self.details = details
