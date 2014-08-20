@@ -725,9 +725,13 @@ class MainFrame(wx.Frame, wx.FileDropTarget):
     @coroutine
     def ClosePage(self, editor):
         if (yield editor.TryClose()):
-            self.ForgetEditor(editor)
-            with frozen_window(self.notebook):
-                self.notebook.DeletePage(self.notebook.GetPageIndex(editor))
+            try:
+                with frozen_window(self.notebook):
+                    self.notebook.DeletePage(self.notebook.GetPageIndex(editor))
+            except Exception:
+                pass
+            else:
+                self.ForgetEditor(editor)
                 if self.notebook.GetPageCount() == 0:
                     self.SetStatusText("", 0)
                     self.SetStatusText("", 1)
