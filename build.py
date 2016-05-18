@@ -36,6 +36,7 @@ dll_excludes = [
     "mswsock.dll",
     "powrprof.dll",
     "UxTheme.dll",
+    "CRYPT32.dll",
 ]
 
 def run(*args, **kwargs):
