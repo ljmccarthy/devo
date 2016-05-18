@@ -4,9 +4,9 @@ import datetime
 
 name = "Devo"
 
-release_date = datetime.date(2014, 8, 9)
+release_date = datetime.date(2016, 5, 18)
 
-version = (1, 3, 0)
+version = (1, 4, 0)
 
 version_string = ".".join(str(x) for x in version)
 
