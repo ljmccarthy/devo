@@ -106,8 +106,7 @@ class DirTreeCtrl(wx.TreeCtrl, wx.FileDropTarget):
         self.SetDoubleBuffered(True)
 
         old_font = self.GetFont()
-        fontsize = 10 if wx.Platform == "__WXMAC__" else 8
-        self.font = wx.Font(fontsize, old_font.Family, old_font.Style, old_font.Weight, faceName=old_font.FaceName)
+        self.font = wx.Font(old_font.PointSize, old_font.Family, old_font.Style, old_font.Weight, faceName=old_font.FaceName)
         self.SetFont(self.font)
 
         self.filter = filter or DirTreeFilter()
