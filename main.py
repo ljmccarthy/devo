@@ -1,6 +1,14 @@
 #!/usr/bin/env python2
 
-import sys, os, getopt, traceback, warnings
+import sys
+
+if sys.platform == "win32":
+    import ctypes
+    SEM_FAILCRITICALERRORS = 1
+    ctypes.windll.kernel32.SetErrorMode(SEM_FAILCRITICALERRORS)
+    ctypes.windll.user32.SetProcessDPIAware()
+
+import os, getopt, traceback, warnings
 
 if not hasattr(sys, "frozen"):
     module_dir = os.path.dirname(os.path.realpath(__file__))
@@ -138,11 +146,6 @@ class DevoApp(wx.App):
             self.log_file.flush()
 
 def main():
-    if sys.platform == "win32":
-        import win32api
-        SEM_FAILCRITICALERRORS = 1
-        win32api.SetErrorMode(SEM_FAILCRITICALERRORS)
-
     if sys.platform == "darwin" and hasattr(sys, "frozen"):
         args = []
     else:
